@@ -1,0 +1,1629 @@
+.
+│   ├── Medication.java:```
+package mine.profile.website.models;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.exception.InsufficientStockException;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Medication {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String dosage;
+    private String imageURL;
+    private int stock;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal price;
+
+    private double amountPerUnit;
+
+    @Enumerated(EnumType.STRING)
+    private PricingUnit pricingUnit;
+
+    @OneToMany(mappedBy = "medication", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PrescribedMedication> prescribedMedications;
+
+    public BigDecimal calculatePrice(double amount) {
+        return this.price.multiply(BigDecimal.valueOf(amount * this.amountPerUnit));
+    }
+
+    public void increaseStock(int quantity) {
+        if (quantity > 0) {
+            this.stock += quantity;
+        } else {
+            throw new IllegalArgumentException("Quantity must be positive to increase stock");
+        }
+    }
+
+    public void decreaseStock(int quantity) {
+        if (quantity > 0) {
+            if (this.stock >= quantity) {
+                this.stock -= quantity;
+            } else {
+                throw new InsufficientStockException("Not enough stock for medication: " + this.name);
+            }
+        } else {
+            throw new IllegalArgumentException("Quantity must be positive to decrease stock");
+        }
+    }
+}
+```
+│   ├── Patient.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Patient {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String firstName;
+
+    private String lastName;
+
+    private LocalDate dateOfBirth;
+
+    private String gender;
+
+    private String address;
+
+    private String phoneNumber;
+
+    private String email;
+
+    private String profilePictureURL;
+
+    private String medicalRecordNumber;
+
+    private String bloodType;
+
+    private String allergies;
+
+    @Lob
+    private String medicalHistory;
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Appointment> appointments;
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Prescription> prescriptions;
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Admission> admissions;
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Assessment> assessments;
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<NursingCarePlan> nursingCarePlans;
+
+    @ManyToMany(mappedBy = "patients")
+    private Set<Nurse> nurses;
+
+    public Patient(String firstName, String lastName, LocalDate dateOfBirth, String gender, String address,
+            String phoneNumber, String email, String profilePictureURL, String medicalRecordNumber, String bloodType,
+            String allergies, String medicalHistory) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dateOfBirth = dateOfBirth;
+        this.gender = gender;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.profilePictureURL = profilePictureURL;
+        this.medicalRecordNumber = medicalRecordNumber;
+        this.bloodType = bloodType;
+        this.allergies = allergies;
+        this.medicalHistory = medicalHistory;
+    }
+}
+```
+│   ├── ImageReportType.java:```
+package mine.profile.website.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class ImageReportType {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private Double price;
+
+    public ImageReportType(String name, Double price) {
+        this.name = name;
+        this.price = price;
+    }
+}
+```
+│   ├── JsonConverter.java:```
+package mine.profile.website.models;
+
+import java.io.IOException;
+
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.AttributeConverter;
+
+@Component
+public class JsonConverter implements AttributeConverter<Object, String> {
+
+    private final ObjectMapper objectMapper;
+
+    public JsonConverter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public String convertToDatabaseColumn(Object attribute) {
+        try {
+            return objectMapper.writeValueAsString(attribute);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting object to JSON string", e);
+        }
+    }
+
+    @Override
+    public Object convertToEntityAttribute(String dbData) {
+        if (dbData == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(dbData, Object.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Error converting JSON string to object", e);
+        }
+    }
+}
+```
+│   ├── User.java:```
+package mine.profile.website.models;
+
+import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true)
+    private String username;
+
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    private String firstName;
+
+    private String lastName;
+
+    private String specialty;
+
+    private boolean enabled;
+
+    @ManyToMany
+    @JoinTable(name = "user_unit", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "unit_id"))
+    private List<Unit> units;
+
+    @OneToMany(mappedBy = "user")
+    private List<MedicationAdministration> medicationAdministrations;
+
+    public User(String username, String password, Role role, String firstName, String lastName, String specialty) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.specialty = specialty;
+    }
+}
+```
+│   ├── NursingCarePlan.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class NursingCarePlan {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime startDate;
+
+    private String notes;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    @OneToMany(mappedBy = "nursingCarePlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CarePlanGoal> carePlanGoals;
+
+    public NursingCarePlan(LocalDateTime startDate, String notes, Patient patient) {
+        this.startDate = startDate;
+        this.notes = notes;
+        this.patient = patient;
+    }
+}
+```
+│   ├── LabTest.java:```
+package mine.profile.website.models;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "lab_test")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class LabTest {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String testName;
+    private String testCode;
+    private Double price;
+    private String description;
+    private String referenceRange;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "structure_data", columnDefinition = "jsonb")
+    private Object structureData;
+}
+```
+│   ├── MedicationAdministration.java:```
+package mine.profile.website.models;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class MedicationAdministration {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id", nullable = false)
+    private Patient patient;
+
+    @ManyToOne
+    @JoinColumn(name = "prescription_id")
+    private Prescription prescription;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "prescribed_medication_id")
+    private PrescribedMedication prescribedMedication;
+
+    @ManyToOne
+    @JoinColumn(name = "billing_id")
+    private Billing billing;
+
+    private double amount;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal calculatedPrice;
+
+    private LocalDateTime administrationTime;
+}
+```
+│   ├── ProcedureLog.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class ProcedureLog {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    private String notes;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "procedure_id")
+    private Procedure procedure;
+
+    @ManyToOne
+    @JoinColumn(name = "billing_id")
+    private Billing billing;
+
+    public ProcedureLog(LocalDateTime startTime, LocalDateTime endTime, String notes, User user, Procedure procedure,
+            Billing billing) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.notes = notes;
+        this.user = user;
+        this.procedure = procedure;
+        this.billing = billing;
+    }
+}
+```
+│   ├── Admission.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Admission {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime admissionDate;
+
+    private LocalDateTime dischargeDate;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    @OneToOne
+    @JoinColumn(name = "bed_id")
+    private Bed bed;
+
+    public Admission(LocalDateTime admissionDate, LocalDateTime dischargeDate, Patient patient, Bed bed) {
+        this.admissionDate = admissionDate;
+        this.dischargeDate = dischargeDate;
+        this.patient = patient;
+        this.bed = bed;
+    }
+}
+```
+│   ├── Product.java:```
+package mine.profile.website.models;
+
+import java.math.BigDecimal;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String code;
+    private String name;
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    private ProductType type; // e.g., Medication, Device, Consumable, Service
+
+    @Enumerated(EnumType.STRING)
+    private PricingModel pricingModel; // e.g., PerUnit, PerTime, PerUse
+
+    private BigDecimal unitPrice; // Price per unit, per time unit or whatever the pricing model defines
+
+    private String unit; // e.g., "liter", "hour" "unit", null if it has a fixed price
+    // for a product that has a fixed price like a specific medication for a certain
+    // price
+    // the product price can be fixed and dont need any unit or quantity for example
+    // a pill of paracetamol
+
+    public enum ProductType {
+        MEDICATION,
+        DEVICE,
+        CONSUMABLE,
+        SERVICE
+    }
+
+    public enum PricingModel {
+        PER_UNIT,
+        PER_TIME,
+        PER_USE,
+        FIXED
+    }
+
+    public static BigDecimal calculatePrice(Product product, BigDecimal quantity) {
+        if (product == null || quantity == null || product.getUnitPrice() == null) {
+            return BigDecimal.ZERO;
+        }
+        return product.getUnitPrice().multiply(quantity);
+    }
+}
+```
+│   ├── Assessment.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Assessment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime assessmentDateTime;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    public Assessment(LocalDateTime assessmentDateTime, String notes, Patient patient) {
+        this.assessmentDateTime = assessmentDateTime;
+        this.notes = notes;
+        this.patient = patient;
+    }
+}
+```
+│   ├── PatientProductUsage.java:```
+package mine.profile.website.models;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class PatientProductUsage {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id", nullable = false)
+    private Patient patient;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "billing_id", nullable = false)
+    private Billing billing;
+
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
+    private BigDecimal quantity; // Amount of product used (relevant for PER_UNIT and PER_USE)
+
+    @Transient
+    private BigDecimal price; // Total price for this usage
+
+    public PatientProductUsage(Patient patient, Product product, LocalDateTime startTime, LocalDateTime endTime,
+            BigDecimal quantity, Billing billing) {
+        this.patient = patient;
+        this.product = product;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.quantity = quantity;
+        this.billing = billing;
+    }
+
+    public BigDecimal getPrice() {
+        if (product == null || product.getUnitPrice() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        switch (product.getPricingModel()) {
+            case PER_UNIT:
+                return calculatePricePerUnit();
+            case PER_TIME:
+                return calculatePricePerTime();
+            case PER_USE:
+                return calculatePricePerUse();
+            case FIXED:
+                return calculatePriceFixed();
+            default:
+                return BigDecimal.ZERO; // Should not happen, but handle the default case
+        }
+    }
+
+    private BigDecimal calculatePricePerUnit() {
+        if (quantity == null)
+            return BigDecimal.ZERO;
+        return product.getUnitPrice().multiply(quantity);
+    }
+
+    private BigDecimal calculatePricePerUse() {
+        return product.getUnitPrice(); // Price per use regardless of quantity in one use
+    }
+
+    private BigDecimal calculatePricePerTime() {
+        if (startTime == null || endTime == null)
+            return BigDecimal.ZERO;
+
+        Duration duration = Duration.between(startTime, endTime);
+        BigDecimal timeInHours = BigDecimal.valueOf(duration.toMinutes() / 60.0);
+        return product.getUnitPrice().multiply(timeInHours);
+
+    }
+
+    private BigDecimal calculatePriceFixed() {
+        return product.getUnitPrice(); // fixed price regardless the quantity or the time
+    }
+}
+```
+│   ├── Nurse.java:```
+package mine.profile.website.models;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Nurse {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToMany
+    @JoinTable(name = "nurse_patient", joinColumns = @JoinColumn(name = "nurse_id"), inverseJoinColumns = @JoinColumn(name = "patient_id"))
+    private Set<Patient> patients = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "nurse_unit", joinColumns = @JoinColumn(name = "nurse_id"), inverseJoinColumns = @JoinColumn(name = "unit_id"))
+    private Set<Unit> units = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "nurse_room", joinColumns = @JoinColumn(name = "nurse_id"), inverseJoinColumns = @JoinColumn(name = "room_id"))
+    private Set<Room> rooms = new HashSet<>();
+
+    public Nurse(User user) {
+        this.user = user;
+    }
+
+}
+```
+│   ├── ActivityType.java:```
+package mine.profile.website.models;
+
+public enum ActivityType {
+    VITAL_SIGNS_RECORDED,
+    MEDICATION_ADMINISTERED,
+    ASSESSMENT_COMPLETED,
+    CARE_PLAN_UPDATED,
+    ADMISSION_RECORDED,
+    DISCHARGE_RECORDED,
+    ROOM_ASSIGNMENT_UPDATED,
+    UNIT_ASSIGNMENT_UPDATED,
+    OTHER
+}
+```
+│   ├── Bed.java:```
+package mine.profile.website.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Bed {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String bedNumber;
+    private boolean isOccupied;
+
+    @ManyToOne
+    @JoinColumn(name = "room_id")
+    private Room room;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bed_id")
+    private Admission admission;
+
+    public Bed(String bedNumber, boolean isOccupied, Room room) {
+        this.bedNumber = bedNumber;
+        this.isOccupied = isOccupied;
+        this.room = room;
+    }
+}
+```
+│   ├── Procedure.java:```
+package mine.profile.website.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Procedure {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String code;
+
+    private String name;
+
+    private double price;
+
+    public Procedure(String code, String name, double price) {
+        this.code = code;
+        this.name = name;
+        this.price = price;
+    }
+}
+```
+│   ├── CarePlanGoal.java:```
+package mine.profile.website.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class CarePlanGoal {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String description;
+
+    private String targetOutcome;
+
+    @ManyToOne
+    @JoinColumn(name = "nursing_care_plan_id")
+    private NursingCarePlan nursingCarePlan;
+
+    public CarePlanGoal(String description, String targetOutcome, NursingCarePlan nursingCarePlan) {
+        this.description = description;
+        this.targetOutcome = targetOutcome;
+        this.nursingCarePlan = nursingCarePlan;
+    }
+}
+```
+│   ├── PrescribedMedication.java:```
+package mine.profile.website.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class PrescribedMedication {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "prescription_id", nullable = false)
+    private Prescription prescription;
+
+    @ManyToOne
+    @JoinColumn(name = "medication_id", nullable = false)
+    private Medication medication;
+
+    private String dosage;
+    private String route;
+    private double amount;
+    private boolean expired;
+
+}
+```
+│   ├── Billing.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Billing {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime billDate;
+
+    private double totalAmount;
+
+    private boolean isPaid;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments;
+
+    @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProcedureLog> procedureLogs;
+
+    @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PatientProductUsage> patientProductUsages;
+
+    @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LabResult> labResults;
+
+    @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ImageReport> imageReports;
+
+    @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MedicationAdministration> medicationAdministrations;
+
+    public Billing(LocalDateTime billDate, double totalAmount, boolean isPaid, Patient patient) {
+        this.billDate = billDate;
+        this.totalAmount = totalAmount;
+        this.isPaid = isPaid;
+        this.patient = patient;
+    }
+}
+```
+│   ├── VitalSign.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class VitalSign {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime timestamp;
+
+    private double heartRate;
+
+    private double bloodPressureSystolic;
+
+    private double bloodPressureDiastolic;
+
+    private double temperature;
+
+    private double respiratoryRate;
+
+    private String notes;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    public VitalSign(LocalDateTime timestamp, double heartRate, double bloodPressureSystolic,
+            double bloodPressureDiastolic,
+            double temperature, double respiratoryRate, Patient patient) {
+        this.timestamp = timestamp;
+        this.heartRate = heartRate;
+        this.bloodPressureSystolic = bloodPressureSystolic;
+        this.bloodPressureDiastolic = bloodPressureDiastolic;
+        this.temperature = temperature;
+        this.respiratoryRate = respiratoryRate;
+        this.patient = patient;
+    }
+}
+```
+│   ├── Prescription.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Prescription {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime prescriptionDate;
+    private String note;
+    private boolean expired;
+    @ManyToOne
+    @JoinColumn(name = "patient_id", nullable = false)
+    private Patient patient;
+
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PrescribedMedication> prescribedMedications;
+
+}
+```
+│   ├── ImageReport.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class ImageReport {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime reportDateTime;
+    private String description;
+    @Lob
+    private String reportText;
+    @ElementCollection
+    @CollectionTable(name = "image_report_image_urls", joinColumns = @JoinColumn(name = "image_report_id"))
+    @Column(name = "image_url")
+    private List<String> imageUrls;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User performedBy;
+
+    @ManyToOne
+    @JoinColumn(name = "image_report_type_id")
+    private ImageReportType imageReportType;
+
+    @ManyToOne
+    @JoinColumn(name = "billing_id", nullable = false)
+    private Billing billing;
+
+    public ImageReport(LocalDateTime reportDateTime, String description, String reportText,
+            List<String> imageUrls, Patient patient, User performedBy, ImageReportType imageReportType,
+            Billing billing) {
+        this.reportDateTime = reportDateTime;
+        this.description = description;
+        this.reportText = reportText;
+        this.imageUrls = imageUrls;
+        this.patient = patient;
+        this.performedBy = performedBy;
+        this.imageReportType = imageReportType;
+        this.billing = billing;
+    }
+}
+```
+│   ├── Payment.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Payment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime paymentDate;
+
+    private double amount;
+
+    private String paymentMethod;
+
+    @ManyToOne
+    @JoinColumn(name = "billing_id")
+    private Billing billing;
+
+    public Payment(LocalDateTime paymentDate, double amount, String paymentMethod, Billing billing) {
+        this.paymentDate = paymentDate;
+        this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.billing = billing;
+    }
+}
+```
+│   └── history
+│   ├── MedicationHistory.java:```
+// In MedicationHistory.java
+package mine.profile.website.models.history;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Medication;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class MedicationHistory {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "medication_id", nullable = false)
+    private Medication medication;
+    private String action;
+    private LocalDateTime timestamp;
+    @Column(name = "user_name")
+    private String userName; // Renamed column
+    @Column(columnDefinition = "TEXT")
+    private String changes; // Store changes as JSON,
+}
+```
+│   ├── Appointment.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Appointment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime appointmentDateTime;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public Appointment(LocalDateTime appointmentDateTime, Patient patient, User user) {
+        this.appointmentDateTime = appointmentDateTime;
+        this.patient = patient;
+        this.user = user;
+    }
+}
+```
+│   ├── Role.java:```
+package mine.profile.website.models;
+
+public enum Role {
+    ADMIN,
+    DOCTOR,
+    NURSE,
+    HEAD_NURSE,
+    PATIENT,
+    RECEPTIONIST,
+    PHARMACIST,
+    LAB_TECHNICIAN,
+    RADIOLOGIST,
+    ACCOUNTANT,
+    INSURANCE_PROVIDER,
+    SOCIAL_WORKER
+}
+```
+│   ├── Room.java:```
+package mine.profile.website.models;
+
+import java.util.List;
+import java.util.Set;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Room {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String roomNumber;
+
+    private String roomType;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Bed> beds;
+
+    @ManyToOne
+    @JoinColumn(name = "unit_id")
+    private Unit unit;
+
+    @ManyToMany(mappedBy = "rooms")
+    private Set<Nurse> nurses;
+
+    public Room(String roomNumber, String roomType, Unit unit) {
+        this.roomNumber = roomNumber;
+        this.roomType = roomType;
+        this.unit = unit;
+    }
+}
+```
+│   ├── PricingUnit.java:```
+package mine.profile.website.models;
+
+public enum PricingUnit {
+    PER_MG("per milligram"),
+    PER_ML("per milliliter"),
+    PER_DOSE("per dose"),
+    PER_VIAL("per vial"),
+    PER_UNIT("per unit"),
+    PER_PEN("per pen"),
+    PER_GRAM("per gram"),
+    PER_TABLET("per tablet"),
+    PER_CAPSULE("per capsule"),
+    PER_PATCH("per patch"),
+    PER_INHALER("per inhaler"),
+    PER_BOX("per box"),
+    PER_PACK("per pack");
+
+    private final String displayValue;
+
+    PricingUnit(String displayValue) {
+        this.displayValue = displayValue;
+    }
+
+    public String getDisplayValue() {
+        return displayValue;
+    }
+}
+```
+│   ├── Department.java:```
+package mine.profile.website.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Department {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+}
+```
+│   ├── NurseActivity.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class NurseActivity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "nurse_id")
+    private Nurse nurse;
+
+    @Enumerated(EnumType.STRING)
+    private ActivityType activityType;
+
+    private LocalDateTime timestamp;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient; // Optional
+
+    private String notes;
+
+    public NurseActivity(Nurse nurse, ActivityType activityType, LocalDateTime timestamp, Patient patient,
+            String notes) {
+        this.nurse = nurse;
+        this.activityType = activityType;
+        this.timestamp = timestamp;
+        this.patient = patient;
+        this.notes = notes;
+    }
+
+}
+```
+│   ├── UnitType.java:```
+package mine.profile.website.models;
+
+public enum UnitType {
+    WARD("Ward"),
+    GENERAL_MEDICAL("General Medical"), // Main medical ward
+    GENERAL_SURGICAL("General Surgical"), // Main surgical ward
+    PEDIATRIC("Pediatric"), // Children's ward
+    OBSTETRICS_GYNECOLOGY("Obstetrics & Gynecology"), // Women's health and pregnancy
+    ORTHOPEDIC("Orthopedic"), // Musculoskeletal system
+
+    ICU("Intensive Care Unit"), // Critically ill patients
+    CCU("Cardiac Care Unit"), // Heart patients
+    NICU("Neonatal ICU"), // Critically ill newborns
+
+    ONCOLOGY("Oncology"), // Cancer treatment
+    DIALYSIS("Dialysis"), // Kidney failure treatment
+    PSYCHIATRIC("Psychiatric"), // Mental health treatment
+    NEUROLOGY("Neurology"), // Nervous system treatment
+    PULMONARY("Pulmonary"), // Respiratory treatment
+    GASTROENTEROLOGY("Gastroenterology"), // Digestive system treatment
+    OPHTHALMOLOGY("Ophthalmology"), // Eye treatment
+    ENT("ENT"), // Ear, nose, and throat treatment
+    DERMATOLOGY("Dermatology"), // Skin treatment
+    REHABILITATION("Rehabilitation"), // Physical and occupational therapy
+    INFECTIOUS_DISEASE("Infectious Disease"), // Treatment of infections
+
+    EMERGENCY("Emergency"), // Immediate care
+    OPERATING_ROOM("Operating Room"), // Surgical procedures
+    LABORATORY("Laboratory"), // Diagnostic testing
+    RADIOLOGY("Radiology"), // Imaging
+    PHARMACY("Pharmacy"), // Medication dispensing
+    OUTPATIENT("Outpatient Clinic"); // Appointments
+
+    private final String displayName;
+
+    UnitType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+}
+```
+│   ├── Unit.java:```
+package mine.profile.website.models;
+
+import java.util.List;
+import java.util.Set;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+public class Unit {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @jakarta.persistence.Column(unique = true)
+    private UnitType unitType;
+
+    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Room> rooms;
+
+    @ManyToMany
+    private List<User> users;
+
+    @ManyToMany(mappedBy = "units")
+    private Set<Nurse> nurses;
+
+    public Unit(UnitType unitType) {
+        this.unitType = unitType;
+
+    }
+}
+```
+│   ├── LabResult.java:```
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "lab_result")
+@Getter
+@Setter
+@NoArgsConstructor
+public class LabResult {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime resultDateTime;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Object resultData;
+
+    private String notes;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User performedBy;
+
+    @ManyToOne
+    @JoinColumn(name = "lab_test_id")
+    private LabTest labTest;
+
+    @ManyToOne
+    @JoinColumn(name = "billing_id", nullable = false)
+    private Billing billing;
+
+    public LabResult(LocalDateTime resultDateTime, String notes, Patient patient,
+            User performedBy, LabTest labTest, Billing billing) {
+        this.resultDateTime = resultDateTime;
+        this.notes = notes;
+        this.patient = patient;
+        this.performedBy = performedBy;
+        this.labTest = labTest;
+        this.billing = billing;
+    }
+}
+```

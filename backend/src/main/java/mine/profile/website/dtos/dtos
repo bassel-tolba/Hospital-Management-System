@@ -1,0 +1,1655 @@
+.
+│   ├── BedDTO.java:```
+
+package mine.profile.website.dtos;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.config.BooleanDeserializer;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class BedDTO {
+    private Long id;
+    private String bedNumber;
+    @JsonDeserialize(using = BooleanDeserializer.class)
+    private boolean isOccupied;
+    private Long roomId;
+}
+```
+│   ├── PatientDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Patient;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class PatientDTO {
+    private Long id;
+
+    @NotBlank(message = "First name is required")
+    private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    private String lastName;
+
+    private LocalDate dateOfBirth;
+    private String gender;
+    private String address;
+    private String phoneNumber;
+    private String email;
+    private String profilePictureURL;
+    private String medicalRecordNumber;
+    private String bloodType;
+    private String allergies;
+    private String medicalHistory;
+    private List<Long> appointmentIds;
+    private List<Long> prescriptionIds;
+    private List<Long> admissionIds;
+    private List<Long> assessmentIds;
+    private List<Long> nursingCarePlanIds;
+
+    public PatientDTO(Long id, @NotBlank(message = "First name is required") String firstName,
+            @NotBlank(message = "Last name is required") String lastName, LocalDate dateOfBirth, String gender,
+            String address, String phoneNumber, String email, String profilePictureURL, String medicalRecordNumber,
+            String bloodType, String allergies, String medicalHistory, List<Long> appointmentIds,
+            List<Long> prescriptionIds, List<Long> admissionIds, List<Long> assessmentIds,
+            List<Long> nursingCarePlanIds) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dateOfBirth = dateOfBirth;
+        this.gender = gender;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.profilePictureURL = profilePictureURL;
+        this.medicalRecordNumber = medicalRecordNumber;
+        this.bloodType = bloodType;
+        this.allergies = allergies;
+        this.medicalHistory = medicalHistory;
+        this.appointmentIds = appointmentIds;
+        this.prescriptionIds = prescriptionIds;
+        this.admissionIds = admissionIds;
+        this.assessmentIds = assessmentIds;
+        this.nursingCarePlanIds = nursingCarePlanIds;
+    }
+
+    public Patient toEntity() {
+        Patient patient = new Patient();
+        patient.setId(this.id);
+        patient.setFirstName(this.firstName);
+        patient.setLastName(this.lastName);
+        patient.setDateOfBirth(this.dateOfBirth);
+        patient.setGender(this.gender);
+        patient.setAddress(this.address);
+        patient.setPhoneNumber(this.phoneNumber);
+        patient.setEmail(this.email);
+        patient.setProfilePictureURL(this.profilePictureURL);
+        patient.setMedicalRecordNumber(this.medicalRecordNumber);
+        patient.setBloodType(this.bloodType);
+        patient.setAllergies(this.allergies);
+        patient.setMedicalHistory(this.medicalHistory);
+
+        return patient;
+    }
+
+    public static PatientDTO toDto(Patient patient) {
+        PatientDTO patientDTO = new PatientDTO();
+        patientDTO.setId(patient.getId());
+        patientDTO.setFirstName(patient.getFirstName());
+        patientDTO.setLastName(patient.getLastName());
+        patientDTO.setDateOfBirth(patient.getDateOfBirth());
+        patientDTO.setGender(patient.getGender());
+        patientDTO.setAddress(patient.getAddress());
+        patientDTO.setPhoneNumber(patient.getPhoneNumber());
+        patientDTO.setEmail(patient.getEmail());
+        patientDTO.setProfilePictureURL(patient.getProfilePictureURL());
+        patientDTO.setMedicalRecordNumber(patient.getMedicalRecordNumber());
+        patientDTO.setBloodType(patient.getBloodType());
+        patientDTO.setAllergies(patient.getAllergies());
+        patientDTO.setMedicalHistory(patient.getMedicalHistory());
+
+        if (patient.getAppointments() != null) {
+            patientDTO.setAppointmentIds(patient.getAppointments().stream().map(appointment -> appointment.getId())
+                    .collect(Collectors.toList()));
+        }
+        if (patient.getPrescriptions() != null) {
+            patientDTO.setPrescriptionIds(patient.getPrescriptions().stream().map(prescription -> prescription.getId())
+                    .collect(Collectors.toList()));
+        }
+        if (patient.getAdmissions() != null) {
+            patientDTO.setAdmissionIds(
+                    patient.getAdmissions().stream().map(admission -> admission.getId()).collect(Collectors.toList()));
+        }
+        if (patient.getAssessments() != null) {
+            patientDTO.setAssessmentIds(patient.getAssessments().stream().map(assessment -> assessment.getId())
+                    .collect(Collectors.toList()));
+        }
+        if (patient.getNursingCarePlans() != null) {
+            patientDTO.setNursingCarePlanIds(patient.getNursingCarePlans().stream()
+                    .map(nursingCarePlan -> nursingCarePlan.getId()).collect(Collectors.toList()));
+        }
+
+        return patientDTO;
+    }
+}
+```
+│   ├── LabResultDTO.java:```
+package mine.profile.website.dtos;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.LabResult;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class LabResultDTO {
+    private Long id;
+    private LocalDateTime resultDateTime;
+    private Map<String, Object> resultMap = new HashMap<>();
+    private String notes;
+    private Long patientId;
+    private Long performedById;
+    private Long labTestId;
+    private Long billingId;
+
+    public static LabResultDTO fromEntity(LabResult labResult) {
+        LabResultDTO dto = new LabResultDTO();
+        dto.setId(labResult.getId());
+        dto.setResultDateTime(labResult.getResultDateTime());
+        dto.setNotes(labResult.getNotes());
+        dto.setPatientId(labResult.getPatient().getId());
+        dto.setPerformedById(labResult.getPerformedBy().getId());
+        dto.setLabTestId(labResult.getLabTest().getId());
+        if (labResult.getBilling() != null) {
+            dto.setBillingId(labResult.getBilling().getId());
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> resultMap;
+        try {
+            resultMap = mapper.readValue((String) labResult.getResultData(), new TypeReference<Map<String, Object>>() {
+            });
+        } catch (IOException e) {
+            resultMap = null; // Handle the exception properly. maybe log and return null
+        }
+        dto.setResultMap(resultMap);
+        return dto;
+    }
+
+    public LabResult toEntity() {
+        LabResult labResult = new LabResult();
+        labResult.setId(this.getId());
+        labResult.setResultDateTime(this.getResultDateTime());
+        labResult.setNotes(this.getNotes());
+        ObjectMapper mapper = new ObjectMapper();
+        String resultDataJson;
+        try {
+            resultDataJson = mapper.writeValueAsString(this.resultMap);
+            labResult.setResultData(resultDataJson);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting resultMap to JSON", e);
+        }
+        return labResult;
+    }
+}
+```
+│   ├── PrescribedMedicationDTO.java:```
+package mine.profile.website.dtos;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Medication;
+import mine.profile.website.models.PrescribedMedication;
+import mine.profile.website.models.Prescription;
+import mine.profile.website.repository.MedicationRepository;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class PrescribedMedicationDTO {
+
+    @Autowired
+    private MedicationRepository medicationRepository;
+
+    private Long id;
+    private Long prescriptionId;
+    private Long medicationId;
+    private String medicationName;
+    private String dosage;
+    private String route;
+    private double amount;
+    private boolean expired;
+
+    public static PrescribedMedicationDTO toDto(PrescribedMedication prescribedMedication) {
+
+        if (prescribedMedication == null) {
+            return null;
+        }
+
+        PrescribedMedicationDTO dto = new PrescribedMedicationDTO();
+        dto.setId(prescribedMedication.getId());
+        dto.setMedicationName(prescribedMedication.getMedication().getName());
+        dto.setPrescriptionId(prescribedMedication.getPrescription().getId());
+        dto.setMedicationId(prescribedMedication.getMedication().getId());
+        dto.setDosage(prescribedMedication.getDosage());
+        dto.setRoute(prescribedMedication.getRoute());
+        dto.setAmount(prescribedMedication.getAmount());
+        dto.setExpired(prescribedMedication.isExpired());
+        return dto;
+    }
+
+    public static PrescribedMedication toEntity(PrescribedMedicationDTO dto, Prescription prescription,
+            Medication medication) {
+        if (dto == null) {
+            return null;
+        }
+
+        PrescribedMedication entity = new PrescribedMedication();
+        entity.setId(dto.getId());
+        entity.setPrescription(prescription);
+        entity.setMedication(medication);
+        entity.setDosage(dto.getDosage());
+        entity.setRoute(dto.getRoute());
+        entity.setAmount(dto.getAmount());
+        entity.setExpired(dto.isExpired());
+        return entity;
+    }
+}
+```
+│   ├── NurseActivityDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.ActivityType;
+import mine.profile.website.models.NurseActivity;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class NurseActivityDTO {
+
+    private Long id;
+
+    private Long nurseId;
+
+    private ActivityType activityType;
+
+    private LocalDateTime timestamp;
+
+    private Long patientId;
+
+    private String notes;
+
+    public NurseActivityDTO(Long id, Long nurseId, ActivityType activityType, LocalDateTime timestamp, Long patientId,
+            String notes) {
+        this.id = id;
+        this.nurseId = nurseId;
+        this.activityType = activityType;
+        this.timestamp = timestamp;
+        this.patientId = patientId;
+        this.notes = notes;
+    }
+
+    public static NurseActivityDTO toDto(NurseActivity nurseActivity) {
+        NurseActivityDTO nurseActivityDTO = new NurseActivityDTO();
+        nurseActivityDTO.setId(nurseActivity.getId());
+        nurseActivityDTO.setNurseId(nurseActivity.getNurse().getId());
+        nurseActivityDTO.setActivityType(nurseActivity.getActivityType());
+        nurseActivityDTO.setTimestamp(nurseActivity.getTimestamp());
+        if (nurseActivity.getPatient() != null) {
+            nurseActivityDTO.setPatientId(nurseActivity.getPatient().getId());
+        }
+        nurseActivityDTO.setNotes(nurseActivity.getNotes());
+        return nurseActivityDTO;
+    }
+}
+```
+│   ├── UserDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.util.List;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class UserDTO {
+    private Long id;
+    private String username;
+    private String password;
+    private String role;
+    private String firstName;
+    private String lastName;
+    private String specialty;
+    private String token;
+    private List<Long> unitIds;
+    private List<Long> roleIds;
+}
+```
+│   ├── mainpage.java:```
+package mine.profile.website.dtos;
+
+import lombok.Data;
+
+@Data
+public class mainpage {
+    long id;
+    String content;
+}
+```
+│   ├── ProcedureLogDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Billing;
+import mine.profile.website.models.Procedure;
+import mine.profile.website.models.ProcedureLog;
+import mine.profile.website.models.User;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class ProcedureLogDTO {
+    private Long id;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private String notes;
+    private Long userId;
+    private Long procedureId;
+    private Long billingId;
+
+    public static ProcedureLog toEntity(ProcedureLogDTO dto, User user, Procedure procedure, Billing billing) {
+        ProcedureLog procedureLog = new ProcedureLog();
+        procedureLog.setId(dto.getId());
+        procedureLog.setStartTime(dto.getStartTime());
+        procedureLog.setEndTime(dto.getEndTime());
+        procedureLog.setNotes(dto.getNotes());
+        procedureLog.setUser(user);
+        procedureLog.setProcedure(procedure);
+        procedureLog.setBilling(billing);
+        return procedureLog;
+    }
+
+    public static ProcedureLogDTO toDto(ProcedureLog entity) {
+        ProcedureLogDTO dto = new ProcedureLogDTO();
+        dto.setId(entity.getId());
+        dto.setStartTime(entity.getStartTime());
+        dto.setEndTime(entity.getEndTime());
+        dto.setNotes(entity.getNotes());
+        dto.setUserId(entity.getUser().getId());
+        dto.setProcedureId(entity.getProcedure().getId());
+        if (entity.getBilling() != null) {
+            dto.setBillingId(entity.getBilling().getId());
+        }
+        return dto;
+    }
+}
+```
+│   ├── PaymentDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Billing;
+import mine.profile.website.models.Payment;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class PaymentDTO {
+    private Long id;
+    private LocalDateTime paymentDate;
+    private double amount;
+    private String paymentMethod;
+    private Long billingId;
+
+    public Payment toEntity(Billing billing) {
+        Payment payment = new Payment();
+        payment.setId(this.id);
+        payment.setPaymentDate(this.paymentDate);
+        payment.setAmount(this.amount);
+        payment.setPaymentMethod(this.paymentMethod);
+        payment.setBilling(billing);
+        return payment;
+
+    }
+
+    public static PaymentDTO toDto(Payment payment) {
+        PaymentDTO paymentDTO = new PaymentDTO();
+        paymentDTO.setId(payment.getId());
+        paymentDTO.setPaymentDate(payment.getPaymentDate());
+        paymentDTO.setAmount(payment.getAmount());
+        paymentDTO.setPaymentMethod(payment.getPaymentMethod());
+        if (payment.getBilling() != null) {
+            paymentDTO.setBillingId(payment.getBilling().getId());
+        }
+
+        return paymentDTO;
+    }
+
+}
+```
+│   ├── AppointmentDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class AppointmentDTO {
+    private Long id;
+    private LocalDateTime appointmentDateTime;
+    private Long patientId;
+    private Long userId;
+}
+```
+│   ├── CarePlanGoalDTO.java:```
+
+package mine.profile.website.dtos;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class CarePlanGoalDTO {
+    private Long id;
+    private String description;
+    private String targetOutcome;
+    private Long nursingCarePlanId;
+}
+```
+│   ├── RoomDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.util.List;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class RoomDTO {
+    private Long id;
+    private String roomNumber;
+    private String roomType;
+    private Long unitId;
+    private List<Long> bedIds;
+}
+```
+│   ├── PatientProductUsageDTO.java:```
+package mine.profile.website.dtos;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.PatientProductUsage;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class PatientProductUsageDTO {
+    private Long id;
+    private Long patientId;
+    private Long productId;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private BigDecimal quantity;
+    private BigDecimal price;
+    private Long billingId;
+
+    public static PatientProductUsageDTO toDto(PatientProductUsage usage) {
+        PatientProductUsageDTO dto = new PatientProductUsageDTO();
+        dto.setId(usage.getId());
+        dto.setPatientId(usage.getPatient().getId());
+        dto.setProductId(usage.getProduct().getId());
+        dto.setStartTime(usage.getStartTime());
+        dto.setEndTime(usage.getEndTime());
+        dto.setQuantity(usage.getQuantity());
+        dto.setPrice(usage.getPrice());
+        if (usage.getBilling() != null) {
+            dto.setBillingId(usage.getBilling().getId());
+        }
+        return dto;
+    }
+
+    public static PatientProductUsage toEntity(PatientProductUsageDTO dto) {
+        PatientProductUsage usage = new PatientProductUsage();
+        usage.setId(dto.getId());
+        usage.setStartTime(dto.getStartTime());
+        usage.setEndTime(dto.getEndTime());
+        usage.setQuantity(dto.getQuantity());
+        return usage;
+    }
+}
+```
+│   ├── DepartmentDTO.java:```
+
+package mine.profile.website.dtos;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class DepartmentDTO {
+    private Long id;
+    private String name;
+}
+```
+│   ├── BillingDTO.java:```
+package mine.profile.website.dtos;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Admission;
+import mine.profile.website.models.Billing;
+import mine.profile.website.models.ImageReport;
+import mine.profile.website.models.LabResult;
+import mine.profile.website.models.MedicationAdministration;
+import mine.profile.website.models.PatientProductUsage;
+import mine.profile.website.models.Payment;
+import mine.profile.website.models.ProcedureLog;
+import mine.profile.website.repository.AdmissionRepository;
+import mine.profile.website.repository.ImageReportRepository;
+import mine.profile.website.repository.LabResultRepository;
+import mine.profile.website.repository.MedicationAdministrationRepository;
+import mine.profile.website.repository.PatientProductUsageRepository;
+import mine.profile.website.repository.PatientRepository;
+import mine.profile.website.repository.PaymentRepository;
+import mine.profile.website.repository.ProcedureLogRepository;
+import mine.profile.website.repository.ProcedureRepository;
+import mine.profile.website.repository.ProductRepository;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class BillingDTO {
+    private Long id;
+    private LocalDateTime billDate;
+    private double totalAmount;
+    private boolean isPaid;
+    private Long patientId;
+    private List<Long> paymentIds;
+    private List<Long> procedureLogIds;
+    private List<Long> patientProductUsageIds;
+    private List<Long> labResultIds;
+    private List<Long> imageReportIds;
+    private List<Long> medicationAdministrationIds;
+    private String bill;
+
+    @Autowired
+    @JsonIgnore
+    private AdmissionRepository admissionRepository;
+    @Autowired
+    @JsonIgnore
+    private PaymentRepository paymentRepository;
+    @Autowired
+    @JsonIgnore
+    private ProcedureLogRepository procedureLogRepository;
+    @Autowired
+    @JsonIgnore
+    private PatientProductUsageRepository patientProductUsageRepository;
+    @Autowired
+    @JsonIgnore
+    private LabResultRepository labResultRepository;
+    @Autowired
+    @JsonIgnore
+    private ImageReportRepository imageReportRepository;
+    @Autowired
+    @JsonIgnore
+    private ProductRepository productRepository;
+    @Autowired
+    @JsonIgnore
+    private ProcedureRepository procedureRepository;
+
+    @Autowired
+    @JsonIgnore
+    private PatientRepository patientRepository;
+
+    @Autowired
+    @JsonIgnore
+    private MedicationAdministrationRepository medicationAdministrationRepository;
+
+    public BillingDTO(Long id, LocalDateTime billDate, double totalAmount, boolean isPaid, Long patientId,
+            List<Long> paymentIds, List<Long> procedureLogIds, List<Long> patientProductUsageIds,
+            List<Long> labResultIds, List<Long> imageReportIds, List<Long> medicationAdministrationIds) {
+        this.id = id;
+        this.billDate = billDate;
+        this.totalAmount = totalAmount;
+        this.isPaid = isPaid;
+        this.patientId = patientId;
+        this.paymentIds = paymentIds;
+        this.procedureLogIds = procedureLogIds;
+        this.patientProductUsageIds = patientProductUsageIds;
+        this.labResultIds = labResultIds;
+        this.imageReportIds = imageReportIds;
+        this.medicationAdministrationIds = medicationAdministrationIds;
+    }
+
+    public Billing toEntity() {
+        Billing billing = new Billing();
+        billing.setId(this.id);
+        billing.setBillDate(this.billDate);
+        billing.setTotalAmount(this.totalAmount);
+        billing.setPaid(this.isPaid);
+
+        return billing;
+    }
+
+    public static BillingDTO toDto(Billing billing, PaymentRepository paymentRepository,
+            ProcedureLogRepository procedureLogRepository,
+            PatientProductUsageRepository patientProductUsageRepository, LabResultRepository labResultRepository,
+            ImageReportRepository imageReportRepository, ProductRepository productRepository,
+            ProcedureRepository procedureRepository, AdmissionRepository admissionRepository,
+            PatientRepository patientRepository,
+            MedicationAdministrationRepository medicationAdministrationRepository) {
+        BillingDTO billingDTO = new BillingDTO();
+        billingDTO.setId(billing.getId());
+        billingDTO.setBillDate(billing.getBillDate());
+        billingDTO.setTotalAmount(billing.getTotalAmount());
+        billingDTO.setPaid(billing.isPaid());
+        if (billing.getPatient() != null) {
+            billingDTO.setPatientId(billing.getPatient().getId());
+        }
+        if (billing.getPayments() != null) {
+            billingDTO.setPaymentIds(
+                    billing.getPayments().stream().map(payment -> payment.getId()).collect(Collectors.toList()));
+        }
+        if (billing.getProcedureLogs() != null) {
+            billingDTO.setProcedureLogIds(
+                    billing.getProcedureLogs().stream().map(log -> log.getId()).collect(Collectors.toList()));
+        }
+        if (billing.getPatientProductUsages() != null) {
+            billingDTO.setPatientProductUsageIds(
+                    billing.getPatientProductUsages().stream().map(usage -> usage.getId())
+                            .collect(Collectors.toList()));
+        }
+        if (billing.getLabResults() != null) {
+            billingDTO.setLabResultIds(
+                    billing.getLabResults().stream().map(result -> result.getId()).collect(Collectors.toList()));
+        }
+        if (billing.getImageReports() != null) {
+            billingDTO.setImageReportIds(
+                    billing.getImageReports().stream().map(report -> report.getId()).collect(Collectors.toList()));
+        }
+
+        if (billing.getMedicationAdministrations() != null) {
+            billingDTO.setMedicationAdministrationIds(
+                    billing.getMedicationAdministrations().stream().map(report -> report.getId())
+                            .collect(Collectors.toList()));
+        }
+
+        billingDTO.paymentRepository = paymentRepository;
+        billingDTO.procedureLogRepository = procedureLogRepository;
+        billingDTO.patientProductUsageRepository = patientProductUsageRepository;
+        billingDTO.labResultRepository = labResultRepository;
+        billingDTO.imageReportRepository = imageReportRepository;
+        billingDTO.productRepository = productRepository;
+        billingDTO.procedureRepository = procedureRepository;
+        billingDTO.admissionRepository = admissionRepository;
+        billingDTO.patientRepository = patientRepository;
+        billingDTO.medicationAdministrationRepository = medicationAdministrationRepository;
+        billingDTO.setBill(billingDTO.generateBillHtml());
+
+        return billingDTO;
+    }
+
+    public String generateBillHtml() {
+        double totalBill = 0;
+        double totalPayment = 0;
+        final double ADMISSION_DAY_PRICE = 100.00;
+
+        StringBuilder billHtml = new StringBuilder();
+        billHtml.append(
+                "<div style=\"font-family: 'Arial', sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 80%; margin: 20px auto; background-color: #f9f9f9;\">");
+        billHtml.append("<h2 style=\"text-align:center; color: #333; margin-bottom: 20px;\">Bill</h2>");
+        billHtml.append("<div style=\"display: flex; justify-content: space-between; margin-bottom: 15px;\">");
+        billHtml.append("<p style=\"color: #555;\"><strong>Bill Date:</strong> " + billDate + "</p>");
+        billHtml.append("<p style=\"color: #555;\"><strong>Patient Name:</strong> "
+                + patientRepository.getById(patientId).getFirstName() + " "
+                + patientRepository.getById(patientId).getLastName() + "</p>");
+        billHtml.append("</div>");
+        billHtml.append("<hr style=\"border-top: 1px solid #ddd; margin-bottom: 20px;\"/>");
+
+        // Admission Section
+        billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Admission</h3>");
+        billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+        double admissionCost = 0;
+        if (patientId != null) {
+            List<Admission> admissions = admissionRepository.findByPatientId(patientId);
+
+            if (admissions != null && !admissions.isEmpty()) {
+                Admission admission = admissions.get(0);
+                if (admission.getAdmissionDate() != null) {
+                    LocalDateTime admissionTime = admission.getAdmissionDate();
+                    LocalDateTime currentTime = LocalDateTime.now();
+                    long days = Duration.between(admissionTime, currentTime).toDays();
+                    days = days == 0 ? 1 : days; // always at least one day.
+
+                    admissionCost = days * ADMISSION_DAY_PRICE;
+                    billHtml.append(
+                            "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                    billHtml.append("<span>Admission Stay (" + days + " days)</span>");
+                    billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
+                            + String.format("%.2f", admissionCost) + "</span>");
+                    billHtml.append("</li>");
+                }
+
+                totalBill += admissionCost;
+            }
+        }
+        billHtml.append("</ul>");
+
+        // Procedure Logs Section
+        billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Procedures</h3>");
+        billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+        if (procedureLogIds != null && !procedureLogIds.isEmpty()) {
+            Map<Long, Long> procedureCountMap = procedureLogIds.stream()
+                    .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+
+            List<ProcedureLog> procedureLogs = procedureLogRepository.findAllById(procedureLogIds);
+
+            for (Map.Entry<Long, Long> entry : procedureCountMap.entrySet()) {
+                Long procedureId = entry.getKey();
+                Long count = entry.getValue();
+
+                ProcedureLog log = procedureLogs.stream()
+                        .filter(procedureLog -> procedureLog.getId().equals(procedureId))
+                        .findFirst()
+                        .orElse(null);
+
+                if (log != null && log.getProcedure() != null) {
+                    double procedurePrice = procedureRepository.findById(log.getProcedure().getId()).orElseThrow()
+                            .getPrice();
+
+                    double totalPriceForProcedure = procedurePrice * count;
+
+                    billHtml.append(
+                            "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                    billHtml.append("<span>" + log.getProcedure().getName() + " (" + count + " time"
+                            + (count > 1 ? "s" : "") + ")</span>");
+                    billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
+                            + String.format("%.2f", totalPriceForProcedure) + "</span>");
+                    billHtml.append("</li>");
+                    totalBill += totalPriceForProcedure;
+                }
+            }
+        }
+        billHtml.append("</ul>");
+
+        // Patient Product Usages Section
+        billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Product Usages</h3>");
+        billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+        if (patientProductUsageIds != null && !patientProductUsageIds.isEmpty()) {
+
+            List<PatientProductUsage> patientProductUsages = patientProductUsageRepository
+                    .findAllById(patientProductUsageIds);
+            for (PatientProductUsage usage : patientProductUsages) {
+                if (usage != null && usage.getProduct() != null) {
+                    BigDecimal usagePrice = usage.getPrice();
+                    BigDecimal quantity = usage.getQuantity() != null ? usage.getQuantity() : BigDecimal.ONE;
+                    double totalPriceForUsage = usagePrice.multiply(quantity).doubleValue();
+
+                    billHtml.append(
+                            "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                    billHtml.append("<span>" + usage.getProduct().getName() + " (" + quantity
+                            + (quantity.compareTo(BigDecimal.ONE) > 0 ? " unit" + "s" : " unit") + ")</span>");
+                    billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
+                            + String.format("%.2f", totalPriceForUsage) + "</span>");
+                    billHtml.append("</li>");
+
+                    totalBill += totalPriceForUsage;
+                }
+            }
+
+        }
+        billHtml.append("</ul>");
+
+        // Lab Results Section
+        billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Lab Results</h3>");
+        billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+        if (labResultIds != null && !labResultIds.isEmpty()) {
+            Map<Long, Long> labResultCountMap = labResultIds.stream()
+                    .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+
+            List<LabResult> labResults = labResultRepository.findAllById(labResultIds);
+
+            for (Map.Entry<Long, Long> entry : labResultCountMap.entrySet()) {
+                Long labResultId = entry.getKey();
+                Long count = entry.getValue();
+
+                LabResult result = labResults.stream()
+                        .filter(labResult -> labResult.getId().equals(labResultId))
+                        .findFirst()
+                        .orElse(null);
+
+                if (result != null && result.getLabTest() != null) {
+                    double labTestPrice = result.getLabTest().getPrice();
+                    double totalPriceForLabTest = labTestPrice * count;
+
+                    billHtml.append(
+                            "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                    billHtml.append("<span>" + result.getLabTest().getTestName() + " (" + count + " time"
+                            + (count > 1 ? "s" : "") + ")</span>");
+                    billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
+                            + String.format("%.2f", totalPriceForLabTest) + "</span>");
+                    billHtml.append("</li>");
+                    totalBill += totalPriceForLabTest;
+                }
+            }
+        }
+        billHtml.append("</ul>");
+
+        // Image Reports Section
+        billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Image Reports</h3>");
+        billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+        if (imageReportIds != null && !imageReportIds.isEmpty()) {
+            Map<Long, Long> imageReportCountMap = imageReportIds.stream()
+                    .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+            List<ImageReport> imageReports = imageReportRepository.findAllById(imageReportIds);
+
+            for (Map.Entry<Long, Long> entry : imageReportCountMap.entrySet()) {
+                Long imageReportId = entry.getKey();
+                Long count = entry.getValue();
+                ImageReport report = imageReports.stream()
+                        .filter(imageReport -> imageReport.getId().equals(imageReportId))
+                        .findFirst()
+                        .orElse(null);
+
+                if (report != null && report.getImageReportType() != null) {
+                    double imageReportPrice = report.getImageReportType().getPrice();
+                    double totalPriceForImageReport = imageReportPrice * count;
+                    billHtml.append(
+                            "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                    billHtml.append("<span>" + report.getImageReportType().getName() + " (" + count + " time"
+                            + (count > 1 ? "s" : "") + ")</span>");
+                    billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
+                            + String.format("%.2f", totalPriceForImageReport) + "</span>");
+                    billHtml.append("</li>");
+                    totalBill += totalPriceForImageReport;
+                }
+            }
+        }
+        billHtml.append("</ul>");
+
+        // Medication Administrations Section
+        billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Medication Administrations</h3>");
+        billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+        if (medicationAdministrationIds != null && !medicationAdministrationIds.isEmpty()) {
+            List<MedicationAdministration> medicationAdministrations = medicationAdministrationRepository
+                    .findAllById(medicationAdministrationIds);
+            for (MedicationAdministration administration : medicationAdministrations) {
+                if (administration != null && administration.getPrescribedMedication() != null) {
+                    BigDecimal calculatedPrice = administration.getCalculatedPrice();
+                    double totalPriceForMedication = calculatedPrice.doubleValue();
+                    billHtml.append(
+                            "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                    billHtml.append("<span>" + administration.getPrescribedMedication().getMedication().getName() + " ("
+                            + String.format("%.2f", administration.getAmount()) + " units)</span>");
+                    billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
+                            + String.format("%.2f", totalPriceForMedication) + "</span>");
+                    billHtml.append("</li>");
+                    totalBill += totalPriceForMedication;
+                }
+            }
+        }
+        billHtml.append("</ul>");
+        billHtml.append("<hr style=\"border-top: 1px solid #ddd; margin-bottom: 20px;\"/>");
+
+        billHtml.append("<p style=\"font-size: 1.1em; color: #333;\"><strong>Total Before Payment:</strong>  $"
+                + String.format("%.2f", totalBill) + "</p>");
+
+        // Add Payments
+        if (paymentIds != null && !paymentIds.isEmpty()) {
+            List<Payment> payments = paymentRepository.findAllById(paymentIds);
+            billHtml.append("<h3 style=\"color: #333; margin-bottom: 15px;\">Payments</h3>");
+            billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
+            for (Payment payment : payments) {
+                billHtml.append(
+                        "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                billHtml.append("<span>Payment </span>");
+                billHtml.append("<span style=\"font-weight: bold; color: #28a745;\">-$"
+                        + String.format("%.2f", payment.getAmount()) + "</span>");
+                billHtml.append("</li>");
+                totalPayment += payment.getAmount();
+            }
+
+            billHtml.append("</ul>");
+            billHtml.append("<hr style=\"border-top: 1px solid #ddd; margin-bottom: 20px;\"/>");
+            billHtml.append("<p style=\"font-size: 1.1em; color: #333;\"><strong>Total Payment:</strong>  $"
+                    + String.format("%.2f", totalPayment) + "</p>");
+        }
+
+        double balance = totalBill - totalPayment;
+
+        if (balance > 0) {
+            billHtml.append(
+                    "<p style=\"font-size: 1.2em; font-weight: bold; color: #333;\"><strong>Balance Due:</strong> $"
+                            + String.format("%.2f", balance) + "</p>");
+
+        } else {
+            billHtml.append(
+                    "<p style=\"font-size: 1.2em; font-weight: bold; color: green;\"><strong>this bill has been paid</strong>"
+                            + "</p>");
+
+        }
+
+        billHtml.append("</div>");
+        return billHtml.toString();
+    }
+}
+```
+│   ├── UnitDTO.java:```
+// UnitDTO.java
+package mine.profile.website.dtos;
+
+import java.util.List;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class UnitDTO {
+    private Long id;
+    private String name;
+    private Long departmentId;
+    private List<Long> roomIds;
+
+}
+```
+│   ├── AuthResponse.java:```
+package mine.profile.website.dtos;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class AuthResponse {
+    private String token;
+}
+```
+│   ├── AuthRequest.java:```
+package mine.profile.website.dtos;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class AuthRequest {
+    private String username;
+    private String password;
+    private String role;
+}
+```
+│   ├── VitalSignDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class VitalSignDTO {
+    private Long id;
+    private LocalDateTime timestamp;
+    private double heartRate;
+    private double bloodPressureSystolic;
+    private double bloodPressureDiastolic;
+    private double temperature;
+    private double respiratoryRate;
+    private Long patientId;
+}
+```
+│   ├── MedicationAdministrationDTO.java:```
+package mine.profile.website.dtos;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Billing;
+import mine.profile.website.models.MedicationAdministration;
+import mine.profile.website.models.Patient;
+import mine.profile.website.models.PrescribedMedication;
+import mine.profile.website.models.User;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class MedicationAdministrationDTO {
+    private Long id;
+    private Long patientId;
+    private Long userId;
+    private double amount;
+    private BigDecimal calculatedPrice;
+    private LocalDateTime administrationTime;
+    private Long prescribedMedicationId;
+    private String user;
+    private String medicationName;
+    private Long billingId;
+
+    public static MedicationAdministrationDTO toDto(MedicationAdministration medicationAdministration) {
+        if (medicationAdministration == null) {
+            return null;
+        }
+        MedicationAdministrationDTO dto = new MedicationAdministrationDTO();
+        dto.setMedicationName(medicationAdministration.getPrescribedMedication().getMedication().getName());
+        dto.setUser(medicationAdministration.getUser().getUsername());
+        dto.setId(medicationAdministration.getId());
+        dto.setPatientId(medicationAdministration.getPatient().getId());
+        dto.setUserId(medicationAdministration.getUser().getId());
+        dto.setPrescribedMedicationId(medicationAdministration.getPrescribedMedication().getId());
+        dto.setAmount(medicationAdministration.getAmount());
+        dto.setCalculatedPrice(medicationAdministration.getCalculatedPrice());
+        dto.setAdministrationTime(medicationAdministration.getAdministrationTime());
+        if (medicationAdministration.getBilling() != null) {
+            dto.setBillingId(medicationAdministration.getBilling().getId());
+        }
+
+        return dto;
+    }
+
+    public static MedicationAdministration toEntity(MedicationAdministrationDTO dto, Patient patient, User user,
+            PrescribedMedication prescribedMedication, Billing billing) {
+        if (dto == null) {
+            return null;
+        }
+        MedicationAdministration entity = new MedicationAdministration();
+        entity.setId(dto.getId());
+        entity.setPatient(patient);
+        entity.setUser(user);
+        entity.setPrescribedMedication(prescribedMedication);
+        entity.setAmount(dto.getAmount());
+        entity.setCalculatedPrice(dto.getCalculatedPrice());
+        entity.setAdministrationTime(dto.getAdministrationTime());
+        entity.setBilling(billing);
+
+        return entity;
+    }
+
+}
+```
+│   ├── NurseDTO.java:```
+package mine.profile.website.dtos;
+
+import lombok.Getter;
+import lombok.Setter;
+import mine.profile.website.models.Nurse;
+import mine.profile.website.models.User;
+
+@Getter
+@Setter
+public class NurseDTO {
+    private Long id;
+    private User user;
+
+    public static NurseDTO toDto(Nurse nurse) {
+        NurseDTO nurseDTO = new NurseDTO();
+        nurseDTO.setId(nurse.getId());
+        nurseDTO.setUser(nurse.getUser());
+        return nurseDTO;
+
+    }
+
+    public static Nurse toEntity(NurseDTO nurseDTO) {
+        Nurse nurse = new Nurse();
+        nurse.setId(nurseDTO.getId());
+        nurse.setUser(nurseDTO.getUser());
+        return nurse;
+    }
+}
+```
+│   ├── AssessmentDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class AssessmentDTO {
+    private Long id;
+    private LocalDateTime assessmentDateTime;
+    private String notes;
+    private Long patientId;
+}
+```
+│   ├── ImageReportTypeDTO.java:```
+package mine.profile.website.dtos;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class ImageReportTypeDTO {
+    private Long id;
+    private String name;
+    private Double price;
+}
+```
+│   ├── UserRoleDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.util.List;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class UserRoleDTO {
+    private Long id;
+    private String name;
+    private List<String> permissions;
+}
+```
+│   ├── LabTestDTO.java:```
+package mine.profile.website.dtos;
+
+import java.io.IOException;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.LabTest;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class LabTestDTO {
+
+    private Long id;
+    private String testName;
+    private String testCode;
+    private Double price;
+    private String description;
+    private String referenceRange;
+    // Changed to Map<String, Object>
+    private Map<String, Object> structureMap;
+
+    public LabTest toEntity() {
+        LabTest labTest = new LabTest();
+        labTest.setId(this.id);
+        labTest.setTestName(this.testName);
+        labTest.setTestCode(this.testCode);
+        labTest.setPrice(this.price);
+        labTest.setDescription(this.description);
+        labTest.setReferenceRange(this.referenceRange);
+
+        ObjectMapper mapper = new ObjectMapper();
+        String structureDataJson;
+        try {
+            structureDataJson = mapper.writeValueAsString(this.structureMap);
+            labTest.setStructureData(structureDataJson); // Serialize to JSON string
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting structureMap to JSON", e); // Handle the exception properly
+        }
+        return labTest;
+    }
+
+    public static LabTestDTO fromEntity(LabTest labTest) {
+        ObjectMapper mapper = new ObjectMapper();
+        // Changed to Map<String, Object>
+        Map<String, Object> structureMap;
+        try {
+            structureMap = mapper.readValue((String) labTest.getStructureData(),
+                    new TypeReference<Map<String, Object>>() {
+                    });
+        } catch (IOException e) {
+            structureMap = null; // Handle the exception properly. maybe log and return null
+        }
+        return new LabTestDTO(
+                labTest.getId(),
+                labTest.getTestName(),
+                labTest.getTestCode(),
+                labTest.getPrice(),
+                labTest.getDescription(),
+                labTest.getReferenceRange(),
+                structureMap);
+    }
+}
+```
+│   ├── ImageReportDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class ImageReportDTO {
+    private Long id;
+    private LocalDateTime reportDateTime;
+    private String description;
+    private String reportText;
+    private String imageType;
+    private List<String> imageUrls;
+    private Long patientId;
+    private Long performedById;
+    private String performedByName;
+    private Long imageReportTypeId;
+    private Long billingId;
+}
+```
+│   └── history
+│   ├── MedicationHistoryDTO.java:```
+package mine.profile.website.dtos.history;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Medication;
+import mine.profile.website.models.history.MedicationHistory;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class MedicationHistoryDTO {
+    private Long id;
+    private Long medicationId;
+    private String medicationName;
+    private String action;
+    private LocalDateTime timestamp;
+    private String userName;
+    private String changes;
+
+    public static MedicationHistoryDTO toDto(MedicationHistory medicationHistory) {
+        if (medicationHistory == null) {
+            return null;
+        }
+        MedicationHistoryDTO dto = new MedicationHistoryDTO();
+        dto.setId(medicationHistory.getId());
+        dto.setMedicationId(medicationHistory.getMedication().getId());
+        dto.setMedicationName(medicationHistory.getMedication().getName());
+        dto.setAction(medicationHistory.getAction());
+        dto.setTimestamp(medicationHistory.getTimestamp());
+        dto.setUserName(medicationHistory.getUserName());
+        dto.setChanges(medicationHistory.getChanges());
+        return dto;
+    }
+
+    public static MedicationHistory toEntity(MedicationHistoryDTO dto, Medication medication) {
+        if (dto == null) {
+            return null;
+        }
+        MedicationHistory entity = new MedicationHistory();
+        entity.setId(dto.getId());
+        entity.setMedication(medication);
+        entity.setAction(dto.getAction());
+        entity.setTimestamp(dto.getTimestamp());
+        entity.setUserName(dto.getUserName());
+        entity.setChanges(dto.getChanges());
+        return entity;
+    }
+}
+```
+│   ├── AdmissionDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class AdmissionDTO {
+    private Long id;
+    private LocalDateTime admissionDate;
+    private LocalDateTime dischargeDate;
+    private Long patientId;
+    private Long bedId;
+}
+```
+│   ├── ProductDTO.java:```
+package mine.profile.website.dtos;
+
+import java.math.BigDecimal;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Product;
+import mine.profile.website.models.Product.PricingModel;
+import mine.profile.website.models.Product.ProductType;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class ProductDTO {
+    private Long id;
+    private String code;
+    private String name;
+    private String description;
+    private ProductType type;
+    private PricingModel pricingModel;
+    private BigDecimal unitPrice;
+    private String unit;
+
+    public static ProductDTO toDto(Product product) {
+        if (product == null) {
+            return null;
+        }
+        ProductDTO dto = new ProductDTO();
+        dto.setId(product.getId());
+        dto.setCode(product.getCode());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setUnitPrice(product.getUnitPrice());
+        dto.setType(product.getType());
+        dto.setPricingModel(product.getPricingModel());
+        dto.setUnit(product.getUnit());
+        return dto;
+    }
+
+    public static Product toEntity(ProductDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        Product entity = new Product();
+        entity.setId(dto.getId());
+        entity.setCode(dto.getCode());
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
+        entity.setUnitPrice(dto.getUnitPrice());
+        entity.setType(dto.getType());
+        entity.setPricingModel(dto.getPricingModel());
+        entity.setUnit(dto.getUnit());
+        return entity;
+    }
+}
+```
+│   ├── PrescriptionDTO.java:```
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Patient;
+import mine.profile.website.models.Prescription;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class PrescriptionDTO {
+
+    private Long id;
+    private LocalDateTime prescriptionDate;
+    private String note;
+    private Long patientId;
+    private String patientName;
+    private List<PrescribedMedicationDTO> prescribedMedications;
+
+    public static PrescriptionDTO toDto(Prescription prescription) {
+
+        if (prescription == null) {
+            return null;
+        }
+
+        PrescriptionDTO dto = new PrescriptionDTO();
+        dto.setPatientName(prescription.getPatient().getFirstName() + " " + prescription.getPatient().getLastName());
+        dto.setId(prescription.getId());
+        dto.setPrescriptionDate(prescription.getPrescriptionDate());
+        dto.setNote(prescription.getNote());
+        dto.setPatientId(prescription.getPatient().getId());
+        dto.setPrescribedMedications(prescription.getPrescribedMedications().stream()
+                .map(PrescribedMedicationDTO::toDto).collect(Collectors.toList()));
+        return dto;
+    }
+
+    public static Prescription toEntity(PrescriptionDTO dto, Patient patient) {
+        if (dto == null) {
+            return null;
+        }
+        Prescription entity = new Prescription();
+        entity.setId(dto.getId());
+        entity.setPrescriptionDate(dto.getPrescriptionDate());
+        entity.setNote(dto.getNote());
+        entity.setPatient(patient);
+        return entity;
+    }
+}
+```
+│   ├── BedDTONo.java:```
+package mine.profile.website.dtos;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.config.BooleanDeserializer;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class BedDTONo {
+    private Long id;
+    private String bedNumber;
+    @JsonDeserialize(using = BooleanDeserializer.class)
+    private boolean isOccupied;
+}
+
+```
+│   ├── MedicationDTO.java:```
+package mine.profile.website.dtos;
+
+import java.math.BigDecimal;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import mine.profile.website.models.Medication;
+import mine.profile.website.models.PricingUnit;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class MedicationDTO {
+    private Long id;
+    private String name;
+    private String dosage;
+    private String imageURL;
+    private BigDecimal price;
+    private double amountPerUnit;
+    private PricingUnit pricingUnit;
+    private int stock;
+
+    public static MedicationDTO toDto(Medication medication) {
+        if (medication == null) {
+            return null;
+        }
+        MedicationDTO dto = new MedicationDTO();
+        dto.setId(medication.getId());
+        dto.setName(medication.getName());
+        dto.setDosage(medication.getDosage());
+        dto.setImageURL(medication.getImageURL());
+        dto.setPrice(medication.getPrice());
+        dto.setAmountPerUnit(medication.getAmountPerUnit());
+        dto.setPricingUnit(medication.getPricingUnit());
+        dto.setStock(medication.getStock());
+        return dto;
+    }
+
+    public static Medication toEntity(MedicationDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        Medication entity = new Medication();
+        entity.setId(dto.getId());
+        entity.setName(dto.getName());
+        entity.setDosage(dto.getDosage());
+        entity.setImageURL(dto.getImageURL());
+        entity.setPrice(dto.getPrice());
+        entity.setAmountPerUnit(dto.getAmountPerUnit());
+        entity.setPricingUnit(dto.getPricingUnit());
+        entity.setStock(dto.getStock());
+        return entity;
+    }
+}
+```
+│   ├── NursingCarePlanDTO.java:```
+
+package mine.profile.website.dtos;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class NursingCarePlanDTO {
+    private Long id;
+    private LocalDateTime startDate;
+    private String notes;
+    private Long patientId;
+    private List<Long> carePlanGoalIds;
+}
+```
+│   ├── ProcedureDTO.java:```
+package mine.profile.website.dtos;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class ProcedureDTO {
+    private Long id;
+    private String code;
+    private String name;
+    private double price;
+
+    public ProcedureDTO(Long id, String code, String name, double price) {
+        this.id = id;
+        this.code = code;
+        this.name = name;
+        this.price = price;
+    }
+}
+```

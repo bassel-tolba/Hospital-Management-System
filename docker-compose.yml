@@ -1,0 +1,61 @@
+version: '3.8'
+services:
+  database:
+    image: postgres:15-alpine
+    ports:
+      - "5431:5432"
+    environment:
+      POSTGRES_USER: bassel
+      POSTGRES_PASSWORD: fl studio
+      POSTGRES_DB: mydb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U bassel -d mydb"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/mydb
+      SPRING_DATASOURCE_USERNAME: bassel
+      SPRING_DATASOURCE_PASSWORD: fl studio
+      JWT_SECRET: c2VjcmV0X2Zvcl90ZXN0aW5nX29ubHlfZG9fbm90X3VzZV9pdF9pbl9wcm9kdWN0aW9uXzE2MzYxODcwNzY=
+      JWT_EXPIRATION: 3600000
+      file_upload_dir: /app/uploads
+      file_upload_directory: /app/uploads
+      SPRING_PROFILES_ACTIVE: dev
+      # Add any other backend env variables here
+    volumes:
+      - upload_volume:/app/uploads
+    depends_on:
+      - database
+    healthcheck:
+        test: ["CMD-SHELL", "curl --fail http://localhost:8080/actuator/health || exit 1"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+       - "3000:80"
+    environment: {} # This fix the error, now the object is empty instead of not being present.
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+volumes:
+  db_data:
+  upload_volume:

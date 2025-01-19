@@ -1,0 +1,172 @@
+{
+	"totalPatients": 150,
+	"malePatients": 70,
+	"femalePatients": 80,
+	"patientsByBloodType": [
+		{
+			"bloodType": "A+",
+			"count": 40
+		},
+		{
+			"bloodType": "B+",
+			"count": 35
+		},
+		{
+			"bloodType": "O+",
+			"count": 50
+		},
+		{
+			"bloodType": "AB+",
+			"count": 25
+		}
+	],
+	"patientsByBirthYear": [
+		{
+			"year": "1990",
+			"count": 15
+		},
+		{
+			"year": "1995",
+			"count": 20
+		},
+		{
+			"year": "2000",
+			"count": 25
+		}
+	],
+	"totalAdmissions": 200,
+	"currentAdmissions": 20,
+	"admissionsByDate": [
+		{
+			"date": "2024-01-01",
+			"count": 10
+		},
+		{
+			"date": "2024-01-02",
+			"count": 15
+		}
+	],
+	"dischargesByDate": [
+		{
+			"date": "2024-01-05",
+			"count": 10
+		},
+		{
+			"date": "2024-01-07",
+			"count": 15
+		}
+	],
+	"totalMedicationAdministrations": 300,
+	"medicationAdministrationsByMedication": [
+		{
+			"medicationName": "Medication A",
+			"count": 100
+		},
+		{
+			"medicationName": "Medication B",
+			"count": 200
+		}
+	],
+	"totalProcedureLogs": 150,
+	"procedureLogsByProcedure": [
+		{
+			"procedureName": "Procedure X",
+			"count": 50
+		},
+		{
+			"procedureName": "Procedure Y",
+			"count": 100
+		}
+	],
+	"proceduresByDate": [
+		{
+			"date": "2024-01-05",
+			"count": 10
+		},
+		{
+			"date": "2024-01-07",
+			"count": 15
+		}
+	],
+	"totalAppointments": 400,
+	"appointmentsByDate": [
+		{
+			"date": "2024-01-01",
+			"count": 20
+		},
+		{
+			"date": "2024-01-02",
+			"count": 30
+		}
+	],
+	"totalVitalSigns": 1000,
+	"nurseActivitiesByType": [
+		{
+			"activityType": "Activity A",
+			"count": 150
+		},
+		{
+			"activityType": "Activity B",
+			"count": 150
+		}
+	],
+	"totalLabResults": 200,
+	"labResultsByTest": [
+		{
+			"testName": "test A",
+			"count": 100
+		},
+		{
+			"testName": "test B",
+			"count": 100
+		}
+	],
+	"totalBeds": 100,
+	"occupiedBeds": 60,
+	"bedsByUnitType": [
+		{
+			"unitType": "Unit A",
+			"count": 40
+		},
+		{
+			"unitType": "Unit B",
+			"count": 60
+		}
+	],
+	"bedsByRoomNumber": [
+		{
+			"roomNumber": "101",
+			"count": 10
+		},
+		{
+			"roomNumber": "102",
+			"count": 10
+		}
+	],
+	"productUsageByProduct": [
+		{
+			"productName": "product A",
+			"count": 100
+		},
+		{
+			"productName": "product B",
+			"count": 100
+		}
+	],
+	"medicationPrescribedByMedication": [
+		{
+			"medicationName": "Medication A",
+			"count": 100
+		},
+		{
+			"medicationName": "Medication B",
+			"count": 200
+		}
+	],
+	"averageLengthOfStay": 5.2,
+	"bedOccupancyRate": 0.6,
+	"averageTimeToSeeADoctor": 1000.0,
+	"totalRevenue": 1500.0,
+	"pendingBills": 500.0,
+	"staffToPatientRatio": 0.5
+}
