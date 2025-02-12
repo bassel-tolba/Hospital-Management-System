@@ -1,10 +1,8 @@
-// Unit.java
 package mine.profile.website.models;
 
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -27,8 +25,9 @@ public class Unit {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(unique = true)
     private UnitType unitType;
+
+    private String name;
 
     private String location;
 
@@ -40,8 +39,9 @@ public class Unit {
     @ManyToMany(mappedBy = "units")
     private List<User> users;
 
-    public Unit(UnitType unitType, String location, String description) {
+    public Unit(UnitType unitType, String name, String location, String description) {
         this.unitType = unitType;
+        this.name = name;
         this.location = location;
         this.description = description;
     }

@@ -11,11 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import mine.profile.website.dtos.PatientProductUsageDTO;
+import mine.profile.website.exception.InsufficientStockException;
 import mine.profile.website.models.Billing;
+import mine.profile.website.models.Inventory;
 import mine.profile.website.models.Patient;
 import mine.profile.website.models.PatientProductUsage;
 import mine.profile.website.models.Product;
 import mine.profile.website.repository.BillingRepository;
+import mine.profile.website.repository.InventoryRepository;
 import mine.profile.website.repository.PatientProductUsageRepository;
 import mine.profile.website.repository.PatientRepository;
 import mine.profile.website.repository.ProductRepository;
@@ -26,17 +29,19 @@ public class PatientProductUsageService {
     private final PatientProductUsageRepository patientProductUsageRepository;
     private final PatientRepository patientRepository;
     private final ProductRepository productRepository;
-
     private final BillingRepository billingRepository;
+    private final InventoryRepository inventoryRepository;
 
     public PatientProductUsageService(PatientProductUsageRepository patientProductUsageRepository,
             PatientRepository patientRepository,
             ProductRepository productRepository,
-            BillingRepository billingRepository) {
+            BillingRepository billingRepository,
+            InventoryRepository inventoryRepository) {
         this.patientProductUsageRepository = patientProductUsageRepository;
         this.patientRepository = patientRepository;
         this.productRepository = productRepository;
         this.billingRepository = billingRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     @Transactional
@@ -66,6 +71,7 @@ public class PatientProductUsageService {
                 || product.getPricingModel() == Product.PricingModel.FIXED) && dto.getQuantity() != null) {
             throw new IllegalArgumentException("Quantity must not be specified for PER_USE or FIXED pricing");
         }
+
         PatientProductUsage usage = PatientProductUsageDTO.toEntity(dto);
         usage.setPatient(patient);
         usage.setProduct(product);
@@ -92,7 +98,28 @@ public class PatientProductUsageService {
             Billing savedBilling = billingRepository.save(billing);
         }
         PatientProductUsage savedUsage = patientProductUsageRepository.save(usage);
+
+        // Decrease stock if applicable and if the usage was saved successfully
+        decreaseStockForUsage(savedUsage);
+
         return PatientProductUsageDTO.toDto(savedUsage);
+    }
+
+    private void decreaseStockForUsage(PatientProductUsage usage) {
+        Product product = usage.getProduct();
+        if (product.getPricingModel() == Product.PricingModel.PER_UNIT) {
+            Inventory inventory = inventoryRepository.findByProductId(product.getId())
+                    .orElseThrow(
+                            () -> new IllegalStateException("Inventory not found for product: " + product.getId()));
+
+            try {
+                inventory.decreaseStock(usage.getQuantity().intValue()); // Assuming quantity is the number of units
+                inventoryRepository.save(inventory);
+            } catch (InsufficientStockException e) {
+                throw e; // Re-throw to be handled by a global exception handler
+            }
+        }
+        // No stock reduction for PER_TIME, PER_USE, or FIXED
     }
 
     @Transactional

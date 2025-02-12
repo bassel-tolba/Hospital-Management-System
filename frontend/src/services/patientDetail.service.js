@@ -20,7 +20,8 @@ export const usePatientDetailStore = create((set, get) => ({
 	productUsages: [],
 	medicationAdministrations: [],
 	imageReports: [],
-	labResults: [], // New state for Lab Results
+	labResults: [],
+	documents: [], // new
 	totalCounts: {},
 	setLoading: (loading) => set({ loading }),
 	setError: (error) => set({ error }),
@@ -38,7 +39,8 @@ export const usePatientDetailStore = create((set, get) => ({
 		productUsagesPage,
 		medicationAdministrationsPage,
 		imageReportsPage,
-		labResultsPage, // New param for lab results page
+		labResultsPage,
+		documentsPage, //new
 		pageSize
 	) => {
 		set({ loading: true, error: null });
@@ -216,6 +218,20 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 				);
 			}
+			if (documentsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/documents`, {
+							headers: {
+								Authorization: `Bearer ${user?.token}`,
+							},
+							params: { page: documentsPage - 1, size: pageSize },
+						})
+						.then((res) => {
+							responses.documents = res;
+						})
+				);
+			}
 
 			await Promise.all(requests);
 
@@ -233,7 +249,8 @@ export const usePatientDetailStore = create((set, get) => ({
 				productUsages: responses.productUsages?.data?.content || state.productUsages,
 				medicationAdministrations: responses.medicationAdministrations?.data?.content || state.medicationAdministrations,
 				imageReports: responses.imageReports?.data?.content || state.imageReports,
-				labResults: responses.labResults?.data?.content || state.labResults, // Set lab results
+				labResults: responses.labResults?.data?.content || state.labResults,
+				documents: responses.documents?.data?.content || state.documents,
 				totalCounts: {
 					admissions: responses.admissions?.data?.totalElements || state.totalCounts?.admissions,
 					appointments: responses.appointments?.data?.totalElements || state.totalCounts?.appointments,
@@ -246,7 +263,8 @@ export const usePatientDetailStore = create((set, get) => ({
 					medicationAdministrations:
 						responses.medicationAdministrations?.data?.totalElements || state.totalCounts?.medicationAdministrations,
 					imageReports: responses.imageReports?.data?.totalElements || state.totalCounts?.imageReports,
-					labResults: responses.labResults?.data?.totalElements || state.totalCounts?.labResults, // Set total lab results count
+					labResults: responses.labResults?.data?.totalElements || state.totalCounts?.labResults,
+					documents: responses.documents?.data?.totalElements || state.totalCounts?.documents,
 				},
 			}));
 		} catch (error) {

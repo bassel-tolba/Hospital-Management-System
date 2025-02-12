@@ -106,6 +106,7 @@ public class ImageReportService {
             throws IOException {
         ImageReport existingImageReport = imageReportRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Image report not found with id: " + id));
+
         Patient patient = patientRepository.findById(imageReportDTO.getPatientId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Patient not found with id: " + imageReportDTO.getPatientId()));
@@ -121,10 +122,10 @@ public class ImageReportService {
         if (!bills.isEmpty()) {
             billing = bills.get(0); // Get the most recent bill
         }
-        List<String> imageUrls = existingImageReport.getImageUrls();
-        if (imageUrls == null) {
-            imageUrls = new ArrayList<>();
-        }
+
+        // replace the imageUrls with the new ones, not add to them
+        List<String> imageUrls = new ArrayList<>();
+
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile imageFile : imageFiles) {
                 if (imageFile != null && !imageFile.isEmpty()) {

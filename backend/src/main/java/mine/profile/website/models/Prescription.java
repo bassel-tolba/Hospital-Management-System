@@ -1,5 +1,6 @@
 package mine.profile.website.models;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,7 +28,12 @@ public class Prescription {
 
     private LocalDateTime prescriptionDate;
     private String note;
-    private boolean expired;
+    private Integer validityDays;
+
+    private LocalDate expirationDate;
+    private boolean expired; // You might still need this if you want to explicitly mark a prescription as
+                             // expired even if it's within it's validity period
+
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
@@ -35,4 +41,10 @@ public class Prescription {
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PrescribedMedication> prescribedMedications;
 
+    public void setValidityDays(Integer validityDays) {
+        this.validityDays = validityDays;
+        if (prescriptionDate != null) {
+            this.expirationDate = prescriptionDate.toLocalDate().plusDays(validityDays);
+        }
+    }
 }

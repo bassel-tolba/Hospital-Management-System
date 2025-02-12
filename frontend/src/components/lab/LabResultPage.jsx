@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Typography, Modal, Form, DatePicker, notification, AutoComplete } from "antd";
+import { Table, Input, Button, Space, Typography, Modal, Form, DatePicker, notification, AutoComplete, Row, Col } from "antd";
 import { useAuthStore } from "../../services/auth.service";
 import axios from "axios";
-import { EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { usePatientStore } from "../../services/patient.service";
 import { useLabStore } from "../../services/lab.service";
@@ -22,26 +22,40 @@ const LabResultPage = () => {
 	const [total, setTotal] = useState(0);
 	const [searchParams, setSearchParams] = useState({});
 
-	//Labtest search states
+	// Labtest search states
 	const [labTestOptions, setLabTestOptions] = useState([]);
 	const [labTestSearchTerm, setLabTestSearchTerm] = useState("");
 	const [selectedLabTestId, setSelectedLabTestId] = useState(null);
 
-	//Patient Search States
+	// Patient Search States
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [patientSearchTerm, setPatientSearchTerm] = useState("");
 	const [selectedPatientId, setSelectedPatientId] = useState(null);
 	const { patients, searchPatients } = usePatientStore();
 	const { labTests, fetchLabTests } = useLabStore();
 
-	const user = useAuthStore((state) => state.user);
+	const { user, hasAuthority } = useAuthStore(); // Get user and hasAuthority
 	const API_BASE_URL = `http://localhost:8080/api/lab-results`;
+
+	// Permission Checks
+	const canCreateLabResult = hasAuthority("CREATE_LAB_RESULT");
+	const canReadLabResult = hasAuthority("READ_LAB_RESULT");
+	const canDeleteLabResult = hasAuthority("DELETE_LAB_RESULT");
 
 	useEffect(() => {
 		fetchLabResults();
 	}, [page, size, searchParams]);
 
 	const fetchLabResults = async () => {
+		if (!canReadLabResult) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to view lab results.",
+			});
+			setLabResults([]); // Clear any previous results
+			setTotal(0);
+			return;
+		}
 		if (!searchParams?.patientId) {
 			setLabResults([]);
 			return;
@@ -57,6 +71,7 @@ const LabResultPage = () => {
 					size,
 				},
 			});
+			// No need to check permission *again* here. The API call is already protected.
 			setLabResults(response.data.content);
 			setTotal(response.data.totalElements);
 		} catch (error) {
@@ -66,28 +81,60 @@ const LabResultPage = () => {
 		}
 	};
 
-	const showModal = (labResult) => {
-		setSelectedLabResult(labResult);
-		if (labResult) {
-			form.setFieldsValue({
-				...labResult,
-				resultDateTime: moment(labResult.resultDateTime),
-				patientId: labResult.patientId,
-				labTestId: labResult.labTestId,
-				notes: labResult.notes,
+	const showModal = async (labResult) => {
+		if (!canCreateLabResult) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to create lab results.",
 			});
-			setSelectedPatientId(labResult.patientId);
-			setSelectedLabTestId(labResult.labTestId);
+			return;
+		}
+		setSelectedLabResult(labResult);
+		setPatientSearchTerm("");
+		setPatientOptions([]);
+		setLabTestSearchTerm("");
+		setLabTestOptions([]);
+		if (labResult) {
+			try {
+				// Fetch the patient and lab test information
+				const patientId = labResult.patientId;
+				const labTestId = labResult.labTestId;
+
+				const searchResults = await searchPatients({ searchTerm: null, page: 0, size: 10 });
+				setPatientOptions(
+					searchResults?.content?.map((patient) => ({
+						label: `${patient.firstName} ${patient.lastName}`,
+						value: patient.id,
+					})) || []
+				);
+
+				const labTest = await fetchLabTests();
+
+				setLabTestOptions(
+					labTest?.map((labTest) => ({
+						label: `${labTest.testName} - ${labTest.testCode}`,
+						value: labTest.id,
+					})) || []
+				);
+
+				form.setFieldsValue({
+					...labResult,
+					resultDateTime: moment(labResult.resultDateTime),
+					patientId: patientId,
+					labTestId: labTestId,
+					notes: labResult.notes,
+				});
+				setSelectedPatientId(patientId);
+				setSelectedLabTestId(labTestId);
+			} catch (error) {
+				handleError(error, "Failed to fetch additional data");
+			}
 		} else {
 			form.resetFields();
 			setSelectedPatientId(null);
 			setSelectedLabTestId(null);
 		}
 		setIsModalVisible(true);
-		setPatientSearchTerm("");
-		setPatientOptions([]);
-		setLabTestSearchTerm("");
-		setLabTestOptions([]);
 	};
 
 	const handleCancel = () => {
@@ -107,7 +154,19 @@ const LabResultPage = () => {
 		if (value) {
 			try {
 				const response = await fetchLabTests(value);
-				console.log(response);
+				setLabTestOptions(
+					response?.map((labTest) => ({
+						label: `${labTest.testName} - ${labTest.testCode}`,
+						value: labTest.id,
+					})) || []
+				);
+			} catch (error) {
+				handleError(error, "Failed to search lab tests");
+				setLabTestOptions([]);
+			}
+		} else if (selectedLabResult?.labTestId) {
+			try {
+				const response = await fetchLabTests();
 				setLabTestOptions(
 					response?.map((labTest) => ({
 						label: `${labTest.testName} - ${labTest.testCode}`,
@@ -125,7 +184,7 @@ const LabResultPage = () => {
 
 	const handleLabTestSelect = (labTestId) => {
 		setSelectedLabTestId(labTestId);
-		form.setFieldsValue({ ...form.getFieldsValue(), labTestId: labTestId }); //update the form when the autocomplete is selected
+		form.setFieldsValue({ ...form.getFieldsValue(), labTestId: labTestId });
 	};
 
 	const handlePatientSearch = async (value) => {
@@ -143,6 +202,19 @@ const LabResultPage = () => {
 				console.error("Failed to search patients:", error);
 				setPatientOptions([]);
 			}
+		} else if (selectedLabResult?.patientId) {
+			try {
+				const searchResults = await searchPatients({ searchTerm: null, page: 0, size: 10 });
+				setPatientOptions(
+					searchResults?.content?.map((patient) => ({
+						label: `${patient.firstName} ${patient.lastName}`,
+						value: patient.id,
+					})) || []
+				);
+			} catch (error) {
+				console.error("Failed to search patients:", error);
+				setPatientOptions([]);
+			}
 		} else {
 			setPatientOptions([]);
 		}
@@ -150,10 +222,18 @@ const LabResultPage = () => {
 
 	const handlePatientSelect = (patientId) => {
 		setSelectedPatientId(patientId);
-		form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId }); //update the form when the autocomplete is selected
+		form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId });
 	};
 
 	const handleFormSubmit = async (labResultDataFromForm) => {
+		if (!canCreateLabResult) {
+			// Check before submitting
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to create lab results.",
+			});
+			return;
+		}
 		try {
 			setLoading(true);
 			const formValues = await form.validateFields();
@@ -162,34 +242,18 @@ const LabResultPage = () => {
 				resultDateTime: formValues.resultDateTime.format("YYYY-MM-DDTHH:mm:ss"),
 				patientId: selectedPatientId,
 				labTestId: selectedLabTestId,
-				performedById: user?.id, // Include the user ID here
+				performedById: user?.id,
 				...labResultDataFromForm,
 			};
-
-			console.log("Lab result data being sent:", labResultData); // Added console log to check that the IDs are being correctly sent.
-
-			if (selectedLabResult) {
-				await axios.put(`${API_BASE_URL}/${selectedLabResult.id}`, labResultData, {
-					headers: {
-						Authorization: `Bearer ${user?.token}`,
-					},
-				});
-				notification.success({
-					message: "Success",
-					description: "Lab Result updated successfully",
-				});
-			} else {
-				await axios.post(API_BASE_URL, labResultData, {
-					headers: {
-						Authorization: `Bearer ${user?.token}`,
-					},
-				});
-				notification.success({
-					message: "Success",
-					description: "Lab result created successfully",
-				});
-			}
-
+			await axios.post(API_BASE_URL, labResultData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: "Lab result created successfully",
+			});
 			fetchLabResults();
 			setIsModalVisible(false);
 			form.resetFields();
@@ -202,6 +266,33 @@ const LabResultPage = () => {
 			setSelectedLabTestId(null);
 		} catch (error) {
 			handleError(error, "Failed to save lab result");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleDelete = async (id) => {
+		if (!canDeleteLabResult) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to delete lab results.",
+			});
+			return;
+		}
+		try {
+			setLoading(true);
+			await axios.delete(`${API_BASE_URL}/${id}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: "Lab result deleted successfully",
+			});
+			fetchLabResults();
+		} catch (error) {
+			handleError(error, "Failed to delete lab result");
 		} finally {
 			setLoading(false);
 		}
@@ -231,21 +322,24 @@ const LabResultPage = () => {
 			title: "Date & Time",
 			dataIndex: "resultDateTime",
 			key: "resultDateTime",
-			render: (text) => moment(text).format("YYYY-MM-DD HH:mm:ss"),
+			render: (text) => (canReadLabResult ? moment(text).format("YYYY-MM-DD HH:mm:ss") : "***"), // Data masking
 		},
 		{
 			title: "Notes",
 			dataIndex: "notes",
 			key: "notes",
+			render: (text) => (canReadLabResult ? text : "***"), // Data masking
 		},
 		{
 			title: "Actions",
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
+					{canDeleteLabResult && (
+						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+							Delete
+						</Button>
+					)}
 				</Space>
 			),
 		},
@@ -254,19 +348,26 @@ const LabResultPage = () => {
 	return (
 		<div style={{ padding: 20 }}>
 			<Title level={2}>Lab Results</Title>
-			<Space style={{ marginBottom: 16 }}>
-				<AutoComplete
-					style={{ width: 300 }}
-					options={patientOptions}
-					onSearch={handlePatientSearch}
-					placeholder="Search for a patient"
-					filterOption={false}
-					onSelect={handleSearchPatientFilter}
-				/>
-				<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId}>
-					Add New Lab Result
-				</Button>
-			</Space>
+			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+				<Col xs={24} sm={12}>
+					<AutoComplete
+						style={{ width: "100%" }}
+						options={patientOptions}
+						onSearch={handlePatientSearch}
+						disabled={!canReadLabResult}
+						placeholder="Search for a patient"
+						filterOption={false}
+						onSelect={handleSearchPatientFilter}
+					/>
+				</Col>
+				<Col xs={24} sm={12}>
+					{canCreateLabResult && (
+						<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
+							Add New Lab Result
+						</Button>
+					)}
+				</Col>
+			</Row>
 			<Table
 				columns={columns}
 				dataSource={labResults}
@@ -278,53 +379,71 @@ const LabResultPage = () => {
 					total: total,
 					onChange: handleTableChange,
 				}}
+				scroll={{ x: true }} // Enable horizontal scrolling for small screens
 			/>
 			<Modal
-				title={selectedLabResult ? "Edit Lab Result" : "Add Lab Result"}
+				title={"Add Lab Result"}
 				open={isModalVisible}
 				onCancel={handleCancel}
-				width={800}
+				width="90%" // Make modal width responsive
+				style={{ maxWidth: 800 }}
 				footer={null}>
 				<Form form={form} layout="vertical">
-					<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
-						<AutoComplete
-							options={patientOptions}
-							onSearch={handlePatientSearch}
-							placeholder="Search for a patient"
-							filterOption={false}
-							onSelect={(patientId, option) => {
-								handlePatientSelect(patientId);
-							}}
+					<Row gutter={[16, 16]}>
+						<Col xs={24} sm={12}>
+							<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
+								<AutoComplete
+									options={patientOptions}
+									onSearch={handlePatientSearch}
+									disabled={!canCreateLabResult}
+									placeholder="Search for a patient"
+									filterOption={false}
+									onSelect={(patientId) => {
+										handlePatientSelect(patientId);
+									}}
+								/>
+							</Form.Item>
+						</Col>
+						<Col xs={24} sm={12}>
+							<Form.Item label="Lab Test" name="labTestId" rules={[{ required: true, message: "Please select a lab test" }]}>
+								<AutoComplete
+									options={labTestOptions}
+									onSearch={handleLabTestSearch}
+									disabled={!canCreateLabResult}
+									placeholder="Search for a lab test"
+									filterOption={false}
+									onSelect={(labTestId) => {
+										handleLabTestSelect(labTestId);
+									}}
+								/>
+							</Form.Item>
+						</Col>
+					</Row>
+					<Row gutter={[16, 16]}>
+						<Col xs={24} sm={12}>
+							<Form.Item
+								label="Result Date & Time"
+								name="resultDateTime"
+								rules={[{ required: true, message: "Please select the result date and time" }]}>
+								<DatePicker style={{ width: "100%" }} showTime disabled={!canCreateLabResult} />
+							</Form.Item>
+						</Col>
+						<Col xs={24} sm={12}>
+							<Form.Item label="Notes" name="notes" rules={[{ required: true, message: "Please enter result notes" }]}>
+								<Input.TextArea rows={4} disabled={!canCreateLabResult} />
+							</Form.Item>
+						</Col>
+					</Row>
+					{canCreateLabResult && (
+						<LabResultForm
+							form={form}
+							labTestId={selectedLabTestId}
+							selectedLabResult={selectedLabResult}
+							onSubmit={handleFormSubmit}
+							onCancel={handleCancel}
+							setLoading={setLoading}
 						/>
-					</Form.Item>
-					<Form.Item label="Lab Test" name="labTestId" rules={[{ required: true, message: "Please select a lab test" }]}>
-						<AutoComplete
-							options={labTestOptions}
-							onSearch={handleLabTestSearch}
-							placeholder="Search for a lab test"
-							filterOption={false}
-							onSelect={(labTestId, option) => {
-								handleLabTestSelect(labTestId);
-							}}
-						/>
-					</Form.Item>
-					<Form.Item
-						label="Result Date & Time"
-						name="resultDateTime"
-						rules={[{ required: true, message: "Please select the result date and time" }]}>
-						<DatePicker style={{ width: "100%" }} showTime />
-					</Form.Item>
-					<Form.Item label="Notes" name="notes" rules={[{ required: true, message: "Please enter result notes" }]}>
-						<Input.TextArea rows={4} />
-					</Form.Item>
-					<LabResultForm
-						form={form}
-						labTestId={selectedLabTestId}
-						selectedLabResult={selectedLabResult}
-						onSubmit={handleFormSubmit}
-						onCancel={handleCancel}
-						setLoading={setLoading}
-					/>
+					)}
 				</Form>
 			</Modal>
 		</div>

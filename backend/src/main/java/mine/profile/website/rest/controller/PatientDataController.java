@@ -13,8 +13,9 @@ import mine.profile.website.dtos.AdmissionDTO;
 import mine.profile.website.dtos.AppointmentDTO;
 import mine.profile.website.dtos.AssessmentDTO;
 import mine.profile.website.dtos.BillingDTO;
+import mine.profile.website.dtos.DocumentDTO;
 import mine.profile.website.dtos.ImageReportDTO;
-import mine.profile.website.dtos.LabResultDTO; // Import LabResultDTO
+import mine.profile.website.dtos.LabResultDTO;
 import mine.profile.website.dtos.MedicationAdministrationDTO;
 import mine.profile.website.dtos.NursingCarePlanDTO;
 import mine.profile.website.dtos.PatientDTO;
@@ -84,6 +85,13 @@ public class PatientDataController {
         return ResponseEntity.ok(patientDataService.getImageReportsByPatientId(patientId, page, size));
     }
 
+    @GetMapping("/{patientId}/documents")
+    public ResponseEntity<Page<DocumentDTO>> getDocumentsByPatientId(@PathVariable Long patientId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(patientDataService.getDocumentsByPatientId(patientId, page, size));
+    }
+
     @GetMapping("/{patientId}/vital-signs")
     public ResponseEntity<Page<VitalSignDTO>> getVitalSignsByPatientId(@PathVariable Long patientId,
             @RequestParam(defaultValue = "0") int page,
@@ -106,7 +114,7 @@ public class PatientDataController {
         return ResponseEntity.ok(patientDataService.getMedicationAdministrationsByPatientId(patientId, page, size));
     }
 
-    @GetMapping("/{patientId}/lab-results") // New Endpoint
+    @GetMapping("/{patientId}/lab-results")
     public ResponseEntity<Page<LabResultDTO>> getLabResultsByPatientId(
             @PathVariable Long patientId,
             @RequestParam(defaultValue = "0") int page,

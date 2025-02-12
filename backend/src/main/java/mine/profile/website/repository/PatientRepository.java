@@ -34,36 +34,41 @@ public interface PatientRepository extends JpaRepository<Patient, Long>, JpaSpec
 
     List<Patient> findByBloodType(String bloodType);
 
-    @Query(value = "SELECT p FROM Patient p WHERE lower(concat(p.firstName,' ',p.lastName)) LIKE lower(:name)")
+    @Query(value = "SELECT p FROM Patient p WHERE lower(concat(p.firstName,' ',p.lastName)) LIKE lower(:name) AND p.deleted = false")
     List<Patient> searchByFullName(@Param("name") String name);
 
-    @Query(value = "SELECT * FROM patient WHERE YEAR(date_of_birth) = :year", nativeQuery = true)
+    @Query(value = "SELECT * FROM patient WHERE YEAR(date_of_birth) = :year AND deleted = false", nativeQuery = true)
     List<Patient> findByYearOfBirth(@Param("year") int year);
 
     @Query("SELECT p FROM Patient p WHERE " +
-            "LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "(LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(p.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :search, '%'))")
+            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :search, '%'))) AND p.deleted = false")
     Page<Patient> searchPatients(@Param("search") String search, Pageable pageable);
 
     Page<Patient> findAll(Pageable pageable);
 
-    Page<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
-            String firstName, String lastName, String medicalRecordNumber, Pageable pageable);
-
+    @Query("SELECT p FROM Patient p WHERE (LOWER(p.firstName) LIKE LOWER(CONCAT('%', :firstName, '%')) OR " +
+            "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :lastName, '%')) OR " +
+            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :medicalRecordNumber, '%'))) AND p.deleted = :deleted")
     List<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
-            String firstName, String lastName, String medicalRecordNumber);
+            @Param("firstName") String firstName, @Param("lastName") String lastName,
+            @Param("medicalRecordNumber") String medicalRecordNumber, @Param("deleted") boolean deleted);
+
+    @Query("SELECT p FROM Patient p WHERE (LOWER(p.firstName) LIKE LOWER(CONCAT('%', :firstName, '%')) OR " +
+            "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :lastName, '%')) OR " +
+            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :medicalRecordNumber, '%'))) AND p.deleted = false")
+    Page<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
+            @Param("firstName") String firstName, @Param("lastName") String lastName,
+            @Param("medicalRecordNumber") String medicalRecordNumber, Pageable pageable);
 
     @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.unit.id = :unitId")
     List<Patient> findPatientsByUnitId(@Param("unitId") Long unitId);
 
     @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.id = :roomId")
     List<Patient> findPatientsByRoomId(@Param("roomId") Long roomId);
-
-    @Query("SELECT p FROM Patient p JOIN p.nurses n WHERE n.id = :nurseId")
-    List<Patient> findPatientsByNurseId(@Param("nurseId") Long nurseId);
 
     // Dashboard Queries
     @Query("SELECT COUNT(p) FROM Patient p")
@@ -81,4 +86,23 @@ public interface PatientRepository extends JpaRepository<Patient, Long>, JpaSpec
     @Query(value = "SELECT YEAR(date_of_birth) as year, count(*) from patient group by year", nativeQuery = true)
     List<Object[]> countPatientsByBirthYear();
 
+    // New methods to find deleted patients
+    @Query("SELECT p FROM Patient p WHERE p.deleted = true")
+    Page<Patient> findAllDeleted(Pageable pageable);
+
+    @Query("SELECT p FROM Patient p WHERE " +
+            "(LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :search, '%'))) AND p.deleted = true")
+    Page<Patient> searchDeletedPatients(@Param("search") String search, Pageable pageable);
+
+    List<Patient> findByDeleted(boolean deleted);
+
+    @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.unit.id = :unitId AND p.deleted = false")
+    List<Patient> findPatientsByUnitIdWithFalse(@Param("unitId") Long unitId);
+
+    @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.id = :roomId AND p.deleted = false")
+    List<Patient> findPatientsByRoomIdWithFalse(@Param("roomId") Long roomId);
 }

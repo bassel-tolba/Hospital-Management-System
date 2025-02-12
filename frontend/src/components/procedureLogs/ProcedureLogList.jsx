@@ -7,6 +7,7 @@ import { usePatientStore } from "../../services/patient.service";
 import { SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { format, formatDistance, isToday, isYesterday, differenceInDays, differenceInMonths } from "date-fns";
 import axios from "axios";
+import { notification } from "antd"; // Import notification
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -47,7 +48,7 @@ const formatExactTime = (localDateTime) => {
 
 const ProcedureLogList = () => {
 	const { users, getAllUsers } = useUserStore();
-	const { user } = useAuthStore();
+	const { user, hasAuthority } = useAuthStore(); // Get hasAuthority
 	const { procedures, getAllProcedures } = useProcedureStore();
 	const { searchPatients } = usePatientStore();
 
@@ -65,6 +66,12 @@ const ProcedureLogList = () => {
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [selectedPatient, setSelectedPatient] = useState(null);
 
+	// Define permission checks
+	const canReadProcedureLog = hasAuthority("READ_PROCEDURE_LOG"); // Assuming you have a READ permission
+	const canCreateProcedureLog = hasAuthority("CREATE_PROCEDURE_LOG");
+	const canUpdateProcedureLog = hasAuthority("UPDATE_PROCEDURE_LOG"); // Assuming you might want an UPDATE permission
+	const canDeleteProcedureLog = hasAuthority("DELETE_PROCEDURE_LOG");
+
 	const fetchAllUsersWithMap = useCallback(async () => {
 		const allUsers = await getAllUsers();
 		const userMap = {};
@@ -75,6 +82,14 @@ const ProcedureLogList = () => {
 
 	const fetchProcedureLogs = useCallback(async () => {
 		setLoading(true);
+		if (!canReadProcedureLog) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to view procedure logs.",
+			});
+			setLoading(false);
+			return; // Stop execution if no permission
+		}
 		try {
 			const user = useAuthStore.getState().user;
 			const response = await axios.get(PROCEDURE_LOG_API_BASE_URL, {
@@ -86,10 +101,15 @@ const ProcedureLogList = () => {
 			setTotal(response.data.length); // Update total from response
 		} catch (error) {
 			console.error("Error fetching procedure logs:", error);
+			notification.error({
+				// Show a notification for the error
+				message: "Error",
+				description: "Failed to fetch procedure logs.",
+			});
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [canReadProcedureLog]);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -113,6 +133,22 @@ const ProcedureLogList = () => {
 	};
 
 	const showModal = (log) => {
+		if (!canCreateProcedureLog && !log) {
+			// Check permission before showing the modal for adding
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to add procedure logs.",
+			});
+			return;
+		}
+		if (log && !canUpdateProcedureLog) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to edit procedure logs.",
+			});
+			return;
+		}
+
 		setSelectedLog(log);
 		setSelectedUser(null);
 		setSelectedProcedure(null);
@@ -176,6 +212,20 @@ const ProcedureLogList = () => {
 	};
 
 	const handleFormSubmit = async () => {
+		if (selectedLog && !canUpdateProcedureLog) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to update procedure logs.",
+			});
+			return;
+		}
+		if (!selectedLog && !canCreateProcedureLog) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to create procedure logs.",
+			});
+			return;
+		}
 		try {
 			const values = await form.validateFields();
 			const payload = {
@@ -194,11 +244,20 @@ const ProcedureLogList = () => {
 				payload.billingId = selectedPatient.id;
 			}
 			const user = useAuthStore.getState().user;
-			await axios.post(PROCEDURE_LOG_API_BASE_URL, payload, {
-				headers: {
-					Authorization: `Bearer ${user?.token}`,
-				},
-			});
+			if (selectedLog) {
+				await axios.put(`${PROCEDURE_LOG_API_BASE_URL}/${selectedLog.id}`, payload, {
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				});
+			} else {
+				await axios.post(PROCEDURE_LOG_API_BASE_URL, payload, {
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				});
+			}
+
 			fetchProcedureLogs();
 			setIsModalVisible(false);
 			setSelectedLog(null);
@@ -209,10 +268,21 @@ const ProcedureLogList = () => {
 			setPatientOptions([]);
 		} catch (error) {
 			console.error("Error submitting form:", error);
+			notification.error({
+				message: "Error",
+				description: "Failed to save procedure log.",
+			});
 		}
 	};
 
 	const handleDelete = async (logId) => {
+		if (!canDeleteProcedureLog) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to delete procedure logs.",
+			});
+			return;
+		}
 		try {
 			const user = useAuthStore.getState().user;
 			await axios.delete(`${PROCEDURE_LOG_API_BASE_URL}/${logId}`, {
@@ -223,6 +293,10 @@ const ProcedureLogList = () => {
 			fetchProcedureLogs();
 		} catch (error) {
 			console.error("Error deleting log:", error);
+			notification.error({
+				message: "Error",
+				description: "Failed to delete procedure log.",
+			});
 		}
 	};
 
@@ -240,44 +314,50 @@ const ProcedureLogList = () => {
 			title: "User",
 			dataIndex: "userId",
 			key: "user",
-			render: (userId) => getUserName(userId),
+			render: (userId) => (canReadProcedureLog ? getUserName(userId) : "***"),
 		},
 		{
 			title: "Procedure",
 			dataIndex: "procedureId",
 			key: "procedure",
-			render: (procedureId) => getProcedureName(procedureId),
+			render: (procedureId) => (canReadProcedureLog ? getProcedureName(procedureId) : "***"),
 		},
 
 		{
 			title: "Start Time",
 			dataIndex: "startTime",
 			key: "startTime",
-			render: (text) => <Tooltip title={formatExactTime(text)}>{formatRelativeTime(text)}</Tooltip>,
+			render: (text) => (canReadProcedureLog ? <Tooltip title={formatExactTime(text)}>{formatRelativeTime(text)}</Tooltip> : "***"),
 		},
 		{
 			title: "End Time",
 			dataIndex: "endTime",
 			key: "endTime",
-			render: (text) => (text ? <Tooltip title={formatExactTime(text)}>{formatRelativeTime(text)}</Tooltip> : "N/A"),
+			render: (text) =>
+				canReadProcedureLog ? text ? <Tooltip title={formatExactTime(text)}>{formatRelativeTime(text)}</Tooltip> : "N/A" : "***",
 		},
 
 		{
 			title: "Notes",
 			dataIndex: "notes",
 			key: "notes",
+			render: (text) => (canReadProcedureLog ? text : "***"),
 		},
 		{
 			title: "Actions",
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-						Delete
-					</Button>
+					{canUpdateProcedureLog && (
+						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+							Edit
+						</Button>
+					)}
+					{canDeleteProcedureLog && (
+						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+							Delete
+						</Button>
+					)}
 				</Space>
 			),
 		},
@@ -287,9 +367,11 @@ const ProcedureLogList = () => {
 		<div style={{ padding: 20 }}>
 			<Title level={2}>Procedure Logs</Title>
 			<Space style={{ marginBottom: 16 }}>
-				<Button type="primary" onClick={() => showModal(null)}>
-					Add New Log
-				</Button>
+				{canCreateProcedureLog && (
+					<Button type="default" onClick={() => showModal(null)}>
+						Add New Log
+					</Button>
+				)}
 			</Space>
 			<Table columns={columns} dataSource={procedureLogs} loading={loading} rowKey="id" pagination={false} />
 			<Pagination current={currentPage} pageSize={pageSize} total={total} onChange={handlePageChange} style={{ marginTop: 20 }} />
@@ -302,7 +384,11 @@ const ProcedureLogList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="primary" onClick={handleFormSubmit}>
+					<Button
+						key="submit"
+						type="default"
+						onClick={handleFormSubmit}
+						disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)}>
 						{selectedLog ? "Update" : "Save"}
 					</Button>,
 				]}>
@@ -321,6 +407,7 @@ const ProcedureLogList = () => {
 							onSearch={handleProcedureSearch}
 							onSelect={handleProcedureSelect}
 							placeholder="Search for a patient"
+							disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)} // Disable based on permissions
 							filterOption={false}
 						/>
 					</Form.Item>
@@ -330,7 +417,9 @@ const ProcedureLogList = () => {
 						</Form.Item>
 					) : (
 						<Form.Item label="User" name="userId" rules={[{ required: true, message: "Please select a user" }]}>
-							<Select placeholder="Select a user">
+							<Select
+								placeholder="Select a user"
+								disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)}>
 								{users?.map((user) => (
 									<Option key={user.id} value={user.id}>
 										{`${user.firstName} ${user.lastName}`}
@@ -340,7 +429,9 @@ const ProcedureLogList = () => {
 						</Form.Item>
 					)}
 					<Form.Item label="Procedure" name="procedureId" rules={[{ required: true, message: "Please select a procedure" }]}>
-						<Select placeholder="Select a procedure">
+						<Select
+							placeholder="Select a procedure"
+							disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)}>
 							{procedureOptions?.map(
 								(
 									procedure // Use procedureOptions here
@@ -353,7 +444,7 @@ const ProcedureLogList = () => {
 						</Select>
 					</Form.Item>
 					<Form.Item label="Notes" name="notes">
-						<Input.TextArea />
+						<Input.TextArea disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)} />
 					</Form.Item>
 				</Form>
 			</Modal>

@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +29,11 @@ public class PatientDTO {
     private String address;
     private String phoneNumber;
     private String email;
+
+    // NEW: Image URL & File
     private String profilePictureURL;
+    private MultipartFile profilePictureFile;
+
     private String medicalRecordNumber;
     private String bloodType;
     private String allergies;
@@ -74,7 +80,7 @@ public class PatientDTO {
         patient.setAddress(this.address);
         patient.setPhoneNumber(this.phoneNumber);
         patient.setEmail(this.email);
-        patient.setProfilePictureURL(this.profilePictureURL);
+        patient.setProfilePictureURL(this.profilePictureURL); // Set Image url
         patient.setMedicalRecordNumber(this.medicalRecordNumber);
         patient.setBloodType(this.bloodType);
         patient.setAllergies(this.allergies);

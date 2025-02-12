@@ -12,8 +12,9 @@ import mine.profile.website.dtos.AdmissionDTO;
 import mine.profile.website.dtos.AppointmentDTO;
 import mine.profile.website.dtos.AssessmentDTO;
 import mine.profile.website.dtos.BillingDTO;
+import mine.profile.website.dtos.DocumentDTO;
 import mine.profile.website.dtos.ImageReportDTO;
-import mine.profile.website.dtos.LabResultDTO; // Import LabResultDTO
+import mine.profile.website.dtos.LabResultDTO;
 import mine.profile.website.dtos.MedicationAdministrationDTO;
 import mine.profile.website.dtos.NursingCarePlanDTO;
 import mine.profile.website.dtos.PatientDTO;
@@ -25,8 +26,9 @@ import mine.profile.website.models.Admission;
 import mine.profile.website.models.Appointment;
 import mine.profile.website.models.Assessment;
 import mine.profile.website.models.Billing;
+import mine.profile.website.models.Document;
 import mine.profile.website.models.ImageReport;
-import mine.profile.website.models.LabResult; // Import LabResult
+import mine.profile.website.models.LabResult;
 import mine.profile.website.models.MedicationAdministration;
 import mine.profile.website.models.NursingCarePlan;
 import mine.profile.website.models.Patient;
@@ -38,8 +40,9 @@ import mine.profile.website.repository.AppointmentRepository;
 import mine.profile.website.repository.AssessmentRepository;
 import mine.profile.website.repository.BedRepository;
 import mine.profile.website.repository.BillingRepository;
+import mine.profile.website.repository.DocumentRepository; // Import DocumentRepository
 import mine.profile.website.repository.ImageReportRepository;
-import mine.profile.website.repository.LabResultRepository; // Import LabResultRepository
+import mine.profile.website.repository.LabResultRepository;
 import mine.profile.website.repository.MedicationAdministrationRepository;
 import mine.profile.website.repository.NursingCarePlanRepository;
 import mine.profile.website.repository.PatientProductUsageRepository;
@@ -79,7 +82,7 @@ public class PatientDataService {
     private VitalSignRepository vitalSignRepository;
 
     @Autowired
-    private LabResultRepository labResultRepository; // Inject LabResultRepository
+    private LabResultRepository labResultRepository;
 
     @Autowired
     private EntityMapper entityMapper;
@@ -102,6 +105,9 @@ public class PatientDataService {
     private ProductRepository productRepository;
     @Autowired
     private ProcedureRepository procedureRepository;
+
+    @Autowired
+    private DocumentRepository documentRepository; // Inject DocumentRepository
 
     @Autowired
     private BedRepository bedRepository;
@@ -176,6 +182,13 @@ public class PatientDataService {
     }
 
     @Transactional(readOnly = true)
+    public Page<DocumentDTO> getDocumentsByPatientId(Long patientId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Document> documents = documentRepository.findByPatientId(patientId, pageable);
+        return documents.map(DocumentDTO::toDto);
+    }
+
+    @Transactional(readOnly = true)
     public Page<PatientProductUsageDTO> getPatientProductUsageByPatientId(Long patientId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<PatientProductUsage> patientProductUsagePage = patientProductUsageRepository.findByPatientId(patientId,
@@ -193,7 +206,7 @@ public class PatientDataService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LabResultDTO> getLabResultsByPatientId(Long patientId, int page, int size) { // New Method
+    public Page<LabResultDTO> getLabResultsByPatientId(Long patientId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<LabResult> labResults = labResultRepository.findByPatientId(patientId, pageable);
         return labResults.map(LabResultDTO::fromEntity);

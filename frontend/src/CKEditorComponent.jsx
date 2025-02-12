@@ -66,7 +66,8 @@ const LICENSE_KEY = "GPL"; // or <YOUR_LICENSE_KEY>.
 
 const NAV_BAR_HEIGHT = 118;
 
-const CKEditorComponent = ({ onChange, data }) => {
+const CKEditorComponent = ({ onChange, data, onBeforeLoad, readOnly, onReady }) => {
+	// Add onReady prop
 	const editorContainerRef = useRef(null);
 	const editorRef = useRef(null);
 	const [isLayoutReady, setIsLayoutReady] = useState(false);
@@ -290,9 +291,10 @@ const CKEditorComponent = ({ onChange, data }) => {
 				table: {
 					contentToolbar: ["tableColumn", "tableRow", "mergeTableCells", "tableProperties", "tableCellProperties"],
 				},
+				readOnly: readOnly,
 			},
 		};
-	}, [isLayoutReady, data]);
+	}, [isLayoutReady, data, readOnly]);
 
 	return (
 		<div className="main-container">
@@ -308,6 +310,19 @@ const CKEditorComponent = ({ onChange, data }) => {
 								onChange={(event, editor) => {
 									const data = editor.getData();
 									onChange(data);
+								}}
+								onReady={(editor) => {
+									console.log("CKEditor is REALLY ready! - inside CKEditorComponent");
+									// First set the editor reference
+									if (onBeforeLoad) {
+										onBeforeLoad(editor);
+									}
+									// Add a small delay to ensure the ref is set
+									setTimeout(() => {
+										if (onReady) {
+											onReady(editor); // Pass the editor instance directly
+										}
+									}, 100);
 								}}
 							/>
 						)}

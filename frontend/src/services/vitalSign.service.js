@@ -48,11 +48,21 @@ export const useVitalSignStore = create((set, get) => ({
 				description: `Vital sign Created Successfully`,
 			});
 		} catch (error) {
-			set({ error: error.message, loading: false });
-			notification.error({
-				message: "Error",
-				description: `Failed to create vital sign: ${error.message}`,
-			});
+			set({ loading: false });
+			if (error.response && error.response.data && error.response.data.errors) {
+				// Extract error messages from the server's response
+				const errorMessages = error.response.data.errors.map((err) => err.defaultMessage).join(", ");
+				notification.error({
+					message: "Error",
+					description: `Failed to create vital sign: ${errorMessages}`,
+				});
+			} else {
+				// Handle other errors
+				notification.error({
+					message: "Error",
+					description: `Failed to create vital sign: ${error.message}`,
+				});
+			}
 			throw error;
 		} finally {
 			set({ loading: false });
@@ -70,11 +80,21 @@ export const useVitalSignStore = create((set, get) => ({
 				description: `Vital sign updated Successfully`,
 			});
 		} catch (error) {
-			set({ error: error.message, loading: false });
-			notification.error({
-				message: "Error",
-				description: `Failed to update vital sign: ${error.message}`,
-			});
+			set({ loading: false });
+			if (error.response && error.response.data && error.response.data.errors) {
+				// Extract error messages from the server's response
+				const errorMessages = error.response.data.errors.map((err) => err.defaultMessage).join(", ");
+				notification.error({
+					message: "Error",
+					description: `Failed to update vital sign: ${errorMessages}`,
+				});
+			} else {
+				// Handle other errors
+				notification.error({
+					message: "Error",
+					description: `Failed to update vital sign: ${error.message}`,
+				});
+			}
 			throw error;
 		} finally {
 			set({ loading: false });

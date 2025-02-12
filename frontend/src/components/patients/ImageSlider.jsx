@@ -1,165 +1,132 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Dialog, DialogContent, IconButton, Box, Typography, useTheme } from "@mui/material";
-import { ArrowBack, ArrowForward, Close } from "@mui/icons-material";
-import styled from "@emotion/styled";
+import React, { useState, useEffect } from "react";
+import { Modal, Carousel, Spin, Radio, Image } from "antd";
+import "./ImageSlider.css";
 
-const DialogStyled = styled(Dialog)`
-	& .MuiPaper-root {
-		border-radius: 12px;
-		background-color: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(245, 245, 245, 0.95)" : "rgba(48, 48, 48, 0.95)")};
-		backdrop-filter: blur(10px);
-	}
-`;
-
-const MediaContainer = styled(Box)`
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	max-height: 70vh;
-`;
-
-const SliderImage = styled("img")`
-	max-width: 90%;
-	max-height: 100%;
-	object-fit: contain;
-	border-radius: 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	transition: transform 0.3s ease;
-	&:hover {
-		transform: scale(1.02);
-	}
-`;
-
-const SliderVideo = styled("video")`
-	max-width: 90%;
-	max-height: 100%;
-	object-fit: contain;
-	border-radius: 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	transition: transform 0.3s ease;
-	&:hover {
-		transform: scale(1.02);
-	}
-`;
-
-const NavigationButton = styled(IconButton)`
-	background: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.6)" : "rgba(60, 60, 60, 0.6)")};
-	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
-	border-radius: 50%;
-	border: 1px solid rgba(0, 0, 0, 0.1);
-
-	&:hover {
-		background: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.8)" : "rgba(70, 70, 70, 0.8)")};
-	}
-
-	& svg {
-		color: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.8)" : "rgba(255, 255, 255, 0.8)")};
-	}
-`;
-
-const CloseButton = styled(IconButton)`
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	background-color: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.8)" : "rgba(60, 60, 60, 0.8)")};
-	border-radius: 50%;
-	border: 1px solid rgba(0, 0, 0, 0.1);
-
-	&:hover {
-		background-color: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.9)" : "rgba(70, 70, 70, 0.9)")};
-	}
-	& svg {
-		color: ${({ theme }) => (theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.8)" : "rgba(255, 255, 255, 0.8)")};
-	}
-`;
-
-const LazyVideo = ({ src }) => {
-	const videoRef = useRef(null);
-	const [isLoaded, setIsLoaded] = useState(false);
+const ImageSlider = React.memo(({ open, onClose, data }) => {
+	// Use React.memo
+	const [loading, setLoading] = useState(true);
+	const [filteredMedia, setFilteredMedia] = useState([]);
+	const [mediaTypeFilter, setMediaTypeFilter] = useState("All");
 
 	useEffect(() => {
-		const observer = new IntersectionObserver((entries) => {
-			entries.forEach((entry) => {
-				if (entry.isIntersecting && !isLoaded) {
-					setIsLoaded(true);
-				}
+		if (!data || !data.imageUrls) {
+			setLoading(false); // Ensure loading is set to false even if there's no data
+			return;
+		}
+
+		setLoading(true);
+		let filtered = data.imageUrls;
+		setFilteredMedia(filtered);
+		setLoading(false);
+	}, [data]);
+
+	useEffect(() => {
+		if (!data || !data.imageUrls) {
+			return;
+		}
+		setLoading(true);
+
+		let filtered;
+		if (mediaTypeFilter === "All") {
+			filtered = data.imageUrls;
+		} else {
+			filtered = data.imageUrls.filter((url) => {
+				const isVideo = [".mp4", ".webm", ".ogg"].some((ext) => url.toLowerCase().endsWith(ext));
+				return (mediaTypeFilter === "Image" && !isVideo) || (mediaTypeFilter === "Video" && isVideo);
 			});
-		});
-
-		if (videoRef.current) {
-			observer.observe(videoRef.current);
 		}
 
-		return () => {
-			if (videoRef.current) {
-				observer.unobserve(videoRef.current);
-			}
-		};
-	}, [isLoaded]);
+		setFilteredMedia(filtered);
+		setLoading(false);
+	}, [mediaTypeFilter, data]);
 
-	return <SliderVideo ref={videoRef} controls src={isLoaded ? src : null} />;
-};
+	if (!data || !data.imageUrls || data.imageUrls.length === 0) {
+		return null;
+	}
 
-const ImageSlider = ({ open, images, onClose }) => {
-	const [currentIndex, setCurrentIndex] = useState(0);
-	const theme = useTheme();
-
-	const handlePrev = () => {
-		setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
+	const handleFilterChange = (e) => {
+		setMediaTypeFilter(e.target.value);
 	};
 
-	const handleNext = () => {
-		setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
-	};
-
-	const cleanImageUrl = (url) => {
-		if (url && url.startsWith(".")) {
-			return url.substring(1);
+	const getVideoType = (url) => {
+		const ext = url.toLowerCase().split(".").pop();
+		switch (ext) {
+			case "mp4":
+				return "video/mp4";
+			case "webm":
+				return "video/webm";
+			case "ogg":
+				return "video/ogg";
+			default:
+				return ""; // Unknown type
 		}
-		return url;
 	};
 
-	const isVideo = (url) => {
-		if (!url) return false;
-		const lowerCaseUrl = url.toLowerCase();
-		return lowerCaseUrl.endsWith(".mp4") || lowerCaseUrl.endsWith(".mov") || lowerCaseUrl.endsWith(".webm");
+	const renderMediaItem = (url, index) => {
+		const isVideo = [".mp4", ".webm", ".ogg"].some((ext) => url.toLowerCase().endsWith(ext));
+
+		return (
+			<div key={url} style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+				{" "}
+				{/* Use the URL as key */}
+				{isVideo ? (
+					<video
+						controls
+						preload="metadata" // Optimized preload setting
+						style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain" }}
+						onError={() => {
+							console.error("Error loading video:", url);
+						}}>
+						<source src={url} type={getVideoType(url)} />
+						Your browser does not support the video tag.
+					</video>
+				) : (
+					<Image
+						src={url}
+						style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain" }}
+						preview={false}
+						fallback="https://via.placeholder.com/400x300?text=Image+Not+Found"
+						onError={(e) => {
+							console.error("Error loading image", e);
+						}}
+					/>
+				)}
+			</div>
+		);
 	};
 
-	if (!images || images.length === 0) return null;
-	const currentMedia = images[currentIndex];
-	const mediaUrl = `http://localhost:8080${cleanImageUrl(currentMedia)}`;
-	const isCurrentVideo = isVideo(currentMedia);
+	const carouselSettings = {
+		dots: filteredMedia.length > 1,
+		arrows: true,
+		className: "custom-carousel",
+	};
 
 	return (
-		<DialogStyled open={open} onClose={onClose} maxWidth="md" fullWidth theme={theme}>
-			<DialogContent style={{ position: "relative", background: "transparent" }}>
-				<CloseButton onClick={onClose} theme={theme}>
-					<Close />
-				</CloseButton>
-				{images.length > 1 && (
-					<NavigationButton style={{ left: 10 }} onClick={handlePrev} theme={theme}>
-						<ArrowBack />
-					</NavigationButton>
+		<Modal open={open} onCancel={onClose} title="Media Viewer" width={800} style={{ top: 20 }} footer={null}>
+			<div style={{ marginBottom: 16, textAlign: "center" }}>
+				<Radio.Group value={mediaTypeFilter} onChange={handleFilterChange}>
+					<Radio.Button value="All">All</Radio.Button>
+					<Radio.Button value="Image">Image</Radio.Button>
+					<Radio.Button value="Video">Video</Radio.Button>
+				</Radio.Group>
+			</div>
+			<div style={{ position: "relative", height: "60vh" }}>
+				{loading ? (
+					<div
+						style={{
+							position: "absolute",
+							top: "50%",
+							left: "50%",
+							transform: "translate(-50%, -50%)",
+						}}>
+						<Spin size="large" />
+					</div>
+				) : (
+					<Carousel {...carouselSettings}>{filteredMedia.map((url, index) => renderMediaItem(url, index))}</Carousel>
 				)}
-				<MediaContainer>
-					{currentMedia &&
-						(isCurrentVideo ? <LazyVideo src={mediaUrl} /> : <SliderImage src={mediaUrl} alt={`Media ${currentIndex + 1}`} />)}
-					{!currentMedia && (
-						<Typography variant="h5" color="textSecondary">
-							No Media Available
-						</Typography>
-					)}
-				</MediaContainer>
-				{images.length > 1 && (
-					<NavigationButton style={{ right: 10 }} onClick={handleNext} theme={theme}>
-						<ArrowForward />
-					</NavigationButton>
-				)}
-			</DialogContent>
-		</DialogStyled>
+			</div>
+		</Modal>
 	);
-};
+});
 
 export default ImageSlider;

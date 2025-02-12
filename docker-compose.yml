@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     ports:
        - "3000:80"
-    environment: {} # This fix the error, now the object is empty instead of not being present.
+    environment: {}
     depends_on:
       - backend
     healthcheck:

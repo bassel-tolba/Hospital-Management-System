@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+// App.js
+import React, { useState, useMemo, useCallback } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import Profile from "./components/auth/Profile";
 import Login from "./components/auth/Login";
@@ -13,170 +14,533 @@ import MedicationList from "./components/medications/MedicationList";
 import PrescriptionList from "./components/prescriptions/PrescriptionList";
 import MedicationAdministrationList from "./components/medicationAdministrations/MedicationAdministrationList";
 import ProcedureList from "./components/procedures/ProcedureList";
-import ProductList from "./components/ProductList";
-import PatientProductUsageList from "./components/PatientProductUsageList";
+import ProcedureLogList from "./components/procedureLogs/ProcedureLogList";
+import ProductList from "./components/products/ProductList";
+import PatientProductUsageList from "./components/products/PatientProductUsageList";
 import PatientDetails from "./components/patients/PatientDetails";
 import { useAuthStore } from "./services/auth.service";
-
 import {
-	AppBar,
-	Toolbar,
-	Typography,
-	Container,
-	Box,
-	Switch,
-	MenuItem, // Import MenuItem from MUI
+	Layout,
+	Menu as AntMenu,
+	Breadcrumb,
+	Button,
+	Drawer,
+	ConfigProvider,
+	Select,
+	theme as antdTheme,
 	Tooltip,
-} from "@mui/material";
-
-import { styled } from "@mui/material/styles";
-
-import useMediaQuery from "@mui/material/useMediaQuery";
-import hospitalLogo from "./hospital-logo.svg";
-import { ConfigProvider, Layout, Menu as AntMenu, Switch as AntSwitch, Breadcrumb } from "antd";
-import ImageReportList from "./components/ImageReportList";
+	Typography,
+	Grid,
+	Input,
+	Card,
+	notification,
+} from "antd";
+import ImageReportList from "./components/imageReports/ImageReportList";
 import LabTestList from "./components/lab/LabTestList";
 import LabResultPage from "./components/lab/LabResultPage";
-import { appRoutes } from "./routes";
+import { appRoutes } from "./routes"; // Import appRoutes
 import Dashboard from "./components/dashboard/Dashboard";
 import PrivateRoute from "./components/PrivateRoute";
-import ImageReportTypeList from "./components/ImageReportTypeList";
-import HeadNurseDashboard from "./components/HeadNurseDashboard";
-import NurseDashboard from "./components/NurseDashboard";
+import ImageReportTypeList from "./components/imageReports/ImageReportTypeList";
 import MedicationHistoryList from "./components/medications/MedicationHistoryList";
 import BillingPage from "./components/billing/BillingPage";
 import ActivityPage from "./pages/ActivityPage";
+import styled, { keyframes, css } from "styled-components";
+import AboutUs from "./components/AboutUs";
+import { MenuOutlined } from "@ant-design/icons";
+import "antd/dist/reset.css";
+import DocumentList from "./components/documents/DocumentList";
+import DocumentTypeList from "./components/documents/DocumentTypeList";
+import AllFeaturesPage from "./components/AllFeaturesPage";
+import RoleAndPermissionManagement from "./components/auth/RoleAndPermissionManagement"; // Import
+// Import necessary Ant Design icons
+import {
+	BulbOutlined,
+	SettingOutlined,
+	DollarCircleOutlined,
+	ExperimentOutlined,
+	LockOutlined,
+	HeartOutlined,
+	ShoppingCartOutlined,
+	LoginOutlined,
+	UserAddOutlined,
+	UserOutlined,
+	TeamOutlined,
+	CalendarOutlined,
+	MedicineBoxOutlined,
+	MonitorOutlined,
+	FileTextOutlined,
+	SaveOutlined,
+	AppstoreOutlined,
+	HomeOutlined,
+	RestOutlined,
+	SolutionOutlined,
+	UsergroupAddOutlined,
+	HistoryOutlined,
+	FileProtectOutlined,
+	ThunderboltOutlined,
+	BoxPlotOutlined,
+	MedicineBoxTwoTone,
+	ShopOutlined,
+	AccountBookOutlined,
+	FileImageOutlined,
+	FileSearchOutlined,
+	FolderOutlined,
+	ProfileOutlined,
+	ExperimentTwoTone,
+	CheckCircleOutlined,
+	KeyOutlined,
+} from "@ant-design/icons";
+import VoiceNavigation from "./VoiceNavigation"; // Import the new component
 
-// Custom styled components for a fairy-tale vibe
-const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
-	"&:hover": {
-		backgroundColor: theme.palette.primary.main,
-		color: theme.palette.primary.contrastText,
-		transform: "scale(1.05)",
-		transition: "transform 0.2s ease",
-	},
-	"&.Mui-selected": {
-		backgroundColor: theme.palette.primary.main,
-		color: theme.palette.primary.contrastText,
-	},
-	"&.Mui-selected:hover": {
-		backgroundColor: theme.palette.primary.main,
-		color: theme.palette.primary.contrastText,
-	},
-}));
+const { Header, Content, Footer, Sider } = Layout;
+const { defaultAlgorithm, darkAlgorithm } = antdTheme;
+const { useBreakpoint } = Grid;
+const { Search } = Input;
 
-const { Header, Content, Footer } = Layout;
+// Animation for content transitions
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
 
-const NavigationMenu = () => {
-	const { user } = useAuthStore();
+const AnimatedContent = styled(Content)`
+	margin: 16px;
+	padding: 24px;
+	min-height: 280px;
+	background: #fff;
+	animation: ${fadeIn} 0.3s ease-out;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	transition: all 0.2s;
+	overflow-x: hidden;
+
+	${({ isDarkMode, theme }) =>
+		isDarkMode &&
+		css`
+			background: #303030;
+			box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+		`}
+`;
+
+const LogoImage = styled.img`
+	width: 120px;
+	max-height: 64px;
+	margin-right: 1.5rem;
+	display: block;
+`;
+
+const StyledHeader = styled(Header)`
+	padding: 0 24px;
+	background: #fff;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+	${({ isDarkMode }) =>
+		isDarkMode &&
+		css`
+			background: #1f1f1f;
+			box-shadow: 0 2px 4px rgba(255, 255, 255, 0.05);
+		`}
+`;
+
+const StyledSider = styled(Sider)`
+	display: block;
+	transition: all 0.2s;
+	background-color: #fff; /* Default light mode background */
+	box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05); /* Default light mode box-shadow */
+
+	${({ isDarkMode }) =>
+		isDarkMode &&
+		css`
+			background-color: #1f1f1f; /* Dark mode background */
+			box-shadow: 2px 0 4px rgba(255, 255, 255, 0.05); /* Dark mode box-shadow */
+		`}
+`;
+
+const StyledDrawer = styled(Drawer)`
+	.ant-drawer-content-wrapper {
+		background-color: #fff;
+	}
+`;
+
+const StyledFooter = styled(Footer)`
+	text-align: center;
+	background: #fafafa;
+	border-top: 1px solid #e8e8e8;
+	color: inherit;
+
+	${({ isDarkMode }) =>
+		isDarkMode &&
+		css`
+			background: #1f1f1f;
+			border-top: 1px solid #424242;
+			color: #fff;
+		`}
+`;
+
+const DashboardCard = styled(Card)`
+	margin-bottom: 16px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	transition: all 0.3s;
+
+	&:hover {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+`;
+
+const colorTokens = {
+	light: {
+		primaryColor: "#1890ff",
+		successColor: "#52c41a",
+		warningColor: "#faad14",
+		errorColor: "#ff4d4f",
+		infoColor: "#1677ff",
+		backgroundColor: "#fff",
+		textColor: "rgba(0, 0, 0, 0.88)",
+		borderColor: "#d9d9d9",
+		paperColor: "#fff",
+		dividerColor: "#e8e8e8",
+	},
+	dark: {
+		primaryColor: "#ffd700",
+		successColor: "#ffd700",
+		warningColor: "#ffe58f",
+		errorColor: "#ff7875",
+		infoColor: "#ffd700",
+		backgroundColor: "#fff", // Keep background white
+		textColor: "#fff",
+		borderColor: "#ffd700",
+		paperColor: "#ffd700",
+		dividerColor: "#424242",
+	},
+	green: {
+		primaryColor: "#52c41a",
+		successColor: "#b7eb8f",
+		warningColor: "#ffe58f",
+		errorColor: "#ff7875",
+		infoColor: "#69b1ff",
+		backgroundColor: "#f6ffed",
+		textColor: "rgba(0, 0, 0, 0.88)",
+		borderColor: "#b7eb8f",
+		paperColor: "#f6ffed",
+		dividerColor: "#b7eb8f",
+	},
+	green_dark: {
+		primaryColor: "#95de64",
+		successColor: "#d9f7be",
+		warningColor: "#fff1b8",
+		errorColor: "#ffb8b0",
+		infoColor: "#bae0ff",
+		backgroundColor: "#fff",
+		textColor: "#fff",
+		borderColor: "#95de64",
+		paperColor: "#303030", // Consistent dark paper
+		dividerColor: "#95de64",
+	},
+	red: {
+		primaryColor: "#ff4d4f",
+		successColor: "#b7eb8f",
+		warningColor: "#ffe58f",
+		errorColor: "#ff7875",
+		infoColor: "#69b1ff",
+		backgroundColor: "#fff2f0",
+		textColor: "rgba(0, 0, 0, 0.88)",
+		borderColor: "#ffccc7",
+		paperColor: "#fff2f0",
+		dividerColor: "#ffccc7",
+	},
+	red_dark: {
+		primaryColor: "#ff7875",
+		successColor: "#ffdfdc",
+		warningColor: "#fff1b8",
+		errorColor: "#ffb8b0",
+		infoColor: "#bae0ff",
+		backgroundColor: "#fff", // Keep background white
+		textColor: "#fff",
+		borderColor: "#ff7875",
+		paperColor: "#303030", // Consistent dark paper
+		dividerColor: "#ff7875",
+	},
+	pink: {
+		primaryColor: "#eb2f96",
+		successColor: "#b7eb8f",
+		warningColor: "#ffe58f",
+		errorColor: "#ff7875",
+		infoColor: "#69b1ff",
+		backgroundColor: "#fff0f6",
+		textColor: "rgba(0, 0, 0, 0.88)",
+		borderColor: "#f7c0e8",
+		paperColor: "#fff0f6",
+		dividerColor: "#f7c0e8",
+	},
+	pink_dark: {
+		primaryColor: "#f7c0e8",
+		successColor: "#fff2f0",
+		warningColor: "#fff1b8",
+		errorColor: "#ffb8b0",
+		infoColor: "#bae0ff",
+		backgroundColor: "#fff", // Keep background white
+		textColor: "#fff",
+		borderColor: "#f7c0e8",
+		paperColor: "#303030", // Consistent dark paper
+		dividerColor: "#f7c0e8",
+	},
+	blue: {
+		primaryColor: "#1890ff",
+		successColor: "#52c41a",
+		warningColor: "#faad14",
+		errorColor: "#ff4d4f",
+		infoColor: "#1677ff",
+		backgroundColor: "#e6f4ff",
+		textColor: "rgba(0, 0, 0, 0.88)",
+		borderColor: "#91caff",
+		paperColor: "#e6f4ff",
+		dividerColor: "#91caff",
+	},
+	blue_dark: {
+		primaryColor: "#69b1ff",
+		successColor: "#b7eb8f",
+		warningColor: "#ffe58f",
+		errorColor: "#ff7875",
+		infoColor: "#91caff",
+		backgroundColor: "#fff", // Keep background white
+		textColor: "#fff",
+		borderColor: "#69b1ff",
+		paperColor: "#303030", // Consistent dark paper
+		dividerColor: "#69b1ff",
+	},
+	purple: {
+		primaryColor: "#722ed1",
+		successColor: "#52c41a",
+		warningColor: "#faad14",
+		errorColor: "#ff4d4f",
+		infoColor: "#1677ff",
+		backgroundColor: "#f0eafa",
+		textColor: "rgba(0, 0, 0, 0.88)",
+		borderColor: "#b37feb",
+		paperColor: "#f0eafa",
+		dividerColor: "#b37feb",
+	},
+	purple_dark: {
+		primaryColor: "#b37feb",
+		successColor: "#b7eb8f",
+		warningColor: "#ffe58f",
+		errorColor: "#ff7875",
+		infoColor: "#91caff",
+		backgroundColor: "#fff", // Keep background white
+		textColor: "#fff",
+		borderColor: "#b37feb",
+		paperColor: "#303030", // Consistent dark paper
+		dividerColor: "#b37feb",
+	},
+};
+
+const getMenuIcon = (path) => {
+	const iconStyle = { fontSize: "16px" };
+
+	switch (path) {
+		case "/login":
+			return <LoginOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
+		case "/register":
+			return <UserAddOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
+		case "/profile":
+			return <UserOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
+		case "/patients":
+			return <TeamOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
+		case "/activities":
+			return <CalendarOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
+		case "/procedures":
+			return <MedicineBoxOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
+		case "/vital-signs":
+			return <MonitorOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
+		case "/assessments":
+			return <FileTextOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
+		case "/procedure-logs":
+			return <SaveOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
+		case "/units":
+			return <AppstoreOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		case "/rooms":
+			return <HomeOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		case "/beds":
+			return <RestOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		case "/admissions":
+			return <SolutionOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		case "/users":
+			return <UsergroupAddOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		case "/medications":
+			return <MedicineBoxTwoTone style={iconStyle} />; // Already TwoTone
+		case "/medications/history":
+			return <HistoryOutlined style={{ ...iconStyle, color: "#faad14" }} />;
+		case "/prescriptions":
+			return <FileProtectOutlined style={{ ...iconStyle, color: "#faad14" }} />;
+		case "/medication-administrations":
+			return <ThunderboltOutlined style={{ ...iconStyle, color: "#faad14" }} />;
+		case "/product-usages":
+			return <BoxPlotOutlined style={{ ...iconStyle, color: "#faad14" }} />;
+		case "/products":
+			return <ShopOutlined style={{ ...iconStyle, color: "#52c41a" }} />;
+		case "/billings":
+			return <AccountBookOutlined style={{ ...iconStyle, color: "#52c41a" }} />;
+		case "/image-reports":
+			return <FileImageOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
+		case "/image-report-types":
+			return <FileSearchOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
+		case "/documents":
+			return <FolderOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
+		case "/document-types":
+			return <ProfileOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
+		case "/lab-tests":
+			return <ExperimentTwoTone style={iconStyle} />; // Already TwoTone
+		case "/lab-results":
+			return <CheckCircleOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
+		case "/all-features":
+			return <AppstoreOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		case "/roles-permissions":
+			return <KeyOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
+		default:
+			return <SettingOutlined style={iconStyle} />;
+	}
+};
+
+const NavigationMenu = ({ onClose, isMobile, collapsed }) => {
+	const { user, hasAuthority } = useAuthStore();
 	const [openKeys, setOpenKeys] = useState([]);
-
+	const [searchTerm, setSearchTerm] = useState("");
 	const navigate = useNavigate();
 
 	const handleMenuItemClick = (path) => {
 		navigate(path);
+		if (isMobile) {
+			onClose();
+		}
 	};
+
 	const onOpenChange = (keys) => {
 		const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
 		setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
 	};
+	const menuPermissions = {
+		"/login": [],
+		"/register": [],
+		"/profile": [],
+		"/patients": ["READ_PATIENT", "CREATE_PATIENT", "UPDATE_PATIENT", "DELETE_PATIENT"],
+		"/activities": ["READ_USER_ACTIVITY", "CREATE_USER_ACTIVITY", "UPDATE_USER_ACTIVITY", "DELETE_USER_ACTIVITY"],
+		"/procedures": ["READ_PROCEDURE", "CREATE_PROCEDURE", "UPDATE_PROCEDURE", "DELETE_PROCEDURE"],
+		"/vital-signs": ["READ_VITAL_SIGN", "CREATE_VITAL_SIGN", "UPDATE_VITAL_SIGN", "DELETE_VITAL_SIGN"],
+		"/assessments": ["READ_ASSESSMENT", "CREATE_ASSESSMENT", "UPDATE_ASSESSMENT", "DELETE_ASSESSMENT"],
+		"/procedure-logs": ["READ_PROCEDURE_LOG", "CREATE_PROCEDURE_LOG", "DELETE_PROCEDURE_LOG"],
+		"/units": ["READ_UNIT", "CREATE_UNIT", "UPDATE_UNIT", "DELETE_UNIT"],
+		"/rooms": ["READ_ROOM", "CREATE_ROOM", "UPDATE_ROOM", "DELETE_ROOM"],
+		"/beds": ["READ_BED", "CREATE_BED", "UPDATE_BED", "DELETE_BED"],
+		"/admissions": ["READ_ADMISSION", "CREATE_ADMISSION", "UPDATE_ADMISSION", "DELETE_ADMISSION"],
+		"/users": ["READ_USER", "CREATE_USER", "UPDATE_USER", "DELETE_USER"],
+		"/medications": ["READ_MEDICATION", "CREATE_MEDICATION", "UPDATE_MEDICATION", "DELETE_MEDICATION", "UPDATE_MEDICATION_STOCK"],
+		"/medications/history": ["READ_MEDICATION_HISTORY"],
+		"/prescriptions": ["READ_PRESCRIPTION", "CREATE_PRESCRIPTION", "UPDATE_PRESCRIPTION", "DELETE_PRESCRIPTION"],
+		"/medication-administrations": ["READ_MEDICATION_ADMINISTRATION", "CREATE_MEDICATION_ADMINISTRATION", "DELETE_MEDICATION_ADMINISTRATION"],
+		"/product-usages": ["READ_PATIENT_PRODUCT_USAGE", "CREATE_PATIENT_PRODUCT_USAGE", "DELETE_PATIENT_PRODUCT_USAGE"],
+		"/products": ["READ_PRODUCT", "CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT"],
+		"/billings": ["READ_BILLING", "CREATE_BILLING", "UPDATE_BILLING", "DELETE_BILLING"],
+		"/image-reports": ["READ_IMAGE_REPORT", "CREATE_IMAGE_REPORT", "UPDATE_IMAGE_REPORT", "DELETE_IMAGE_REPORT"],
+		"/image-report-types": ["READ_IMAGE_REPORT_TYPE", "CREATE_IMAGE_REPORT_TYPE", "UPDATE_IMAGE_REPORT_TYPE", "DELETE_IMAGE_REPORT_TYPE"],
+		"/documents": ["READ_DOCUMENT", "CREATE_DOCUMENT", "UPDATE_DOCUMENT", "DELETE_DOCUMENT"],
+		"/document-types": ["READ_DOCUMENT_TYPE", "CREATE_DOCUMENT_TYPE", "UPDATE_DOCUMENT_TYPE", "DELETE_DOCUMENT_TYPE"],
+		"/lab-tests": ["READ_LAB_TEST", "CREATE_LAB_TEST"],
+		"/lab-results": ["READ_LAB_RESULT", "CREATE_LAB_RESULT", "DELETE_LAB_RESULT"],
+		"/all-features": [], // No specific permissions, always show
+		"/roles-permissions": ["MANAGE_PERMISSIONS", "MANAGE_ROLES"],
+	};
 
 	const menuItems = useMemo(() => {
+		console.log("Current user:", user); // Log the user object
 		const baseItems = [
-			{ label: "Login", path: "/login", show: true, category: "General" },
-			{ label: "Register", path: "/register", show: true, category: "General" },
+			{ label: "Login", path: "/login", show: true, category: "Authentications" },
+			{ label: "Register", path: "/register", show: true, category: "Authentications" },
 		];
 
-		const loggedInItems = user ? [{ label: "Profile", path: "/profile", show: true, category: "General" }] : [];
+		const loggedInItems = user ? [{ label: "Profile", path: "/profile", show: true, category: "Authentications" }] : [];
 
-		const roleBasedItems = [];
-		if (user) {
-			if (["ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "LAB_TECHNICIAN", "RADIOLOGIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Patients", path: "/patients", show: true, category: "Patient Care" });
-				roleBasedItems.push({ label: "Activities", path: "/activities", show: true, category: "Patient Care" });
-			}
-			if (["ADMIN", "RECEPTIONIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Units", path: "/units", show: true, category: "Administrative" });
-			}
-			if (["ADMIN", "NURSE", "RECEPTIONIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Rooms", path: "/rooms", show: true, category: "Administrative" });
-				roleBasedItems.push({ label: "Beds", path: "/beds", show: true, category: "Administrative" });
-				roleBasedItems.push({ label: "Admissions", path: "/admissions", show: true, category: "Administrative" });
-			}
-			if (["ADMIN", "DOCTOR", "NURSE", "PHARMACIST"].includes(user.role)) {
-				roleBasedItems.push({
-					label: "Medications",
-					path: "/medications",
-					show: true,
-					category: "Medication Management",
-				});
-				roleBasedItems.push({
-					label: "Medication History",
-					path: "/medications/history",
-					show: true,
-					category: "Medication Management",
-				});
-				roleBasedItems.push({
-					label: "Prescriptions",
-					path: "/prescriptions",
-					show: true,
-					category: "Medication Management",
-				});
-				roleBasedItems.push({
-					label: "Medication Administrations",
-					path: "/medication-administrations",
-					show: true,
-					category: "Medication Management",
-				});
-			}
-			if (["ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Procedures", path: "/procedures", show: true, category: "Patient Care" });
-			}
-			if (["ADMIN", "DOCTOR", "NURSE"].includes(user.role)) {
-				roleBasedItems.push({ label: "Procedure Logs", path: "/procedure-logs", show: true, category: "Patient Care" });
-			}
-			if (["ADMIN", "PHARMACIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Products", path: "/products", show: true, category: "Inventory" });
-			}
+		const permissionBasedItems = Object.entries(menuPermissions)
+			.filter(([path, permissions]) => {
+				console.log(`Checking path: ${path}, required permissions:`, permissions);
 
-			if (["ADMIN", "NURSE", "DOCTOR", "PHARMACIST"].includes(user.role)) {
-				roleBasedItems.push({
-					label: "Product Usages",
-					path: "/product-usages",
-					show: true,
-					category: "Medication Management",
+				if (permissions.length === 0) {
+					console.log(`Path ${path} has no permissions, showing.`);
+					return true; // Always show if no permissions are required
+				}
+				if (!user) {
+					console.log(`No user logged in, hiding path ${path}.`);
+					return false; // No user, hide the item
+				}
+
+				// Check hasAuthority for EACH permission and log the result
+				const hasPermission = permissions.some((permission) => {
+					const result = hasAuthority(permission);
+					console.log(`Checking permission ${permission}, result: ${result}`);
+					return result;
 				});
-			}
-			if (["ADMIN", "NURSE", "DOCTOR"].includes(user.role)) {
-				roleBasedItems.push({ label: "Vital Signs", path: "/vital-signs", show: true, category: "Patient Care" });
-				roleBasedItems.push({ label: "Assessments", path: "/assessments", show: true, category: "Patient Care" });
-			}
-			if (["ADMIN", "DOCTOR", "RADIOLOGIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Image Reports", path: "/image-reports", show: true, category: "Diagnostics" });
-				roleBasedItems.push({ label: "Image Report Types", path: "/image-report-types", show: true, category: "Diagnostics" });
-			}
 
-			if (["ADMIN", "DOCTOR", "LAB_TECHNICIAN"].includes(user.role)) {
-				roleBasedItems.push({ label: "Lab Tests", path: "/lab-tests", show: true, category: "Diagnostics" });
-				roleBasedItems.push({ label: "Lab Results", path: "/lab-results", show: true, category: "Diagnostics" });
-			}
+				console.log(`Final decision for ${path}: ${hasPermission}`);
+				return hasPermission;
+			})
+			.map(([path, _]) => {
+				// Extract label from path (customize as needed)
+				const label = path
+					.split("/")
+					.pop()
+					.replace(/-/g, " ")
+					.replace(/^\w/, (c) => c.toUpperCase());
+				let category = "Other"; // Default category
 
-			if (user.role === "ADMIN") {
-				roleBasedItems.push({ label: "Users", path: "/users", show: true, category: "Administrative" });
-			}
-			if (user.role === "HEAD_NURSE" || user.role === "ADMIN") {
-				roleBasedItems.push({ label: "Head Nurse", path: "/head-nurse", show: true, category: "Nursing" });
-			}
-			if (user.role === "NURSE" || user.role === "ADMIN" || user.role === "HEAD_NURSE") {
-				roleBasedItems.push({ label: "Nurse", path: "/nurse", show: true, category: "Nursing" });
-			}
-			if (["ADMIN", "RECEPTIONIST"].includes(user.role)) {
-				roleBasedItems.push({ label: "Billings", path: "/billings", show: true, category: "Billing" });
-			}
-		}
+				// Categorize based on path (you can refine this)
+				if (
+					path.startsWith("/patients") ||
+					path.startsWith("/activities") ||
+					path.startsWith("/procedures") ||
+					path.startsWith("/vital-signs") ||
+					path.startsWith("/assessments") ||
+					path.startsWith("/procedure-logs")
+				) {
+					category = "Patient Management";
+				} else if (
+					path.startsWith("/units") ||
+					path.startsWith("/rooms") ||
+					path.startsWith("/beds") ||
+					path.startsWith("/admissions") ||
+					path.startsWith("/users")
+				) {
+					category = "Administration";
+				} else if (
+					path.startsWith("/medications") ||
+					path.startsWith("/prescriptions") ||
+					path.startsWith("/medication-administrations") ||
+					path.startsWith("/product-usages")
+				) {
+					category = "Medication & Orders";
+				} else if (path.startsWith("/products") || path.startsWith("/billings")) {
+					category = "Billing & Finance";
+				} else if (
+					path.startsWith("/image-reports") ||
+					path.startsWith("/image-report-types") ||
+					path.startsWith("/documents") ||
+					path.startsWith("/document-types") ||
+					path.startsWith("/lab-tests") ||
+					path.startsWith("/lab-results")
+				) {
+					category = "Diagnostics & Labs";
+				} else if (path.startsWith("/roles-permissions")) {
+					category = "Security";
+				}
 
-		return [...baseItems, ...loggedInItems, ...roleBasedItems];
-	}, [user]);
+				return { label, path, show: true, category };
+			});
+
+		return [...baseItems, ...loggedInItems, ...permissionBasedItems];
+	}, [user, hasAuthority]);
 
 	const groupedMenuItems = useMemo(() => {
 		return menuItems.reduce((acc, item) => {
@@ -189,44 +553,81 @@ const NavigationMenu = () => {
 		}, {});
 	}, [menuItems]);
 
-	return (
-		<AntMenu theme="dark" mode="inline" openKeys={openKeys} onOpenChange={onOpenChange} style={{ borderRight: 0, height: "100%" }}>
-			{Object.entries(groupedMenuItems).map(([category, items], index) => {
-				return (
-					<AntMenu.SubMenu key={index} title={category !== "General" ? category : null}>
-						{items.map((menuItem) => (
-							<AntMenu.Item key={menuItem.label} onClick={() => handleMenuItemClick(menuItem.path)}>
-								{menuItem.label}
-							</AntMenu.Item>
-						))}
-					</AntMenu.SubMenu>
-				);
-			})}
-		</AntMenu>
-	);
-};
+	// Filter menu items based on search term
+	const filteredMenuItems = useMemo(() => {
+		if (!searchTerm) {
+			return groupedMenuItems;
+		}
 
-const App = () => {
-	const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-	const [mode, setMode] = useState(prefersDarkMode ? "dark" : "light");
-	const { user } = useAuthStore();
+		const filtered = {};
+		Object.entries(groupedMenuItems).forEach(([category, items]) => {
+			const filteredItems = items.filter((item) => item.label.toLowerCase().includes(searchTerm.toLowerCase()));
+			if (filteredItems.length > 0) {
+				filtered[category] = filteredItems;
+			}
+		});
+		return filtered;
+	}, [searchTerm, groupedMenuItems]);
 
-	const toggleDarkMode = () => {
-		setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
-		document.body.classList.toggle("dark-mode");
+	const handleSearch = (value) => {
+		setSearchTerm(value);
 	};
 
 	return (
-		<ConfigProvider>
-			<Router>
-				<AppContent user={user} toggleDarkMode={toggleDarkMode} mode={mode} />
-			</Router>
-		</ConfigProvider>
+		<>
+			{isMobile ? null : (
+				<Search placeholder="Search features" onChange={(e) => handleSearch(e.target.value)} style={{ width: "100%", marginBottom: 16 }} />
+			)}
+
+			<AntMenu
+				mode={isMobile ? "vertical" : "inline"}
+				openKeys={openKeys}
+				onOpenChange={onOpenChange}
+				style={{ borderRight: 0, height: "100%" }}
+				inlineCollapsed={collapsed}>
+				{Object.entries(filteredMenuItems).map(([category, items], index) => (
+					<AntMenu.SubMenu key={index} title={category}>
+						{items.map((menuItem) => {
+							const icon = getMenuIcon(menuItem.path);
+							return (
+								<AntMenu.Item key={menuItem.label} onClick={() => handleMenuItemClick(menuItem.path)}>
+									<span style={{ display: "flex", alignItems: "center" }}>
+										{icon}
+										<span style={{ marginLeft: 8 }}>{menuItem.label}</span>
+									</span>
+								</AntMenu.Item>
+							);
+						})}
+					</AntMenu.SubMenu>
+				))}
+			</AntMenu>
+		</>
 	);
 };
 
-const AppContent = ({ user, toggleDarkMode, mode }) => {
+// Placeholder for Dashboard Cards (Replace with actual components)
+const AppContent = ({ children }) => {
+	const { user } = useAuthStore();
+	const [mobileOpen, setMobileOpen] = useState(false);
+	const [desktopOpen, setDesktopOpen] = useState(false); // Initially Collapsed
 	const location = useLocation();
+	const screens = Grid.useBreakpoint();
+	const isSmallScreen = !screens.md;
+	const [colorMode, setColorMode] = useState("light");
+	const isDarkMode = colorMode.endsWith("dark");
+	const navigate = useNavigate();
+
+	const handleDrawerToggle = () => {
+		setMobileOpen(!mobileOpen);
+	};
+
+	const handleDesktopDrawerToggle = () => {
+		setDesktopOpen(!desktopOpen);
+	};
+
+	const handleColorModeChange = (value) => {
+		setColorMode(value);
+	};
 
 	const breadcrumbItems = useMemo(() => {
 		const pathSegments = location.pathname.split("/").filter(Boolean);
@@ -234,7 +635,7 @@ const AppContent = ({ user, toggleDarkMode, mode }) => {
 			const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
 			return {
 				title: (
-					<RouterLink to={path} color="inherit">
+					<RouterLink to={path} style={{ color: "inherit" }}>
 						{segment}
 					</RouterLink>
 				),
@@ -242,32 +643,124 @@ const AppContent = ({ user, toggleDarkMode, mode }) => {
 		});
 	}, [location]);
 
-	const { Header, Content, Footer, Sider } = Layout;
+	const antDesignTheme = useMemo(() => {
+		const currentTokens = colorTokens[colorMode];
+
+		return {
+			algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
+			token: {
+				colorPrimary: currentTokens.primaryColor,
+				colorSuccess: currentTokens.successColor,
+				colorWarning: currentTokens.warningColor,
+				colorError: currentTokens.errorColor,
+				colorInfo: currentTokens.infoColor,
+				borderRadius: 6,
+			},
+		};
+	}, [colorMode, isDarkMode]);
+
+	const handleNavigation = useCallback(
+		(pageName) => {
+			// Corrected mapping of voice command to route (case-insensitive and trimmed)
+			const routeMap = {
+				login: "/login", // Lowercase keys
+				register: "/register",
+				profile: "/profile",
+				patients: "/patients",
+				activities: "/activities",
+				procedures: "/procedures",
+				"vital signs": "/vital-signs", // Include spaces
+				assessments: "/assessments",
+				"procedure logs": "/procedure-logs",
+				units: "/units",
+				rooms: "/rooms",
+				beds: "/beds",
+				admissions: "/admissions",
+				users: "/users",
+				medications: "/medications",
+				"medication history": "/medications/history",
+				prescriptions: "/prescriptions",
+				"medication administrations": "/medication-administrations",
+				"product usages": "/product-usages",
+				products: "/products",
+				billings: "/billings",
+				"image reports": "/image-reports",
+				"image report types": "/image-report-types",
+				documents: "/documents",
+				"document types": "/document-types",
+				"lab tests": "/lab-tests",
+				"lab results": "/lab-results",
+				"all features": "/all-features",
+				"roles permissions": "/roles-permissions",
+				dashboard: "/dashboard",
+				home: "/",
+			};
+
+			const normalizedPageName = pageName.toLowerCase(); // Convert to lowercase
+			const route = routeMap[normalizedPageName];
+
+			if (route) {
+				navigate(route);
+				notification.success({
+					message: "Navigating",
+					description: `Navigating to ${pageName}`,
+				});
+			} else {
+				notification.error({
+					message: "Navigation Error",
+					description: `Could not find a page named "${pageName}".`,
+				});
+			}
+		},
+		[navigate]
+	);
 
 	return (
-		<Layout style={{ minHeight: "100vh" }}>
-			<Sider theme="dark" width={250} style={{ overflow: "auto" }}>
-				<Box display="flex" flexDirection="column" alignItems="center" p={2}>
-					<img
-						src={hospitalLogo}
-						alt="Hospital Logo"
-						style={{ height: "40px", filter: "drop-shadow(0 0 4px rgba(0,0,0,0.2))", marginBottom: "10px" }}
+		<ConfigProvider theme={antDesignTheme}>
+			<Layout style={{ minHeight: "100vh" }}>
+				<StyledHeader isDarkMode={isDarkMode}>
+					<div style={{ display: "flex", alignItems: "center" }}>
+						<LogoImage src="/logo.png" alt="Logo" />
+						{!isSmallScreen && (
+							<Button
+								type="text"
+								icon={<MenuOutlined />}
+								onClick={handleDesktopDrawerToggle}
+								aria-label="Toggle Sidebar"
+								style={{ marginLeft: "-8px" }}
+							/>
+						)}
+					</div>
+
+					<Button
+						type="text"
+						icon={<MenuOutlined />}
+						onClick={handleDrawerToggle}
+						style={{ display: isSmallScreen ? "block" : "none" }}
+						aria-label="Toggle Mobile Menu"
 					/>
-					<Typography variant="h6" component="div" sx={{ fontWeight: 700, color: "white", textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>
-						Enchanted Grove Hospital
-					</Typography>
-				</Box>
-				<NavigationMenu />
-			</Sider>
-			<Layout className="site-layout">
-				<Header
-					style={{
-						padding: "0 20px",
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}>
-					<Box display="flex" alignItems="center">
+
+					<div style={{ display: "flex", alignItems: "center" }}>
+						<VoiceNavigation onNavigate={handleNavigation} /> {/* Add the component here */}
+						<Select
+							defaultValue="light"
+							style={{ width: 120, marginRight: 16 }}
+							onChange={handleColorModeChange}
+							options={[
+								{ value: "light", label: "Light" },
+								{ value: "dark", label: "Dark" },
+								{ value: "green", label: "Green" },
+								{ value: "green_dark", label: "Green Dark" },
+								{ value: "red", label: "Red" },
+								{ value: "red_dark", label: "Red Dark" },
+								{ value: "pink", label: "Pink" },
+								{ value: "pink_dark", label: "Pink Dark" },
+								{ value: "blue", label: "Blue" },
+								{ value: "blue_dark", label: "Blue Dark" },
+								{ value: "purple", label: "Purple" },
+								{ value: "purple_dark", label: "Purple Dark" },
+							]}
+						/>
 						{user && (
 							<Tooltip title={user.role} placement="bottom">
 								<Typography variant="body2" sx={{ marginRight: 2, fontWeight: 500 }}>
@@ -275,61 +768,84 @@ const AppContent = ({ user, toggleDarkMode, mode }) => {
 								</Typography>
 							</Tooltip>
 						)}
-						<AntSwitch checked={mode === "dark"} onChange={toggleDarkMode} />
-					</Box>
-				</Header>
-				<Content
-					style={{
-						margin: "16px",
-						padding: 24,
-						minHeight: 280,
-					}}>
-					{breadcrumbItems.length > 0 && (
-						<Breadcrumb style={{ marginBottom: 16 }}>
-							<Breadcrumb.Item>
-								<RouterLink to="/" color="inherit">
-									Home
-								</RouterLink>
-							</Breadcrumb.Item>
-							{breadcrumbItems.map((item, index) => (
-								<Breadcrumb.Item key={index}>{item.title}</Breadcrumb.Item>
-							))}
-						</Breadcrumb>
-					)}
-					<Routes>
-						<Route path="/" element={<Dashboard />} />
-						{appRoutes.map((route, index) => (
-							<Route key={index} path={route.path} element={route.element} />
-						))}
-						<Route
-							path="/head-nurse"
-							element={
-								<PrivateRoute>
-									<HeadNurseDashboard />
-								</PrivateRoute>
-							}
-						/>
-						<Route
-							path="/nurse"
-							element={
-								<PrivateRoute>
-									<NurseDashboard />
-								</PrivateRoute>
-							}
-						/>
-						<Route
-							path="/medications/history"
-							element={
-								<PrivateRoute roles={["ADMIN", "DOCTOR", "NURSE", "PHARMACIST"]}>
-									<MedicationHistoryList />
-								</PrivateRoute>
-							}
-						/>
-					</Routes>
-				</Content>
-				<Footer style={{ textAlign: "center" }}>© 2023 Pro Hospital. All rights reserved.</Footer>
+					</div>
+				</StyledHeader>
+				<Layout>
+					<StyledSider
+						width={250}
+						collapsed={desktopOpen}
+						onCollapse={handleDesktopDrawerToggle}
+						breakpoint="md"
+						collapsible
+						isDarkMode={isDarkMode}
+						style={{
+							display: isSmallScreen ? "none" : "block",
+						}}>
+						<NavigationMenu onClose={() => {}} isMobile={false} collapsed={desktopOpen} />
+					</StyledSider>
+					<StyledDrawer
+						title="Menu"
+						placement="left"
+						width={250}
+						onClose={handleDrawerToggle}
+						open={mobileOpen}
+						style={{
+							display: isSmallScreen ? "block" : "none",
+						}}>
+						<NavigationMenu onClose={handleDrawerToggle} isMobile={true} />
+					</StyledDrawer>
+					<Layout style={{ padding: "0" }}>
+						<AnimatedContent key={location.pathname} isDarkMode={isDarkMode}>
+							{breadcrumbItems.length > 0 && (
+								<Breadcrumb style={{ marginBottom: 16 }}>
+									<Breadcrumb.Item>
+										<RouterLink to="/" style={{ color: "inherit" }}>
+											Home
+										</RouterLink>
+									</Breadcrumb.Item>
+									{breadcrumbItems.map((item, index) => (
+										<Breadcrumb.Item key={index}>{item.title}</Breadcrumb.Item>
+									))}
+								</Breadcrumb>
+							)}
+							{children}
+						</AnimatedContent>
+						<StyledFooter isDarkMode={isDarkMode}>
+							© 2023 GMTS Hospital Model. All rights reserved. |{" "}
+							<RouterLink to="/about-us" style={{ color: "inherit" }}>
+								About Us
+							</RouterLink>
+						</StyledFooter>
+					</Layout>
+				</Layout>
 			</Layout>
-		</Layout>
+		</ConfigProvider>
+	);
+};
+
+const App = () => {
+	return (
+		<Router>
+			<AppContent>
+				<Routes>
+					<Route path="/" element={<AllFeaturesPage />} />
+					<Route path="/dashboard" element={<Dashboard />} />
+					{appRoutes.map((route, index) => (
+						<Route key={index} path={route.path} element={route.element} />
+					))}
+					<Route
+						path="/roles-permissions"
+						element={
+							<PrivateRoute permissions={["MANAGE_PERMISSIONS", "MANAGE_ROLES"]}>
+								<RoleAndPermissionManagement />
+							</PrivateRoute>
+						}
+					/>
+					<Route path="/all-features" element={<AllFeaturesPage />} />
+					<Route path="/about-us" element={<AboutUs />} />
+				</Routes>
+			</AppContent>
+		</Router>
 	);
 };
 

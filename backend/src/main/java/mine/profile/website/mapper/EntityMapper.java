@@ -22,7 +22,6 @@ import mine.profile.website.dtos.ProcedureDTO;
 import mine.profile.website.dtos.ProcedureLogDTO;
 import mine.profile.website.dtos.RoomDTO;
 import mine.profile.website.dtos.UnitDTO;
-import mine.profile.website.dtos.UserDTO;
 import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.models.Admission;
 import mine.profile.website.models.Appointment;
@@ -39,7 +38,6 @@ import mine.profile.website.models.Payment;
 import mine.profile.website.models.Prescription;
 import mine.profile.website.models.Procedure;
 import mine.profile.website.models.ProcedureLog;
-import mine.profile.website.models.Role;
 import mine.profile.website.models.Room;
 import mine.profile.website.models.Unit;
 import mine.profile.website.models.User;
@@ -741,49 +739,49 @@ public class EntityMapper {
     }
 
     // -------------------- User Mapping --------------------
-    public UserDTO toDto(User user) {
-        if (user == null) {
-            return null;
-        }
-        UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setPassword(user.getPassword());
-        dto.setRole(user.getRole().toString());
-        dto.setFirstName(user.getFirstName());
-        dto.setLastName(user.getLastName());
-        dto.setSpecialty(user.getSpecialty());
-        if (user.getUnits() != null) {
-            dto.setUnitIds(user.getUnits().stream().map(Unit::getId).collect(Collectors.toList()));
-        }
-        return dto;
-    }
+    // public UserDTO toDto(User user) {
+    // if (user == null) {
+    // return null;
+    // }
+    // UserDTO dto = new UserDTO();
+    // dto.setId(user.getId());
+    // dto.setUsername(user.getUsername());
+    // dto.setPassword(user.getPassword());
+    // dto.setRole(user.getRole().toString());
+    // dto.setFirstName(user.getFirstName());
+    // dto.setLastName(user.getLastName());
+    // dto.setSpecialty(user.getSpecialty());
+    // if (user.getUnits() != null) {
+    // dto.setUnitIds(user.getUnits().stream().map(Unit::getId).collect(Collectors.toList()));
+    // }
+    // return dto;
+    // }
 
-    public User toEntity(UserDTO dto) {
-        if (dto == null) {
-            return null;
-        }
-        User entity = new User();
-        entity.setId(dto.getId());
-        entity.setUsername(dto.getUsername());
-        entity.setPassword(dto.getPassword());
-        if (dto.getRole() != null) {
-            entity.setRole(Role.valueOf(dto.getRole()));
-        }
-        entity.setFirstName(dto.getFirstName());
-        entity.setLastName(dto.getLastName());
-        entity.setSpecialty(dto.getSpecialty());
-        return entity;
-    }
+    // public User toEntity(UserDTO dto) {
+    // if (dto == null) {
+    // return null;
+    // }
+    // User entity = new User();
+    // entity.setId(dto.getId());
+    // entity.setUsername(dto.getUsername());
+    // entity.setPassword(dto.getPassword());
+    // if (dto.getRole() != null) {
+    // entity.setRole(Role.valueOf(dto.getRole()));
+    // }
+    // entity.setFirstName(dto.getFirstName());
+    // entity.setLastName(dto.getLastName());
+    // entity.setSpecialty(dto.getSpecialty());
+    // return entity;
+    // }
 
-    public List<UserDTO> toUserDtoList(List<User> users) {
-        if (users == null) {
-            return new ArrayList<>();
-        }
-        return users.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
+    // public List<UserDTO> toUserDtoList(List<User> users) {
+    // if (users == null) {
+    // return new ArrayList<>();
+    // }
+    // return users.stream()
+    // .map(this::toDto)
+    // .collect(Collectors.toList());
+    // }
 
     // -------------------- VitalSign Mapping --------------------
     public VitalSignDTO toDto(VitalSign vitalSign) {

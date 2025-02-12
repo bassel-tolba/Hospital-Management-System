@@ -40,6 +40,30 @@ export const usePrescriptionStore = create((set, get) => ({
 			throw error;
 		}
 	},
+	updatePrescription: async (prescriptionId, prescriptionData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${PRESCRIPTION_API_BASE_URL}/${prescriptionId}`, prescriptionData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Prescription updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update prescription: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
 
 	getPrescriptionById: async (prescriptionId) => {
 		set({ loading: true, error: null });

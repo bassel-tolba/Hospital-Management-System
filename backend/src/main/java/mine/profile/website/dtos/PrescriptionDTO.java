@@ -1,5 +1,6 @@
 package mine.profile.website.dtos;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +21,9 @@ public class PrescriptionDTO {
     private String note;
     private Long patientId;
     private String patientName;
+    private Integer validityDays;
+
+    private LocalDate expirationDate;
     private List<PrescribedMedicationDTO> prescribedMedications;
 
     public static PrescriptionDTO toDto(Prescription prescription) {
@@ -34,6 +38,8 @@ public class PrescriptionDTO {
         dto.setPrescriptionDate(prescription.getPrescriptionDate());
         dto.setNote(prescription.getNote());
         dto.setPatientId(prescription.getPatient().getId());
+        dto.setValidityDays(prescription.getValidityDays());
+        dto.setExpirationDate(prescription.getExpirationDate());
         dto.setPrescribedMedications(prescription.getPrescribedMedications().stream()
                 .map(PrescribedMedicationDTO::toDto).collect(Collectors.toList()));
         return dto;
@@ -48,6 +54,7 @@ public class PrescriptionDTO {
         entity.setPrescriptionDate(dto.getPrescriptionDate());
         entity.setNote(dto.getNote());
         entity.setPatient(patient);
+        entity.setValidityDays(dto.getValidityDays());
         return entity;
     }
 }

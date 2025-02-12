@@ -18,7 +18,7 @@ import mine.profile.website.dtos.RoomDTO;
 import mine.profile.website.service.RoomService;
 
 @RestController
-@RequestMapping("/rooms")
+@RequestMapping("/api/rooms")
 public class RoomController {
 
     @Autowired

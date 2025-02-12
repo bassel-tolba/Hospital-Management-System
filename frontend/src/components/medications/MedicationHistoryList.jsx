@@ -72,7 +72,7 @@ const MedicationHistoryList = () => {
 		<div style={{ padding: 20 }}>
 			<Title level={2}>Medication History</Title>
 			<Space style={{ marginBottom: 16 }}>
-				<Button type="primary" onClick={handleBackToMedicationList}>
+				<Button type="default" onClick={handleBackToMedicationList}>
 					Back to Medication List
 				</Button>
 			</Space>

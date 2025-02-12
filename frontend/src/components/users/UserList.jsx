@@ -1,13 +1,17 @@
+// frontend/src/components/User/UserList.js
 import React, { useState, useEffect, useCallback } from "react";
-import { Table, Input, Button, Space, Typography, notification, Form, Select } from "antd";
+import { Table, Input, Button, Space, Typography, notification, Form, Select, Avatar } from "antd"; // Import Avatar
 import { useUserStore } from "../../services/user.service";
 import { useUnitStore } from "../../services/unit.service";
 import { usePatientStore } from "../../services/patient.service";
+import { useRoleStore } from "../../services/role.service";
+import { useAuthStore } from "../../services/auth.service";
 import { SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import UserFormModal from "./UserFormModal";
-import debounce from "lodash/debounce"; // Import debounce
+import debounce from "lodash/debounce";
 
 const { Title } = Typography;
+const { Option } = Select;
 
 const UserList = () => {
 	const {
@@ -18,68 +22,73 @@ const UserList = () => {
 		deleteUser,
 		updateUser,
 		clearError,
-		setLoading,
 		getUsersByRole,
 		currentUser,
 		getCurrentUser,
 		updateUserPatients,
 		updateUserRooms,
 		updateUserUnits,
+		createUser,
 	} = useUserStore();
+	const { hasAuthority } = useAuthStore();
 	const { units, fetchAllUnits, loading: unitLoading } = useUnitStore();
 	const { patients, searchPatients, loading: patientLoading } = usePatientStore();
+	const { roles, fetchAllRoles, loading: rolesLoading } = useRoleStore(); // Get roles and loading state
 
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [form] = Form.useForm();
-	const [page, setPage] = useState(0);
+	const [page, setPage] = useState(1);
 	const [size, setSize] = useState(10);
 	const [searchParams, setSearchParams] = useState({});
 	const [searchTerm, setSearchTerm] = useState("");
-	const [roleFilter, setRoleFilter] = useState("");
+	const [roleFilter, setRoleFilter] = useState(null);
 
 	useEffect(() => {
 		fetchAllUnits();
+		fetchAllRoles();
 		getCurrentUser();
-	}, [fetchAllUnits, getCurrentUser]);
+	}, [fetchAllUnits, getCurrentUser, fetchAllRoles]);
 
 	useEffect(() => {
 		fetchUsers();
-	}, [page, size, searchParams, roleFilter, getUsersByRole, searchUsers]); // added getUsersByRole and searchUsers to the dependency array
+	}, [page, size, searchParams, roleFilter]);
 
 	const fetchUsers = async () => {
-		setLoading(true);
+		clearError();
 		try {
 			if (roleFilter) {
 				await getUsersByRole(roleFilter);
 			} else {
-				await searchUsers({ ...searchParams, page, size });
+				// Always pass page and size for consistent pagination
+				await searchUsers({ ...searchParams, page: page - 1, size });
 			}
 		} catch (error) {
 			console.error("Error fetching users:", error);
-			notification.error({
-				message: "Error",
-				description: `Failed to load users : ${error.message}`,
-			});
-			clearError();
-		} finally {
-			setLoading(false);
+			// Error handling is delegated to the service
 		}
 	};
-
+	const transformImageUrl = (url) => {
+		if (!url) return null;
+		let fileUrl = url;
+		if (fileUrl.startsWith(".")) {
+			fileUrl = fileUrl.substring(1);
+		}
+		return `http://localhost:8080${fileUrl}`;
+	};
 	const showModal = (user) => {
 		setSelectedUser(user);
 		if (user) {
 			form.setFieldsValue({
 				...user,
-				unitIds: user.unitIds,
-				roomIds: user.roomIds,
-				patientIds: user.patientIds,
+				roleId: user.roleId,
+				unitIds: user.unitIds || [], // Ensure arrays
+				roomIds: user.roomIds || [], // Ensure arrays
+				patientIds: user.patientIds || [], // Ensure arrays
 			});
 		} else {
 			form.resetFields();
 		}
-
 		setIsModalVisible(true);
 	};
 
@@ -90,31 +99,48 @@ const UserList = () => {
 	};
 	const handleRoleChange = (value) => {
 		setRoleFilter(value);
-		setPage(0);
+		setPage(1); // Reset to first page when changing role filter
 	};
 
 	const handleFormSubmit = async () => {
 		try {
 			const values = await form.validateFields();
+			const { unitIds, roomIds, patientIds, profilePicture, ...coreUserData } = values;
 
-			// Prepare the core user data for the /api/users/{id} update endpoint
-			const { unitIds, roomIds, patientIds, ...coreUserData } = values;
+			let removedProfilePictureUrl = null;
+			if (selectedUser && selectedUser.profilePictureURL && !profilePicture) {
+				removedProfilePictureUrl = selectedUser.profilePictureURL;
+			}
+
+			let updatedUser;
 
 			if (selectedUser) {
-				// Call the unit, room and patient endpoints first
-				if (unitIds && unitIds.length > 0) {
-					await updateUserUnits(selectedUser.id, unitIds);
+				if (!hasAuthority("UPDATE_USER")) {
+					notification.error({ message: "Error", description: "You do not have permission to update users." });
+					return;
 				}
-				if (roomIds && roomIds.length > 0) {
-					await updateUserRooms(selectedUser.id, roomIds);
+				// Update core user data
+				updatedUser = await updateUser(selectedUser.id, coreUserData, profilePicture, removedProfilePictureUrl);
+			} else {
+				if (!hasAuthority("CREATE_USER")) {
+					notification.error({ message: "Error", description: "You do not have permission to create users." });
+					return;
 				}
-				if (patientIds && patientIds.length > 0) {
-					await updateUserPatients(selectedUser.id, patientIds);
-				}
-
-				// Call the core user update endpoint with only the core user data
-				await updateUser(selectedUser.id, coreUserData);
+				// Create user, and get the created user's ID.
+				updatedUser = await createUser(coreUserData, profilePicture);
 			}
+
+			// Update related entities only if the arrays are not empty, and *after* core user creation/update
+			if (unitIds && unitIds.length > 0) {
+				await updateUserUnits(updatedUser.id, unitIds);
+			}
+			if (roomIds && roomIds.length > 0) {
+				await updateUserRooms(updatedUser.id, roomIds);
+			}
+			if (patientIds && patientIds.length > 0) {
+				await updateUserPatients(updatedUser.id, patientIds);
+			}
+
 			fetchUsers();
 			setIsModalVisible(false);
 			form.resetFields();
@@ -123,54 +149,65 @@ const UserList = () => {
 			console.error("Error in handle form submit", error);
 			notification.error({
 				message: "Error",
-				description: `Failed to update user: ${error.message}`,
+				description: `Failed to ${selectedUser ? "update" : "create"} user: ${error.message}`,
 			});
 		}
 	};
 
 	const handleDelete = async (userId) => {
+		if (!hasAuthority("DELETE_USER")) {
+			notification.error({ message: "Error", description: "You do not have permission to delete users." });
+			return; // Prevent the delete
+		}
 		try {
 			await deleteUser(userId);
 			fetchUsers();
 		} catch (error) {
 			console.error("Error deleting user:", error);
-			notification.error({
-				message: "Error",
-				description: `Failed to delete user: ${error.message}`,
-			});
 		}
 	};
 
 	const handleTableChange = (pagination) => {
-		setPage(pagination.current - 1);
+		setPage(pagination.current);
 		setSize(pagination.pageSize);
 	};
 
 	const handleSearch = useCallback(
 		debounce((value) => {
 			setSearchParams({ search: value });
-			setPage(0);
+			setPage(1); // Reset to the first page on new search
 		}, 500),
-		[setSearchParams, setPage] // Added setPage and setSearchParams to the dependency array
+		[]
 	);
-
 	const handleInputChange = (e) => {
 		const { value } = e.target;
-		setSearchTerm(value);
-		handleSearch(value);
+		setSearchTerm(value); // Update local search term state
+		handleSearch(value); // Call debounced search
 	};
 
 	const columns = [
+		// New column for profile picture
+		{
+			title: "Profile Picture",
+			dataIndex: "profilePictureURL",
+			key: "profilePictureURL",
+			render: (text, record) => (
+				<Avatar
+					size={40}
+					src={record.profilePictureURL ? transformImageUrl(record.profilePictureURL) : null}
+					style={{ objectFit: "cover", border: "2px solid #ddd", borderColor: "snow" }}
+				/>
+			),
+		},
 		{
 			title: "Username",
 			dataIndex: "username",
 			key: "username",
 		},
-
 		{
 			title: "Role",
-			dataIndex: "role",
-			key: "role",
+			dataIndex: "roleName",
+			key: "roleName",
 		},
 		{
 			title: "First Name",
@@ -192,12 +229,18 @@ const UserList = () => {
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-						Delete
-					</Button>
+					{/* Edit button - only shown if the user has UPDATE_USER permission */}
+					{hasAuthority("UPDATE_USER") && (
+						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+							Edit
+						</Button>
+					)}
+					{/* Delete button - only shown if the user has DELETE_USER permission */}
+					{hasAuthority("DELETE_USER") && (
+						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+							Delete
+						</Button>
+					)}
 				</Space>
 			),
 		},
@@ -206,16 +249,34 @@ const UserList = () => {
 	return (
 		<div style={{ padding: 20 }}>
 			<Title level={2}>User List</Title>
-			<Space style={{ marginBottom: 16 }}>
-				<Input.Search placeholder="Search by username, role..." onChange={handleInputChange} style={{ width: 300 }} />
-				<Select placeholder="Filter by Role" style={{ width: 150 }} onChange={handleRoleChange} allowClear>
-					<Select.Option value="ADMIN">Admin</Select.Option>
-					<Select.Option value="NURSE">Nurse</Select.Option>
-					<Select.Option value="DOCTOR">Doctor</Select.Option>
-					<Select.Option value="PATIENT">Patient</Select.Option>
-					<Select.Option value="RECEPTIONIST">Receptionist</Select.Option>
-					<Select.Option value="PHARMACIST">Pharmacist</Select.Option>
-				</Select>
+			<Space style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", width: "100%" }}>
+				<Input.Search
+					placeholder="Search by username, role..."
+					onChange={handleInputChange}
+					style={{ width: 300 }}
+					value={searchTerm} // Controlled input
+				/>
+				<Space>
+					<Select
+						placeholder="Filter by Role"
+						style={{ width: 150 }}
+						onChange={handleRoleChange}
+						allowClear
+						loading={rolesLoading} // Show loading indicator
+					>
+						{roles.map((role) => (
+							<Option key={role.id} value={role.id}>
+								{role.name}
+							</Option>
+						))}
+					</Select>
+					{/* Create User button */}
+					{hasAuthority("CREATE_USER") && (
+						<Button type="default" onClick={() => showModal(null)}>
+							Add User
+						</Button>
+					)}
+				</Space>
 			</Space>
 
 			<Table
@@ -224,18 +285,20 @@ const UserList = () => {
 				loading={loading}
 				rowKey="id"
 				pagination={{
-					current: page + 1,
+					current: page, // Use Ant Design's current directly
 					pageSize: size,
 					total: total,
-					onChange: handleTableChange,
+					onChange: handleTableChange, // Simplified change handler
+					showSizeChanger: true,
 				}}
 			/>
+
 			<UserFormModal
 				isVisible={isModalVisible}
 				onCancel={handleCancel}
 				onSubmit={handleFormSubmit}
 				form={form}
-				loading={unitLoading || patientLoading}
+				loading={unitLoading || patientLoading || rolesLoading}
 				selectedUser={selectedUser}
 				currentUser={currentUser}
 			/>

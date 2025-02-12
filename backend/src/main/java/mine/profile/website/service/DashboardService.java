@@ -28,7 +28,6 @@ import mine.profile.website.repository.ImageReportRepository;
 import mine.profile.website.repository.LabResultRepository;
 import mine.profile.website.repository.MedicationAdministrationRepository;
 import mine.profile.website.repository.MedicationRepository;
-import mine.profile.website.repository.NurseActivityRepository;
 import mine.profile.website.repository.PatientProductUsageRepository;
 import mine.profile.website.repository.PatientRepository;
 import mine.profile.website.repository.PaymentRepository;
@@ -49,7 +48,6 @@ public class DashboardService {
     private final ProcedureLogRepository procedureLogRepository;
     private final AppointmentRepository appointmentRepository;
     private final VitalSignRepository vitalSignRepository;
-    private final NurseActivityRepository nurseActivityRepository;
     private final LabResultRepository labResultRepository;
     private final BedRepository bedRepository;
     private final ProductRepository productRepository;
@@ -285,7 +283,6 @@ public class DashboardService {
 
             managerialData.put("totalRevenue", calculateTotalRevenue());
             managerialData.put("pendingBills", calculatePendingBills());
-            managerialData.put("staffToPatientRatio", calculateStaffToPatientRatio());
 
             // Calculate total open admissions
             long openAdmissions = admissionRepository.findAll().stream()
@@ -335,13 +332,6 @@ public class DashboardService {
             dailyPayments.put(date.toString(), dailyTotal);
         }
         return dailyPayments;
-    }
-
-    private double calculateStaffToPatientRatio() {
-        long totalNursesAndDoctors = userRepository.findByRole(mine.profile.website.models.Role.NURSE).size()
-                + userRepository.findByRole(mine.profile.website.models.Role.DOCTOR).size();
-        long totalPatients = patientRepository.count();
-        return totalPatients > 0 ? (double) totalNursesAndDoctors / totalPatients : 0.0;
     }
 
     private List<Map<String, Object>> calculatePendingBills() {

@@ -27,10 +27,18 @@ const LabTestTableBuilder = ({ onTableChange, initialTableData }) => {
 	}, [initialTableData]);
 
 	const addHeader = () => {
-		if (newHeaderName.trim() !== "") {
-			setHeaders([...headers, { key: uuidv4(), name: newHeaderName.trim() }]);
-			setNewHeaderName("");
+		const trimmedNewHeaderName = newHeaderName.trim();
+		if (trimmedNewHeaderName === "") {
+			message.error("Header name cannot be empty.");
+			return;
 		}
+		if (headers.some((header) => header.name === trimmedNewHeaderName)) {
+			message.error("Header name must be unique.");
+			return;
+		}
+
+		setHeaders([...headers, { key: uuidv4(), name: trimmedNewHeaderName }]);
+		setNewHeaderName("");
 	};
 
 	const addRow = () => {
@@ -45,11 +53,21 @@ const LabTestTableBuilder = ({ onTableChange, initialTableData }) => {
 		setRows([...rows, newRow]);
 		setNewRowData({});
 	};
+
 	const handleHeaderChange = (key, value) => {
+		const trimmedValue = value.trim();
+		if (trimmedValue === "") {
+			message.error("Header name cannot be empty.");
+			return;
+		}
+		if (headers.some((header) => header.key !== key && header.name === trimmedValue)) {
+			message.error("Header name must be unique.");
+			return;
+		}
 		setHeaders((prevHeaders) => {
 			return prevHeaders.map((header) => {
 				if (header.key === key) {
-					return { ...header, name: value };
+					return { ...header, name: trimmedValue };
 				}
 				return header;
 			});
@@ -57,13 +75,14 @@ const LabTestTableBuilder = ({ onTableChange, initialTableData }) => {
 		setRows((prevRows) => {
 			return prevRows.map((row) => {
 				const newRow = { ...row };
-				delete Object.assign(newRow, { [value]: newRow[headers.find((header) => header.key === key).name] })[
+				delete Object.assign(newRow, { [trimmedValue]: newRow[headers.find((header) => header.key === key).name] })[
 					headers.find((header) => header.key === key).name
 				];
 				return newRow;
 			});
 		});
 	};
+
 	const handleRowChange = (key, header, value) => {
 		setRows((prevRows) => {
 			return prevRows.map((row) => {
@@ -135,7 +154,7 @@ const LabTestTableBuilder = ({ onTableChange, initialTableData }) => {
 							onChange={(e) => setNewHeaderName(e.target.value)}
 							style={{ width: 200 }}
 						/>
-						<Button type="primary" onClick={addHeader}>
+						<Button type="default" onClick={addHeader}>
 							Add Header
 						</Button>
 					</div>
@@ -152,13 +171,13 @@ const LabTestTableBuilder = ({ onTableChange, initialTableData }) => {
 									/>
 								);
 							})}
-							<Button type="primary" onClick={addRow}>
+							<Button type="default" onClick={addRow}>
 								Add Row
 							</Button>
 						</div>
 					)}
 					<Table bordered columns={columns} dataSource={rows} loading={loading} />
-					<Button type="primary" onClick={handleGenerateJSON}>
+					<Button type="default" onClick={handleGenerateJSON}>
 						Generate JSON
 					</Button>
 				</Space>

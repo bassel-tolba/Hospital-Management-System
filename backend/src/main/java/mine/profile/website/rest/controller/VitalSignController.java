@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.VitalSignService;
 
@@ -24,10 +25,8 @@ public class VitalSignController {
     @Autowired
     private VitalSignService vitalSignService;
 
-    // -----------VitalSignService-----------//
-
     @PostMapping
-    public ResponseEntity<VitalSignDTO> createVitalSign(@RequestBody VitalSignDTO vitalSignDTO) {
+    public ResponseEntity<VitalSignDTO> createVitalSign(@Valid @RequestBody VitalSignDTO vitalSignDTO) {
         return new ResponseEntity<>(vitalSignService.createVitalSign(vitalSignDTO), HttpStatus.CREATED);
     }
 
@@ -43,7 +42,8 @@ public class VitalSignController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<VitalSignDTO> updateVitalSign(@PathVariable Long id, @RequestBody VitalSignDTO vitalSignDTO) {
+    public ResponseEntity<VitalSignDTO> updateVitalSign(@PathVariable Long id,
+            @Valid @RequestBody VitalSignDTO vitalSignDTO) {
         return ResponseEntity.ok(vitalSignService.updateVitalSign(id, vitalSignDTO));
     }
 

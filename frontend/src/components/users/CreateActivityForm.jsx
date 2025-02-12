@@ -1,19 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-	TextField,
-	Button,
-	Select,
-	MenuItem,
-	FormControl,
-	InputLabel,
-	Box,
-	CircularProgress,
-	Autocomplete,
-	IconButton,
-	InputAdornment,
-	Typography,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import React, { useEffect } from "react";
+import { Form, Input, Select, Button, Spin, Typography, notification, Space, AutoComplete } from "antd";
 import { useActivityStore } from "../../services/activity.service";
 import { usePatientStore } from "../../services/patient.service";
 import { useUnitStore } from "../../services/unit.service";
@@ -21,7 +7,10 @@ import { useRoomStore } from "../../services/room.service";
 import { useLabStore } from "../../services/lab.service";
 import { useImageReportTypeStore } from "../../services/imageReportType.service";
 
+const { Option } = Select;
+
 const CreateActivityForm = ({ onActivityCreated }) => {
+	const [form] = Form.useForm();
 	const { createActivity, loading, error, clearError } = useActivityStore();
 	const { patients, searchPatients, loading: patientLoading } = usePatientStore();
 	const { units, fetchAllUnits, loading: unitLoading } = useUnitStore();
@@ -29,443 +18,174 @@ const CreateActivityForm = ({ onActivityCreated }) => {
 	const { labTests, fetchLabTests, loading: labLoading } = useLabStore();
 	const { imageReportTypes, fetchImageReportTypes, loading: imageReportLoading } = useImageReportTypeStore();
 
-	const [formData, setFormData] = useState({
-		activityType: "",
-		description: "",
-		roomId: null,
-		unitId: null,
-		patientIds: [],
-		state: "pending",
-	});
-
-	const [selectedRoom, setSelectedRoom] = useState(null);
-	const [selectedUnit, setSelectedUnit] = useState(null);
-	const [selectedPatients, setSelectedPatients] = useState([]);
-	const [patientSearchTerm, setPatientSearchTerm] = useState("");
-	const [filteredRooms, setFilteredRooms] = useState([]);
-	const [selectedLabTest, setSelectedLabTest] = useState(null);
-	const [selectedImageReportType, setSelectedImageReportType] = useState(null);
-	// const [filteredUnits, setFilteredUnits] = useState([]); // No longer needed
-	// const [unitError, setUnitError] = useState(null); //No longer needed
-
 	useEffect(() => {
 		fetchAllUnits();
 	}, [fetchAllUnits]);
 
 	useEffect(() => {
-		if (!units) return;
-		let autoSelectedUnit = null;
-
-		if (formData.activityType === "LAB_TEST") {
-			const labUnit = units.find((unit) => unit.name === "LABORATORY");
-			autoSelectedUnit = labUnit ? labUnit.id : null;
-		} else if (formData.activityType === "IMAGE_REPORT") {
-			const radiologyUnit = units.find((unit) => unit.name === "RADIOLOGY");
-			autoSelectedUnit = radiologyUnit ? radiologyUnit.id : null;
-		}
-
-		if (autoSelectedUnit) {
-			setSelectedUnit(autoSelectedUnit);
-		} else {
-			setSelectedUnit(null);
-		}
-	}, [units, formData.activityType]);
-
-	useEffect(() => {
-		const fetchRooms = async () => {
-			if (selectedUnit) {
-				try {
-					const response = await searchRooms({ unitId: selectedUnit });
-					setFilteredRooms(response.content || []);
-				} catch (error) {
-					console.error("Error fetching rooms:", error);
-					setFilteredRooms([]);
-				}
-			} else {
-				setFilteredRooms([]);
+		const fetchDependentData = async () => {
+			const activityType = form.getFieldValue("activityType");
+			if (activityType === "LAB_TEST") {
+				await fetchLabTests();
+				const labUnit = units?.find((unit) => unit.name === "LABORATORY")?.id;
+				form.setFieldsValue({ unitId: labUnit });
+			} else if (activityType === "IMAGE_REPORT") {
+				await fetchImageReportTypes(0, 10000);
+				const radiologyUnit = units?.find((unit) => unit.name === "RADIOLOGY")?.id;
+				form.setFieldsValue({ unitId: radiologyUnit });
 			}
 		};
-		fetchRooms();
-	}, [selectedUnit, searchRooms]);
+		fetchDependentData();
+	}, [form, units, fetchLabTests, fetchImageReportTypes]);
 
-	const handleSearch = async () => {
-		if (patientSearchTerm) {
-			await searchPatients({ searchTerm: patientSearchTerm });
-		}
-	};
-
-	const handleSearchKeyDown = (event) => {
-		if (event.key === "Enter") {
-			handleSearch();
-		}
-	};
-
-	const handleSearchChange = (event) => {
-		setPatientSearchTerm(event.target.value);
-	};
-
-	useEffect(() => {
-		if (selectedRoom) {
-			setFormData((prevData) => ({
-				...prevData,
-				roomId: selectedRoom,
-			}));
+	const handleUnitChange = async (unitId) => {
+		if (unitId) {
+			const response = await searchRooms({ unitId });
+			form.setFieldsValue({ roomId: null });
+			form.setFieldsValue({ filteredRooms: response.content });
 		} else {
-			setFormData((prevData) => ({
-				...prevData,
-				roomId: null,
-			}));
-		}
-	}, [selectedRoom]);
-
-	useEffect(() => {
-		if (selectedUnit) {
-			setFormData((prevData) => ({
-				...prevData,
-				unitId: selectedUnit,
-			}));
-		} else {
-			setFormData((prevData) => ({
-				...prevData,
-				unitId: null,
-			}));
-		}
-	}, [selectedUnit]);
-
-	const handleInputChange = (e) => {
-		const { name, value } = e.target;
-
-		if (name === "activityType") {
-			// Reset selected lab test/image report
-			if (value !== "LAB_TEST") setSelectedLabTest(null);
-			if (value !== "IMAGE_REPORT") setSelectedImageReportType(null);
-
-			// Auto-select the unit
-			let autoSelectedUnit = null;
-
-			if (value === "LAB_TEST") {
-				const labUnit = units.find((unit) => unit.name === "LABORATORY");
-				autoSelectedUnit = labUnit ? labUnit.id : null;
-			} else if (value === "IMAGE_REPORT") {
-				const radiologyUnit = units.find((unit) => unit.name === "RADIOLOGY");
-				autoSelectedUnit = radiologyUnit ? radiologyUnit.id : null;
-			}
-
-			setSelectedUnit(autoSelectedUnit);
-		}
-		setFormData((prevData) => ({
-			...prevData,
-			[name]: value,
-		}));
-	};
-
-	const handlePatientSelect = (event, value) => {
-		setSelectedPatients(value);
-		setFormData((prevData) => ({
-			...prevData,
-			patientIds: value.map((patient) => patient.id),
-		}));
-	};
-
-	const handleRoomChange = (event) => {
-		setSelectedRoom(event.target.value);
-	};
-
-	const handleUnitChange = (event) => {
-		setSelectedUnit(event.target.value);
-	};
-
-	const handleLabTestChange = (event, value) => {
-		setSelectedLabTest(value);
-		if (value) {
-			setFormData((prevData) => ({
-				...prevData,
-				description: value.testName,
-			}));
-		} else {
-			setFormData((prevData) => ({
-				...prevData,
-				description: "",
-			}));
+			form.setFieldsValue({ roomId: null });
+			form.setFieldsValue({ filteredRooms: [] });
 		}
 	};
 
-	const handleImageReportTypeChange = (event, value) => {
-		setSelectedImageReportType(value);
-		if (value) {
-			setFormData((prevData) => ({
-				...prevData,
-				description: value.name,
-			}));
-		} else {
-			setFormData((prevData) => ({
-				...prevData,
-				description: "",
-			}));
-		}
+	const handlePatientSearch = async (value) => {
+		await searchPatients({ searchTerm: value });
 	};
 
-	useEffect(() => {
-		if (formData.activityType === "LAB_TEST") {
-			fetchLabTests();
-		}
-		if (formData.activityType === "IMAGE_REPORT") {
-			fetchImageReportTypes(0, 10000); // Fetch all image report types
-		}
-	}, [formData.activityType, fetchLabTests, fetchImageReportTypes]);
+	const handleLabTestSelect = (value, option) => {
+		form.setFieldsValue({ description: option?.test?.testName, labTestId: option?.test?.id, imageReportTypeId: null });
+	};
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
+	const handleImageReportTypeSelect = (value, option) => {
+		form.setFieldsValue({ description: option?.type?.name, imageReportTypeId: option?.type?.id, labTestId: null });
+	};
+
+	const handleSubmit = async (values) => {
 		try {
-			await createActivity(formData);
-			setFormData({
-				activityType: "",
-				description: "",
-				roomId: null,
-				unitId: null,
-				patientIds: [],
-				state: "pending",
-			});
-			setSelectedRoom(null);
-			setSelectedUnit(null);
-			setSelectedPatients([]);
-			setSelectedLabTest(null);
-			setSelectedImageReportType(null);
-			setPatientSearchTerm("");
-			//	setUnitError(null); No longer needed
-
-			// Call the callback to refresh the list
+			await createActivity({ ...values, state: "pending" });
+			form.resetFields();
 			onActivityCreated();
 		} catch (err) {
 			console.error("Failed to create activity", err);
+			notification.error({
+				message: "Error",
+				description: `Failed to create activity: ${error}`,
+			});
 		}
 	};
 
 	if (loading || patientLoading || unitLoading || roomLoading || labLoading || imageReportLoading) {
 		return (
-			<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100px" }}>
-				<CircularProgress size={30} />
-			</Box>
+			<div style={{ textAlign: "center", padding: 20 }}>
+				<Spin />
+			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<Box sx={{ color: "red", mb: 1 }}>
-				Error: {error}
+			<Space>
+				<Typography.Text type="danger">Error: {error}</Typography.Text>
 				<Button size="small" onClick={clearError}>
 					Clear Error
 				</Button>
-			</Box>
+			</Space>
 		);
 	}
+	const patientOptions = patients.map((patient) => ({
+		value: patient.id,
+		label: `${patient.firstName} ${patient.lastName}`,
+	}));
+	const labTestOptions = labTests?.map((test) => ({
+		value: test.testName,
+		label: test.testName,
+		test,
+	}));
+	const imageReportTypeOptions = imageReportTypes?.map((type) => ({
+		value: type.name,
+		label: type.name,
+		type,
+	}));
 
 	return (
-		<Box sx={{ margin: "0 auto" }}>
-			<form onSubmit={handleSubmit}>
-				<Box mb={1}>
-					<FormControl fullWidth size="small">
-						<InputLabel id="activity-type-label" sx={{ fontSize: "0.9rem" }}>
-							Activity Type
-						</InputLabel>
-						<Select
-							labelId="activity-type-label"
-							id="activityType"
-							name="activityType"
-							value={formData.activityType}
-							onChange={handleInputChange}
-							required
-							sx={{ fontSize: "0.9rem" }}>
-							<MenuItem value="LAB_TEST" sx={{ fontSize: "0.9rem" }}>
-								Lab Test
-							</MenuItem>
-							<MenuItem value="IMAGE_REPORT" sx={{ fontSize: "0.9rem" }}>
-								Image Report
-							</MenuItem>
-							<MenuItem value="VITAL_SIGNS" sx={{ fontSize: "0.9rem" }}>
-								Vital Signs
-							</MenuItem>
-							<MenuItem value="MEDICATION_ADMINISTRATION" sx={{ fontSize: "0.9rem" }}>
-								Medication Administration
-							</MenuItem>
-							<MenuItem value="ASSESSMENT" sx={{ fontSize: "0.9rem" }}>
-								Assessment
-							</MenuItem>
-							<MenuItem value="PRODUCT" sx={{ fontSize: "0.9rem" }}>
-								Product
-							</MenuItem>
-						</Select>
-					</FormControl>
-				</Box>
+		<Form form={form} layout="vertical" onFinish={handleSubmit}>
+			<Form.Item name="activityType" label="Activity Type" rules={[{ required: true }]}>
+				<Select
+					onChange={() => {
+						form.setFieldsValue({ description: "", labTestId: null, imageReportTypeId: null });
+						form.setFieldsValue({ unitId: null, roomId: null });
+					}}>
+					<Option value="LAB_TEST">Lab Test</Option>
+					<Option value="IMAGE_REPORT">Image Report</Option>
+					<Option value="VITAL_SIGNS">Vital Signs</Option>
+					<Option value="MEDICATION_ADMINISTRATION">Medication Administration</Option>
+					<Option value="ASSESSMENT">Assessment</Option>
+					<Option value="PRODUCT">Product</Option>
+				</Select>
+			</Form.Item>
 
-				{formData.activityType === "LAB_TEST" && (
-					<Box mb={1}>
-						<FormControl fullWidth size="small">
-							<Autocomplete
-								size="small"
-								filterOptions={(options, state) => {
-									return options;
-								}}
-								options={labTests}
-								loading={labLoading}
-								getOptionLabel={(option) => `${option.testName}`}
-								value={selectedLabTest}
-								onChange={handleLabTestChange}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										label="Search Lab Tests"
-										InputLabelProps={{ style: { fontSize: "0.9rem" } }}
-										InputProps={{
-											...params.InputProps,
-											style: { fontSize: "0.9rem" },
-										}}
-									/>
-								)}
-							/>
-						</FormControl>
-					</Box>
-				)}
-
-				{formData.activityType === "IMAGE_REPORT" && (
-					<Box mb={1}>
-						<FormControl fullWidth size="small">
-							<Autocomplete
-								size="small"
-								filterOptions={(options, state) => {
-									return options;
-								}}
-								options={imageReportTypes}
-								loading={imageReportLoading}
-								getOptionLabel={(option) => `${option.name}`}
-								value={selectedImageReportType}
-								onChange={handleImageReportTypeChange}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										label="Search Image Report Types"
-										InputLabelProps={{ style: { fontSize: "0.9rem" } }}
-										InputProps={{
-											...params.InputProps,
-											style: { fontSize: "0.9rem" },
-										}}
-									/>
-								)}
-							/>
-						</FormControl>
-					</Box>
-				)}
-
-				<Box mb={1}>
-					<TextField
-						fullWidth
-						InputProps={{ style: { fontSize: "0.9rem" } }}
-						label="Description"
-						name="description"
-						value={formData.description}
-						required
-						size="small"
-						disabled={formData.activityType === "LAB_TEST" || formData.activityType === "IMAGE_REPORT"}
+			{form.getFieldValue("activityType") === "LAB_TEST" && (
+				<Form.Item label="Search Lab Tests">
+					<AutoComplete
+						style={{ width: "100%" }}
+						filterOption={false}
+						options={labTestOptions}
+						onSelect={handleLabTestSelect}
+						placeholder="Search Lab Tests"
 					/>
-				</Box>
-				{/* {unitError && (
-					<Typography color="error" variant="body2" mb={1}>
-						{unitError}
-					</Typography>
-				)} */}
-				<Box mb={1}>
-					<FormControl fullWidth size="small">
-						<InputLabel id="unit-select-label" sx={{ fontSize: "0.9rem" }}>
-							Unit (optional)
-						</InputLabel>
-						<Select
-							labelId="unit-select-label"
-							id="unitId"
-							value={selectedUnit || ""}
-							onChange={handleUnitChange}
-							sx={{ fontSize: "0.9rem" }}>
-							<MenuItem value="" sx={{ fontSize: "0.9rem" }}>
-								<em>None</em>
-							</MenuItem>
-							{units.map((unit) => (
-								<MenuItem key={unit.id} value={unit.id} sx={{ fontSize: "0.9rem" }}>
-									{unit.name}
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
-				</Box>
+				</Form.Item>
+			)}
+			{form.getFieldValue("activityType") === "IMAGE_REPORT" && (
+				<Form.Item label="Search Image Report Types">
+					<AutoComplete
+						style={{ width: "100%" }}
+						filterOption={false}
+						options={imageReportTypeOptions}
+						onSelect={handleImageReportTypeSelect}
+						placeholder="Search Image Report Types"
+					/>
+				</Form.Item>
+			)}
+			<Form.Item name="description" label="Description" rules={[{ required: true }]}>
+				<Input disabled={form.getFieldValue("activityType") === "LAB_TEST" || form.getFieldValue("activityType") === "IMAGE_REPORT"} />
+			</Form.Item>
+			<Form.Item name="unitId" label="Unit (optional)">
+				<Select onChange={handleUnitChange} allowClear>
+					{units?.map((unit) => (
+						<Option key={unit.id} value={unit.id}>
+							{unit.name}
+						</Option>
+					))}
+				</Select>
+			</Form.Item>
 
-				{selectedUnit && (
-					<Box mb={1}>
-						<FormControl fullWidth size="small">
-							<InputLabel id="room-select-label" sx={{ fontSize: "0.9rem" }}>
-								Room (optional)
-							</InputLabel>
-							<Select
-								labelId="room-select-label"
-								id="roomId"
-								value={selectedRoom || ""}
-								onChange={handleRoomChange}
-								sx={{ fontSize: "0.9rem" }}>
-								<MenuItem value="" sx={{ fontSize: "0.9rem" }}>
-									<em>None</em>
-								</MenuItem>
-								{Array.isArray(filteredRooms) &&
-									filteredRooms.map((room) => (
-										<MenuItem key={room.id} value={room.id} sx={{ fontSize: "0.9rem" }}>
-											{room.roomNumber}
-										</MenuItem>
-									))}
-							</Select>
-						</FormControl>
-					</Box>
-				)}
+			<Form.Item name="roomId" label="Room (optional)">
+				<Select allowClear>
+					{form.getFieldValue("filteredRooms")?.map((room) => (
+						<Option key={room.id} value={room.id}>
+							{room.roomNumber}
+						</Option>
+					))}
+				</Select>
+			</Form.Item>
 
-				<Box mb={1}>
-					<FormControl fullWidth size="small">
-						<Autocomplete
-							multiple
-							size="small"
-							filterOptions={(options, state) => {
-								return options;
-							}}
-							options={patients}
-							loading={patientLoading}
-							getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-							value={selectedPatients}
-							onChange={handlePatientSelect}
-							onKeyDown={handleSearchKeyDown}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									label="Search Patients"
-									InputLabelProps={{ style: { fontSize: "0.9rem" } }}
-									InputProps={{
-										...params.InputProps,
-										style: { fontSize: "0.9rem" },
-										endAdornment: (
-											<InputAdornment position="end">
-												<IconButton onClick={handleSearch} edge="end" aria-label="search">
-													<SearchIcon />
-												</IconButton>
-											</InputAdornment>
-										),
-									}}
-									onChange={handleSearchChange}
-								/>
-							)}
-						/>
-					</FormControl>
-				</Box>
+			<Form.Item name="patientIds" label="Search Patients">
+				<AutoComplete
+					filterOption={false}
+					options={patientOptions}
+					onSearch={handlePatientSearch}
+					placeholder="Search Patients"
+					mode={"multiple"}
+				/>
+			</Form.Item>
 
-				<Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-					<Button type="submit" variant="contained" color="primary" size="small" disabled={loading}>
-						{loading ? <CircularProgress size={20} /> : "Create Activity"}
-					</Button>
-				</Box>
-			</form>
-		</Box>
+			<Form.Item>
+				<Button type="default" htmlType="submit" loading={loading}>
+					Create Activity
+				</Button>
+			</Form.Item>
+		</Form>
 	);
 };
 

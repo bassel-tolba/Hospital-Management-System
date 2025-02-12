@@ -22,9 +22,12 @@ public class FileHandler {
 
     private final List<String> allowedImageExtensions = Arrays.asList(".png", ".jpeg", ".jpg", ".webp", ".gif");
     private final List<String> allowedVideoExtensions = Arrays.asList(".mp4", ".mov", ".avi", ".mkv");
+    private final List<String> allowedDocumentExtensions = Arrays.asList(".pdf", ".doc", ".docx", ".txt", ".xls",
+            ".xlsx", ".csv", ".ppt", ".pptx");
 
     private final String IMAGE_DIR = "images";
     private final String VIDEO_DIR = "videos";
+    private final String DOCUMENT_DIR = "documents";
 
     public String saveFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
@@ -32,16 +35,23 @@ public class FileHandler {
         }
 
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null) {
-            throw new IllegalArgumentException("Original file name is null.");
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new IllegalArgumentException("Original filename is missing or null.");
         }
-        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+
+        int dotIndex = originalFilename.lastIndexOf(".");
+        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
+            throw new IllegalArgumentException("File has no extension or invalid extension.");
+        }
+        String fileExtension = originalFilename.substring(dotIndex).toLowerCase();
 
         String subDirectory;
         if (allowedImageExtensions.contains(fileExtension)) {
             subDirectory = IMAGE_DIR;
         } else if (allowedVideoExtensions.contains(fileExtension)) {
             subDirectory = VIDEO_DIR;
+        } else if (allowedDocumentExtensions.contains(fileExtension)) {
+            subDirectory = DOCUMENT_DIR;
         } else {
             throw new IllegalArgumentException("File extension " + fileExtension + " is not allowed.");
         }
@@ -61,17 +71,19 @@ public class FileHandler {
             throw new IOException("Failed to store file " + uniqueFileName, e);
         }
 
-        return filePath.toString(); // Changed this return
+        return filePath.toString();
     }
 
-    public String getSubdirectory(String filePath) { // modified this method
-        if (filePath == null || !filePath.startsWith("/")) {
-            return null;
+    public String getSubdirectory(String filePath) {
+        if (filePath == null || !filePath.startsWith(uploadDirectory)) {
+            return null; // Return null if the filePath does not start with uploadDirectory
         }
-        String[] parts = filePath.split("/");
+        String remainingPath = filePath.substring(uploadDirectory.length());
+        String[] parts = remainingPath.split("/");
+
         if (parts.length < 2) {
-            return null;
+            return null; // return null if the file is in the root of the directory.
         }
-        return parts[1];
+        return parts[1]; // the second part is the subdirectory name
     }
 }

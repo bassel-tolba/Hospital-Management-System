@@ -179,7 +179,6 @@ public class BillingDTO {
     public double calculatePendingAmount() {
         double totalBill = 0;
         double totalPayment = 0;
-        final double ADMISSION_DAY_PRICE = 100.00;
         if (isPaid() == true) {
             return 0;
         }
@@ -188,15 +187,22 @@ public class BillingDTO {
             if (admissions != null && !admissions.isEmpty()) {
                 for (Admission admission : admissions) {
                     if (admission.getAdmissionDate() != null) {
-                        if (admission.getDischargeDate() == null
-                                || admission.getDischargeDate().isAfter(this.billDate)) {
-                            LocalDateTime admissionTime = admission.getAdmissionDate();
+                        LocalDateTime admissionTime = admission.getAdmissionDate();
+                        LocalDateTime dischargeTime = admission.getDischargeDate();
+                        double admissionTypePrice = 0;
+
+                        if (admission.getAdmissionType() != null) {
+                            admissionTypePrice = admission.getAdmissionType().getPrice();
+
+                        }
+                        if (dischargeTime == null || dischargeTime.isAfter(this.billDate)) {
                             // Use billDate here to compare with admission dates
                             LocalDateTime currentTime = this.billDate;
                             long days = Duration.between(admissionTime, currentTime).toDays();
                             days = days == 0 ? 1 : days; // always at least one day.
-                            totalBill += days * ADMISSION_DAY_PRICE;
-                        } else if (admission.getDischargeDate().isBefore(this.billDate)) {
+                            totalBill += days * admissionTypePrice;
+
+                        } else if (dischargeTime.isBefore(this.billDate)) {
                             // Free the bed if the admission is completed (discharge date is in the past)
                             if (admission.getBed() != null) {
                                 Bed bed = bedRepository.findById(admission.getBed().getId()).orElse(null);
@@ -329,13 +335,43 @@ public class BillingDTO {
     public String generateBillHtml() {
         double totalBill = 0;
         double totalPayment = 0;
-        final double ADMISSION_DAY_PRICE = 100.00;
+        LocalDateTime now = LocalDateTime.now();
 
         StringBuilder billHtml = new StringBuilder();
+        billHtml.append("<!DOCTYPE html>");
+        billHtml.append("<html lang=\"en\">");
+        billHtml.append("<head>");
+        billHtml.append("<meta charset=\"UTF-8\">");
+        billHtml.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+        billHtml.append("<title>Patient Bill</title>");
+
+        billHtml.append("<style>");
         billHtml.append(
-                "<div style=\"font-family: 'Arial', sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 80%; margin: 20px auto; background-color: #f9f9f9;\">");
+                "body { font-family: 'Arial', sans-serif; background-color: #fff; color: #333; margin: 20px; }");
+        billHtml.append(
+                ".bill-container { width: 80%; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; background-color: #fff; }");
+        billHtml.append("h2 { text-align:center; color: #333; margin-bottom: 20px; }");
+        billHtml.append(".bill-header { display: flex; justify-content: space-between; margin-bottom: 15px; }");
+        billHtml.append(".bill-header p { color: #555; }");
+        billHtml.append("hr { border-top: 1px solid #ddd; margin-bottom: 20px; }");
+        billHtml.append("h3 { color: #333; margin-bottom: 15px; }");
+        billHtml.append("ul { list-style: none; padding: 0; }");
+        billHtml.append(
+                "li { padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center; }");
+        billHtml.append("li span { display: block; }");
+        billHtml.append("li span:first-child { flex-grow: 1; }");
+        billHtml.append(
+                "li span:last-child { font-weight: bold; color: #007bff; text-align: right; min-width: 80px; }");
+        billHtml.append(".payment span:last-child { color: #28a745; }");
+        billHtml.append(".total { font-size: 1.1em; color: #333; margin-top: 20px; font-weight:bold; }");
+        billHtml.append(".balance-due { font-size: 1.2em; font-weight: bold; color: #333; }");
+        billHtml.append(".paid-message { font-size: 1.2em; font-weight: bold; color: green; }");
+        billHtml.append("</style>");
+        billHtml.append("</head>");
+        billHtml.append("<body>");
+        billHtml.append("<div class=\"bill-container\">");
         billHtml.append("<h2 style=\"text-align:center; color: #333; margin-bottom: 20px;\">Bill</h2>");
-        billHtml.append("<div style=\"display: flex; justify-content: space-between; margin-bottom: 15px;\">");
+        billHtml.append("<div class=\"bill-header\">");
         billHtml.append("<p style=\"color: #555;\"><strong>Bill Date:</strong> " + billDate + "</p>");
         billHtml.append("<p style=\"color: #555;\"><strong>Patient Name:</strong> "
                 + patientRepository.getById(patientId).getFirstName() + " "
@@ -352,24 +388,39 @@ public class BillingDTO {
             if (admissions != null && !admissions.isEmpty()) {
                 for (Admission admission : admissions) {
                     if (admission.getAdmissionDate() != null) {
-                        if (admission.getDischargeDate() == null
-                                || admission.getDischargeDate().isAfter(this.billDate)) {
-                            LocalDateTime admissionTime = admission.getAdmissionDate();
-                            // Use billDate here to compare with admission dates
-                            LocalDateTime currentTime = this.billDate;
-                            long days = Duration.between(admissionTime, currentTime).toDays();
-                            days = days == 0 ? 1 : days; // always at least one day.
+                        LocalDateTime admissionTime = admission.getAdmissionDate();
+                        LocalDateTime dischargeTime = admission.getDischargeDate();
+                        double admissionTypePrice = 0;
+                        String admissionTypeName = "";
 
-                            admissionCost = days * ADMISSION_DAY_PRICE;
+                        if (admission.getAdmissionType() != null) {
+                            admissionTypePrice = admission.getAdmissionType().getPrice();
+                            admissionTypeName = admission.getAdmissionType().getName();
+                        }
+
+                        long days;
+                        String daysLeftText = "";
+                        if (dischargeTime == null || dischargeTime.isAfter(billDate)) {
+
+                            days = Math.round(Duration.between(admissionTime, billDate).toDays());
+                            days = days <= 0 ? 1 : days;
+                            admissionCost = days * admissionTypePrice;
+                            if (dischargeTime != null) {
+                                long daysLeft = Math.round(Duration.between(now, dischargeTime).toDays());
+
+                                daysLeftText = " (" + daysLeft + " days left)";
+
+                            }
                             billHtml.append(
                                     "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
-                            billHtml.append("<span>Admission Stay (" + days + " days)</span>");
+                            billHtml.append("<span>" + admissionTypeName + " Stay (" + days + " days)" + daysLeftText
+                                    + "</span>");
                             billHtml.append("<span style=\"font-weight: bold; color: #007bff;\">$"
                                     + String.format("%.2f", admissionCost) + "</span>");
                             billHtml.append("</li>");
                             totalBill += admissionCost;
-                        } else if (admission.getDischargeDate().isBefore(this.billDate)
-                                || admission.getDischargeDate().isBefore(LocalDateTime.now())) {
+
+                        } else if (dischargeTime != null && dischargeTime.isBefore(this.billDate)) {
                             // Free the bed if the admission is completed (discharge date is in the past).
                             if (admission.getBed() != null) {
                                 Bed bed = bedRepository.findById(admission.getBed().getId()).orElse(null);
@@ -544,7 +595,7 @@ public class BillingDTO {
         billHtml.append("</ul>");
         billHtml.append("<hr style=\"border-top: 1px solid #ddd; margin-bottom: 20px;\"/>");
 
-        billHtml.append("<p style=\"font-size: 1.1em; color: #333;\"><strong>Total Before Payment:</strong>  $"
+        billHtml.append("<p class=\"total\"><strong>Total Before Payment:</strong>  $"
                 + String.format("%.2f", totalBill) + "</p>");
 
         // Add Payments
@@ -554,7 +605,7 @@ public class BillingDTO {
             billHtml.append("<ul style=\"list-style: none; padding: 0;\">");
             for (Payment payment : payments) {
                 billHtml.append(
-                        "<li style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
+                        "<li class=\"payment\" style=\"padding: 10px 0; border-bottom: 1px dotted #eee; display: flex; justify-content: space-between; align-items: center;\">");
                 billHtml.append("<span>Payment </span>");
                 billHtml.append("<span style=\"font-weight: bold; color: #28a745;\">-$"
                         + String.format("%.2f", payment.getAmount()) + "</span>");
@@ -564,7 +615,7 @@ public class BillingDTO {
 
             billHtml.append("</ul>");
             billHtml.append("<hr style=\"border-top: 1px solid #ddd; margin-bottom: 20px;\"/>");
-            billHtml.append("<p style=\"font-size: 1.1em; color: #333;\"><strong>Total Payment:</strong>  $"
+            billHtml.append("<p class=\"total\"><strong>Total Payment:</strong>  $"
                     + String.format("%.2f", totalPayment) + "</p>");
         }
 
@@ -572,17 +623,19 @@ public class BillingDTO {
 
         if (balance > 0) {
             billHtml.append(
-                    "<p style=\"font-size: 1.2em; font-weight: bold; color: #333;\"><strong>Balance Due:</strong> $"
+                    "<p class=\"balance-due\"><strong>Balance Due:</strong> $"
                             + String.format("%.2f", balance) + "</p>");
 
         } else {
             billHtml.append(
-                    "<p style=\"font-size: 1.2em; font-weight: bold; color: green;\"><strong>this bill has been paid</strong>"
+                    "<p class=\"paid-message\"><strong>this bill has been paid</strong>"
                             + "</p>");
 
         }
 
         billHtml.append("</div>");
+        billHtml.append("</body>");
+        billHtml.append("</html>");
         return billHtml.toString();
     }
 }

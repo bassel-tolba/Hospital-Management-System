@@ -1,0 +1,19 @@
+.main-container {
+	max-width: 1200px; /* Limit maximum width for large screens */
+	margin: 0 auto; /* Center the container */
+	padding: 20px; /* Add some padding */
+}
+@media screen and (max-width: 768px) {
+	.main-container {
+		padding: 10px; /* Add some padding */
+	}
+}
+@media (max-width: 768px) {
+	.ant-modal {
+		top: 10px !important; /* Adjust modal position for small screens */
+	}
+	.ant-input,
+	.ant-btn {
+		font-size: 14px; /* Reduce font size for smaller screens */
+	}
+}

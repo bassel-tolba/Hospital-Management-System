@@ -18,7 +18,7 @@ import mine.profile.website.dtos.BedDTO;
 import mine.profile.website.service.BedService;
 
 @RestController
-@RequestMapping("/beds")
+@RequestMapping("/api/beds")
 public class BedController {
 
     @Autowired

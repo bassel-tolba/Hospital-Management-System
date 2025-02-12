@@ -1,10 +1,13 @@
-// UserController.java
+// backend/src/main/java/mine/profile/website/rest/controller/UserController.java
 package mine.profile.website.rest.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,10 +18,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.Valid;
 import mine.profile.website.dtos.UserDTO;
-import mine.profile.website.models.Role;
 import mine.profile.website.service.UserService;
 
 @RestController
@@ -36,10 +41,12 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        UserDTO createdUser = userService.createUser(userDTO);
-        return ResponseEntity.ok(createdUser);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('CREATE_USER')")
+    public ResponseEntity<UserDTO> createUser(@Valid @RequestPart("user") UserDTO userDTO,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+        UserDTO createdUser = userService.createUser(userDTO, profilePicture);
+        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
@@ -48,13 +55,23 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
-        UserDTO updatedUser = userService.updateUser(id, userDTO);
-        return ResponseEntity.ok(updatedUser);
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id,
+            @RequestPart("user") @Valid UserDTO userDTO,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestPart(value = "removedProfilePictureUrls", required = false) String removedProfilePictureUrls) {
+
+        UserDTO updatedUser = userService.updateUser(id, userDTO, profilePicture, removedProfilePictureUrls);
+        if (updatedUser != null) {
+            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('DELETE_USER')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
@@ -66,9 +83,10 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @GetMapping("/byrole/{role}")
-    public ResponseEntity<java.util.List<UserDTO>> findByRole(@PathVariable String role) {
-        java.util.List<UserDTO> users = userService.findByRole(role);
+    @GetMapping("/byrole/{roleId}") // Changed to roleId
+    @PreAuthorize("hasAuthority('READ_USER')") // Require permission, not role
+    public ResponseEntity<java.util.List<UserDTO>> findByRole(@PathVariable Long roleId) {
+        java.util.List<UserDTO> users = userService.findByRole(roleId);
         return ResponseEntity.ok(users);
     }
 
@@ -97,56 +115,42 @@ public class UserController {
     }
 
     @PutMapping("/updateunits/{id}")
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<UserDTO> updateUserUnits(@PathVariable Long id, @RequestBody java.util.List<Long> unitIds) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-
-             UserDTO updatedUser = userService.updateUserUnits(id, unitIds);
-             return ResponseEntity.ok(updatedUser);
-        }
-         return ResponseEntity.status(403).build();
+        UserDTO updatedUser = userService.updateUserUnits(id, unitIds);
+        return ResponseEntity.ok(updatedUser);
 
     }
 
     @PutMapping("/updaterooms/{id}")
-     public ResponseEntity<UserDTO> updateUserRooms(@PathVariable Long id, @RequestBody java.util.List<Long> roomIds) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-       if (authentication != null && authentication.getAuthorities().stream()
-                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-
-            UserDTO updatedUser = userService.updateUserRooms(id, roomIds);
-            return ResponseEntity.ok(updatedUser);
-         }
-         return ResponseEntity.status(403).build();
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
+    public ResponseEntity<UserDTO> updateUserRooms(@PathVariable Long id, @RequestBody java.util.List<Long> roomIds) {
+        UserDTO updatedUser = userService.updateUserRooms(id, roomIds);
+        return ResponseEntity.ok(updatedUser);
 
     }
 
     @PutMapping("/updatepatients/{id}")
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     public ResponseEntity<UserDTO> updateUserPatients(@PathVariable Long id,
             @RequestBody java.util.List<Long> patientIds) {
-          Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-
-            UserDTO updatedUser = userService.updateUserPatients(id, patientIds);
-             return ResponseEntity.ok(updatedUser);
-        }
-         return ResponseEntity.status(403).build();
+        UserDTO updatedUser = userService.updateUserPatients(id, patientIds);
+        return ResponseEntity.ok(updatedUser);
 
     }
+
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser() {
-         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).build(); // Unauthorized if not authenticated
         }
 
         String username = authentication.getName(); // Get username from authentication
         UserDTO user = userService.getUserByUsername(username);
-       if(user == null){
-           return ResponseEntity.status(404).build();
-       }
+        if (user == null) {
+            return ResponseEntity.status(404).build();
+        }
         return ResponseEntity.ok(user);
     }
 }

@@ -1,3 +1,4 @@
+// LabResultService.java
 package mine.profile.website.service;
 
 import java.util.List;
@@ -65,6 +66,38 @@ public class LabResultService {
     }
 
     @Transactional
+    public LabResultDTO updateLabResult(Long id, LabResultDTO labResultDTO) {
+        LabResult existingLabResult = labResultRepository.findById(id).orElse(null);
+        if (existingLabResult == null) {
+            return null; // Lab result not found
+        }
+
+        Patient patient = patientRepository.findById(labResultDTO.getPatientId()).orElse(null);
+        User user = userRepository.findById(labResultDTO.getPerformedById()).orElse(null);
+        LabTest labTest = labTestRepository.findById(labResultDTO.getLabTestId()).orElse(null);
+        if (Objects.isNull(patient) || Objects.isNull(user) || Objects.isNull(labTest)) {
+            return null;
+        }
+
+        Billing billing = null;
+        List<Billing> bills = billingRepository.findByPatientIdOrderByBillDateDesc(patient.getId());
+        if (!bills.isEmpty()) {
+            billing = bills.get(0); // Get the most recent bill
+        }
+
+        existingLabResult.setPatient(patient);
+        existingLabResult.setPerformedBy(user);
+        existingLabResult.setLabTest(labTest);
+        existingLabResult.setBilling(billing);
+
+        existingLabResult.setResultDateTime(labResultDTO.getResultDateTime());
+        existingLabResult.setNotes(labResultDTO.getNotes());
+
+        LabResult updatedLabResult = labResultRepository.save(existingLabResult);
+        return LabResultDTO.fromEntity(updatedLabResult);
+    }
+
+    @Transactional
     public LabResultDTO getLabResultById(Long id) {
         LabResult labResult = labResultRepository.findById(id).orElse(null);
         if (labResult == null) {
@@ -77,5 +110,14 @@ public class LabResultService {
     public Page<LabResultDTO> getLabResultsByPatient(Long patientId, Pageable pageable) {
         Page<LabResult> results = labResultRepository.findByPatientId(patientId, pageable);
         return results.map(LabResultDTO::fromEntity);
+    }
+
+    @Transactional
+    public boolean deleteLabResult(Long id) {
+        if (labResultRepository.existsById(id)) {
+            labResultRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

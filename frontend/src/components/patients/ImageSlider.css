@@ -1,0 +1,39 @@
+/* ImageSlider.css */
+
+.ant-carousel .slick-dots li.slick-active button {
+	background: #1890ff; /* Active dot color */
+	height: 15px;
+}
+
+.ant-carousel .slick-dots li button {
+	background: #d9d9d9; /* Inactive dot color */
+	height: 15px;
+}
+.custom-carousel .slick-arrow {
+	color: #1890ff;
+
+	border-radius: 50%;
+	padding: 5px;
+	width: 60px;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	top: 100%;
+	transform: translateY(-50%);
+	z-index: 1;
+}
+
+.custom-carousel .slick-prev {
+	left: auto; /* Adjust as needed */
+}
+.custom-carousel .slick-next {
+	right: 100%-auto; /* Adjust as needed */
+}
+
+.custom-carousel .slick-prev:before,
+.custom-carousel .slick-next:before {
+	font-size: 20px; /*adjust the icon size here */
+	color: #000;
+	font-family: "slick";
+}

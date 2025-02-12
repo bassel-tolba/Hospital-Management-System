@@ -94,25 +94,6 @@ export const useLabStore = create((set, get) => ({
 			set({ loading: false });
 		}
 	},
-	updateLabResult: async (id, labResultData) => {
-		set({ loading: true, error: null });
-		try {
-			const user = useAuthStore.getState().user;
-			const response = await axios.put(`${LAB_RESULT_API_BASE_URL}/${id}`, labResultData, {
-				headers: { Authorization: `Bearer ${user?.token}` },
-			});
-			notification.success({
-				message: "Success",
-				description: `Lab Result Updated successfully: ${response.data.id}`,
-			});
-			return response.data;
-		} catch (error) {
-			handleError(error, "Failed to update lab result");
-			throw error;
-		} finally {
-			set({ loading: false });
-		}
-	},
 	getLabResultById: async (id) => {
 		set({ loading: true, error: null });
 		try {

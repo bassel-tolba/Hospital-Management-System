@@ -1,3 +1,4 @@
+// 1. JwtTokenProvider.java
 package mine.profile.website.security;
 
 import java.security.Key;
@@ -33,9 +34,11 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+        // Correctly include ALL authorities
+        List<String> authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        extraClaims.put("role", roles.get(0));
+        extraClaims.put("authorities", authorities); // Use "authorities" claim
 
         return Jwts
                 .builder()
@@ -51,9 +54,10 @@ public class JwtTokenProvider {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public String getRoleFromToken(String token) {
-        return extractClaim(token, claims -> (String) claims.get("role"));
-    }
+    // No longer needed, we use the "authorities" claim directly
+    // public String getRoleFromToken(String token) {
+    // return extractClaim(token, claims -> (String) claims.get("role"));
+    // }
 
     public boolean validateToken(String token) {
         try {

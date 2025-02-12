@@ -12,4 +12,5 @@ import mine.profile.website.models.UserActivity;
 public interface UserActivityRepository extends JpaRepository<UserActivity, Long> {
     List<UserActivity> findByState(String state);
 
+    List<UserActivity> findByStateIgnoreCaseOrStateIgnoreCase(String state1, String state2);
 }

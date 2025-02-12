@@ -1,7 +1,6 @@
 package mine.profile.website.models;
 
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -9,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
@@ -38,10 +36,14 @@ public class Room {
     @JoinColumn(name = "unit_id")
     private Unit unit;
 
-    @ManyToMany(mappedBy = "rooms")
-    private Set<Nurse> nurses;
-
     public Unit getUnit() {
         return this.unit;
+    }
+
+    public Room(String roomNumber, String roomType, List<Bed> beds, Unit unit) {
+        this.roomNumber = roomNumber;
+        this.roomType = roomType;
+        this.beds = beds;
+        this.unit = unit;
     }
 }

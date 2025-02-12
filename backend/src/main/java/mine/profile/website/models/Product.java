@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,6 +39,9 @@ public class Product {
     // price
     // the product price can be fixed and dont need any unit or quantity for example
     // a pill of paracetamol
+
+    @OneToOne(mappedBy = "product")
+    private Inventory inventory;
 
     public enum ProductType {
         MEDICATION,

@@ -162,4 +162,61 @@ export const useProductStore = create((set, get) => ({
 			throw error;
 		}
 	},
+	increaseStock: async (productId, quantity) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.patch(
+				`${PRODUCT_API_BASE_URL}/${productId}/increase-stock?quantity=${quantity}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Stock increased successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to increase stock: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	decreaseStock: async (productId, quantity) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.patch(
+				`${PRODUCT_API_BASE_URL}/${productId}/decrease-stock?quantity=${quantity}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Stock decreased successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to decrease stock: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
 }));

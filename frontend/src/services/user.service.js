@@ -1,3 +1,4 @@
+// frontend/src/services/user.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
@@ -11,10 +12,6 @@ export const useUserStore = create((set, get) => ({
 	error: null,
 	total: 0,
 	currentUser: null,
-	setUsers: (users) => set({ users }),
-	setLoading: (loading) => set({ loading }),
-	setError: (error) => set({ error }),
-	setTotal: (total) => set({ total }),
 	clearError: () => set({ error: null }),
 
 	getCurrentUser: async () => {
@@ -27,20 +24,35 @@ export const useUserStore = create((set, get) => ({
 			set({ loading: false, currentUser: response.data });
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get current user";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to get current user: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
 	},
-	createUser: async (userData) => {
+	createUser: async (userData, profilePicture) => {
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.post(USER_API_BASE_URL, userData, {
-				headers: { Authorization: `Bearer ${user?.token}` },
+			const formData = new FormData();
+			formData.append(
+				"user",
+				new Blob([JSON.stringify(userData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+
+			const response = await axios.post(USER_API_BASE_URL, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
 			});
 			set({ loading: false });
 			notification.success({
@@ -49,10 +61,11 @@ export const useUserStore = create((set, get) => ({
 			});
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to create user";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to create user: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -68,10 +81,11 @@ export const useUserStore = create((set, get) => ({
 			set({ loading: false });
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get user";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to get user: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -87,39 +101,59 @@ export const useUserStore = create((set, get) => ({
 			set({ loading: false });
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get users";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to get users: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
 	},
-	getUsersByRole: async (role) => {
+	getUsersByRole: async (roleId) => {
+		// Changed parameter to roleId
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.get(`${USER_API_BASE_URL}/byrole/${role}`, {
+			const response = await axios.get(`${USER_API_BASE_URL}/byrole/${roleId}`, {
+				// Corrected endpoint
 				headers: { Authorization: `Bearer ${user?.token}` },
 			});
 			set({ loading: false, users: response.data });
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get users by role";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to get users by role: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
 	},
 
-	updateUser: async (userId, userData) => {
+	updateUser: async (userId, userData, profilePicture, removedProfilePictureUrl) => {
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.put(`${USER_API_BASE_URL}/${userId}`, userData, {
-				headers: { Authorization: `Bearer ${user?.token}` },
+			const formData = new FormData();
+			formData.append(
+				"user",
+				new Blob([JSON.stringify(userData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+			if (removedProfilePictureUrl) {
+				formData.append("removedProfilePictureUrls", new Blob([JSON.stringify([removedProfilePictureUrl])], { type: "application/json" }));
+			}
+			const response = await axios.put(`${USER_API_BASE_URL}/${userId}`, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
 			});
 			set({ loading: false });
 			notification.success({
@@ -128,10 +162,11 @@ export const useUserStore = create((set, get) => ({
 			});
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to update user: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -150,10 +185,11 @@ export const useUserStore = create((set, get) => ({
 				description: "User deleted successfully.",
 			});
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to delete user";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to delete user: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -180,10 +216,11 @@ export const useUserStore = create((set, get) => ({
 			});
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to search users";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to search users: ${error?.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -192,9 +229,16 @@ export const useUserStore = create((set, get) => ({
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.put(`${USER_API_BASE_URL}/updateunits/${userId}`, unitIds, {
-				headers: { Authorization: `Bearer ${user?.token}` },
-			});
+			const response = await axios.put(
+				`${USER_API_BASE_URL}/updateunits/${userId}`,
+				unitIds, // Send the array directly as the request body
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+						"Content-Type": "application/json", // Explicitly set content type
+					},
+				}
+			);
 			set({ loading: false });
 			notification.success({
 				message: "Success",
@@ -202,10 +246,11 @@ export const useUserStore = create((set, get) => ({
 			});
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user units";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to update user units: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -224,10 +269,11 @@ export const useUserStore = create((set, get) => ({
 			});
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user rooms";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to update user rooms: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}
@@ -246,10 +292,11 @@ export const useUserStore = create((set, get) => ({
 			});
 			return response.data;
 		} catch (error) {
-			set({ error: error.response?.data?.message || error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user patients";
+			set({ error: errorMessage, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to update user patients: ${error.response?.data?.message || error.message}`,
+				description: errorMessage,
 			});
 			throw error;
 		}

@@ -1,8 +1,12 @@
 package mine.profile.website.models;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
+
+import org.hibernate.annotations.Where;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -10,7 +14,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,6 +25,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Where(clause = "deleted = false") // Add this annotation
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,6 +45,7 @@ public class Patient {
 
     private String email;
 
+    // NEW: Image URL field
     private String profilePictureURL;
 
     private String medicalRecordNumber;
@@ -67,22 +72,30 @@ public class Patient {
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NursingCarePlan> nursingCarePlans;
 
-    @ManyToMany(mappedBy = "patients")
-    private Set<Nurse> nurses;
+    private boolean deleted = false; // Add this field
 
     public Unit getUnit() {
-        if (this.admissions != null && !this.admissions.isEmpty()) {
-            return this.admissions.get(0).getBed().getRoom().getUnit();
-        }
-        return null;
+        return getCurrentAdmission()
+                .map(admission -> admission.getBed().getRoom().getUnit())
+                .orElse(null);
     }
 
     public Room getRoom() {
-        if (this.admissions != null && !this.admissions.isEmpty()) {
-            return this.admissions.get(0).getBed().getRoom();
-
-        }
-        return null;
+        return getCurrentAdmission()
+                .map(admission -> admission.getBed().getRoom())
+                .orElse(null);
     }
 
+    // Helper method to get the *current* (active) admission
+    private Optional<Admission> getCurrentAdmission() {
+        if (admissions == null || admissions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // Find the *latest* admission that is still active
+        return admissions.stream()
+                .filter(admission -> admission.getDischargeDate() == null
+                        || admission.getDischargeDate().isAfter(LocalDateTime.now()))
+                .max(Comparator.comparing(Admission::getAdmissionDate)); // Most recent, active admission
+    }
 }

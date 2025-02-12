@@ -3,6 +3,8 @@ package mine.profile.website.models;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -84,13 +86,24 @@ public class PatientProductUsage {
     }
 
     private BigDecimal calculatePricePerTime() {
-        if (startTime == null || endTime == null)
+        if (startTime == null || endTime == null || product.getUnit() == null || product.getUnitPrice() == null)
             return BigDecimal.ZERO;
 
         Duration duration = Duration.between(startTime, endTime);
-        BigDecimal timeInHours = BigDecimal.valueOf(duration.toMinutes() / 60.0);
-        return product.getUnitPrice().multiply(timeInHours);
+        double timeInHours = duration.toMinutes() / 60.0;
 
+        if (timeInHours <= 0)
+            return BigDecimal.ZERO;
+
+        Pattern pattern = Pattern.compile("(\\d+) hours");
+        Matcher matcher = pattern.matcher(product.getUnit());
+
+        if (matcher.find()) {
+            int timeUnit = Integer.parseInt(matcher.group(1));
+            int timeUnitsUsed = (int) Math.ceil(timeInHours / timeUnit);
+            return product.getUnitPrice().multiply(BigDecimal.valueOf(timeUnitsUsed));
+        }
+        return BigDecimal.ZERO;
     }
 
     private BigDecimal calculatePriceFixed() {

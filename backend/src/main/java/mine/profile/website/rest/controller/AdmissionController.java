@@ -16,29 +16,33 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import mine.profile.website.dtos.AdmissionDTO;
+import mine.profile.website.dtos.AdmissionTypeDTO;
 import mine.profile.website.dtos.PatientDTO;
 import mine.profile.website.service.AdmissionService;
+import mine.profile.website.service.AdmissionTypeService;
 
 @RestController
-@RequestMapping("/api/admissions")
+@RequestMapping("/api")
 public class AdmissionController {
 
     @Autowired
     private AdmissionService admissionService;
+    @Autowired
+    private AdmissionTypeService admissionTypeService;
 
-    @PostMapping
+    @PostMapping("/admissions")
     public ResponseEntity<AdmissionDTO> createAdmission(@RequestBody AdmissionDTO admissionDTO) {
         AdmissionDTO createdAdmission = admissionService.createAdmission(admissionDTO);
         return new ResponseEntity<>(createdAdmission, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/admissions/{id}")
     public ResponseEntity<AdmissionDTO> getAdmissionById(@PathVariable Long id) {
         AdmissionDTO admissionDTO = admissionService.getAdmissionById(id);
         return ResponseEntity.ok(admissionDTO);
     }
 
-    @GetMapping
+    @GetMapping("/admissions")
     public ResponseEntity<List<AdmissionDTO>> searchAdmissions(
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) Long bedId,
@@ -49,30 +53,62 @@ public class AdmissionController {
         return ResponseEntity.ok(admissions);
     }
 
-    @GetMapping("/open")
+    @GetMapping("/admissions/open")
     public ResponseEntity<List<AdmissionDTO>> getOpenAdmissions() {
         List<AdmissionDTO> admissions = admissionService.findOpenAdmissions();
         return ResponseEntity.ok(admissions);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/admissions/{id}")
     public ResponseEntity<AdmissionDTO> updateAdmission(@PathVariable Long id, @RequestBody AdmissionDTO admissionDTO) {
         AdmissionDTO updatedAdmission = admissionService.updateAdmission(id, admissionDTO);
         return ResponseEntity.ok(updatedAdmission);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admissions/{id}")
     public ResponseEntity<Void> deleteAdmission(@PathVariable Long id) {
         admissionService.deleteAdmission(id);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/bed/{bedId}/patient")
+    @GetMapping("/admissions/bed/{bedId}/patient")
     public ResponseEntity<PatientDTO> getPatientByBedId(@PathVariable Long bedId) {
         PatientDTO patientDTO = admissionService.getPatientByBedId(bedId);
         if (patientDTO == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(patientDTO, HttpStatus.OK);
+    }
+
+    // Admission Type Endpoints
+    @PostMapping("/admissionTypes")
+    public ResponseEntity<AdmissionTypeDTO> createAdmissionType(@RequestBody AdmissionTypeDTO admissionTypeDTO) {
+        AdmissionTypeDTO createdType = admissionTypeService.createAdmissionType(admissionTypeDTO);
+        return new ResponseEntity<>(createdType, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/admissionTypes/{id}")
+    public ResponseEntity<AdmissionTypeDTO> getAdmissionTypeById(@PathVariable Long id) {
+        AdmissionTypeDTO typeDTO = admissionTypeService.getAdmissionTypeById(id);
+        return ResponseEntity.ok(typeDTO);
+    }
+
+    @GetMapping("/admissionTypes")
+    public ResponseEntity<List<AdmissionTypeDTO>> getAllAdmissionTypes() {
+        List<AdmissionTypeDTO> types = admissionTypeService.getAllAdmissionTypes();
+        return ResponseEntity.ok(types);
+    }
+
+    @PutMapping("/admissionTypes/{id}")
+    public ResponseEntity<AdmissionTypeDTO> updateAdmissionType(@PathVariable Long id,
+            @RequestBody AdmissionTypeDTO admissionTypeDTO) {
+        AdmissionTypeDTO updatedType = admissionTypeService.updateAdmissionType(id, admissionTypeDTO);
+        return ResponseEntity.ok(updatedType);
+    }
+
+    @DeleteMapping("/admissionTypes/{id}")
+    public ResponseEntity<Void> deleteAdmissionType(@PathVariable Long id) {
+        admissionTypeService.deleteAdmissionType(id);
+        return ResponseEntity.noContent().build();
     }
 }

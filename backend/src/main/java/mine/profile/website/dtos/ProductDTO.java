@@ -21,6 +21,7 @@ public class ProductDTO {
     private PricingModel pricingModel;
     private BigDecimal unitPrice;
     private String unit;
+    private Integer stock; // Add stock to the DTO
 
     public static ProductDTO toDto(Product product) {
         if (product == null) {
@@ -35,6 +36,9 @@ public class ProductDTO {
         dto.setType(product.getType());
         dto.setPricingModel(product.getPricingModel());
         dto.setUnit(product.getUnit());
+        if (product.getInventory() != null) {
+            dto.setStock(product.getInventory().getStock());
+        }
         return dto;
     }
 
@@ -51,6 +55,8 @@ public class ProductDTO {
         entity.setType(dto.getType());
         entity.setPricingModel(dto.getPricingModel());
         entity.setUnit(dto.getUnit());
+        // Note: We don't set the stock here. Stock is managed through the Inventory
+        // entity.
         return entity;
     }
 }

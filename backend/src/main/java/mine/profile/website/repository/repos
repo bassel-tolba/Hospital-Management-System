@@ -1,139 +1,133 @@
 .
-│   ├── ProcedureLogRepository.java:```
+├── history
+│   └── MedicationHistoryRepository.java:```
+package mine.profile.website.repository.history;
 
-package mine.profile.website.repository;
-
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import mine.profile.website.models.ProcedureLog;
+import mine.profile.website.models.history.MedicationHistory;
 
-public interface ProcedureLogRepository extends JpaRepository<ProcedureLog, Long> {
-    List<ProcedureLog> findByBillingId(Long billingId);
-
-    Page<ProcedureLog> findByUserId(Long userId, Pageable pageable);
+public interface MedicationHistoryRepository extends JpaRepository<MedicationHistory, Long> {
 
 }
 ```
-│   ├── PatientRepository.java:```
+├── ActivityTargetRepository.java:```
+// ActivityTargetRepository.java
 package mine.profile.website.repository;
 
-import java.time.LocalDate;
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.Patient;
-
-@Repository
-public interface PatientRepository extends JpaRepository<Patient, Long>, JpaSpecificationExecutor<Patient> {
-
-    // Derived Query Methods (Keep these if needed for specific cases)
-    List<Patient> findByFirstName(String firstName);
-
-    List<Patient> findByLastName(String lastName);
-
-    List<Patient> findByFirstNameContainingIgnoreCase(String firstName);
-
-    List<Patient> findByLastNameContainingIgnoreCase(String lastName);
-
-    List<Patient> findByDateOfBirth(LocalDate dateOfBirth);
-
-    List<Patient> findByGender(String gender);
-
-    List<Patient> findByEmail(String email);
-
-    List<Patient> findByPhoneNumber(String phoneNumber);
-
-    List<Patient> findByBloodType(String bloodType);
-
-    // Custom JPQL queries
-    @Query(value = "SELECT p FROM Patient p WHERE lower(concat(p.firstName,' ',p.lastName)) LIKE lower(:name)")
-    List<Patient> searchByFullName(@Param("name") String name);
-
-    // Native SQL Query
-    @Query(value = "SELECT * FROM patient WHERE YEAR(date_of_birth) = :year", nativeQuery = true)
-    List<Patient> findByYearOfBirth(@Param("year") int year);
-
-    @Query("SELECT p FROM Patient p WHERE " +
-            "LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(p.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Patient> searchPatients(@Param("search") String search, Pageable pageable);
-
-    Page<Patient> findAll(Pageable pageable);
-
-    Page<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
-            String firstName, String lastName, String medicalRecordNumber, Pageable pageable);
-
-    List<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
-            String firstName, String lastName, String medicalRecordNumber);
-
-    @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.unit.id = :unitId")
-    List<Patient> findPatientsByUnitId(@Param("unitId") Long unitId);
-
-    @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.id = :roomId")
-    List<Patient> findPatientsByRoomId(@Param("roomId") Long roomId);
-
-    // Optional if you want to keep this
-    @Query("SELECT p FROM Patient p JOIN p.nurses n WHERE n.id = :nurseId")
-    List<Patient> findPatientsByNurseId(@Param("nurseId") Long nurseId);
-}
-```
-│   ├── ImageReportRepository.java:```
-package mine.profile.website.repository;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import mine.profile.website.models.ImageReport;
+import mine.profile.website.models.ActivityTarget;
 
 @Repository
-public interface ImageReportRepository extends JpaRepository<ImageReport, Long> {
-    Page<ImageReport> findByPatientId(Long patientId, Pageable pageable);
+public interface ActivityTargetRepository extends JpaRepository<ActivityTarget, Long> {
 }
 ```
-│   ├── NurseRepository.java:```
+├── AdmissionRepository.java:```
 package mine.profile.website.repository;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
 
-import mine.profile.website.models.Nurse;
+import mine.profile.website.models.Admission;
+import mine.profile.website.models.Patient;
 
-@Repository
-public interface NurseRepository extends JpaRepository<Nurse, Long> {
+public interface AdmissionRepository extends JpaRepository<Admission, Long> {
+    List<Admission> findByPatientId(Long patientId);
 
-    Optional<Nurse> findByUser_Id(Long userId);
+    Page<Admission> findByPatientId(Long patientId, Pageable pageable);
+
+    Page<Admission> findByBedId(Long bedId, Pageable pageable);
+
+    Page<Admission> findByPatientIdAndBedId(Long patientId, Long bedId, Pageable pageable);
+
+    List<Admission> findByDischargeDateIsNull();
+
+    Admission findByBedId(Long bedId);
+
+    Optional<Admission> findFirstByPatientOrderByAdmissionDateAsc(Patient patient);
+
+    List<Admission> findByPatientIdAndDischargeDateIsNull(Long patientId);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(a) FROM Admission a")
+    long countAllAdmissions();
+
+    @Query("SELECT COUNT(a) FROM Admission a WHERE a.dischargeDate IS NULL")
+    long countCurrentAdmissions();
+
+    @Query(value = "SELECT DATE(admission_date) as date, count(*) from admission group by date", nativeQuery = true)
+    List<Object[]> countAdmissionsByDate();
+
+    @Query(value = "SELECT DATE(discharge_date) as date, count(*) from admission where discharge_date is not null group by date", nativeQuery = true)
+    List<Object[]> countDischargesByDate();
+
 }
 ```
-│   ├── PrescribedMedicationRepository.java:```
+├── AdmissionTypeRepository.java:```
 package mine.profile.website.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import mine.profile.website.models.PrescribedMedication;
+import mine.profile.website.models.AdmissionType;
 
-public interface PrescribedMedicationRepository extends JpaRepository<PrescribedMedication, Long> {
+public interface AdmissionTypeRepository extends JpaRepository<AdmissionType, Long> {
+}
+```
+├── AppointmentRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Appointment;
+
+@Repository
+public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+    List<Appointment> findByPatientId(Long patientId);
+
+    Page<Appointment> findByPatientId(Long patientId, Pageable pageable);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(a) FROM Appointment a")
+    long countAllAppointments();
+
+    @Query(value = "SELECT DATE(appointment_date_time) as date, count(*) from appointment group by date", nativeQuery = true)
+    List<Object[]> countAppointmentsByDate();
+}
+```
+├── AssessmentRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Assessment;
+
+@Repository
+public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
+    List<Assessment> findByPatientId(Long patientId);
+
+    Page<Assessment> findByPatientId(Long patientId, Pageable pageable);
 
 }
 ```
-│   ├── BedRepository.java:```
+├── BedRepository.java:```
 package mine.profile.website.repository;
 
 import java.util.List;
@@ -167,55 +161,23 @@ public interface BedRepository extends JpaRepository<Bed, Long>, JpaSpecificatio
 
     Page<Bed> findByBedNumberContainingIgnoreCaseAndRoomIdAndRoom_UnitId(String bedNumber,
             Long roomId, Long unitId, Pageable pageable);
-}
-```
-│   ├── PrescriptionRepository.java:```
-package mine.profile.website.repository;
 
-import java.util.List;
+    // Dashboard Queries
+    @Query("SELECT COUNT(b) FROM Bed b")
+    long countAllBeds();
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+    @Query("SELECT COUNT(b) FROM Bed b WHERE b.isOccupied = true")
+    long countOccupiedBeds();
 
-import mine.profile.website.models.Patient;
-import mine.profile.website.models.Prescription;
+    @Query("SELECT b.room.unit.unitType, COUNT(b) FROM Bed b GROUP BY b.room.unit.unitType")
+    List<Object[]> countBedsByUnitType();
 
-@Repository
-public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
-    Page<Prescription> findByPatient(Patient patient, Pageable pageable);
-
-    List<Prescription> findByPatientId(Long patientId);
-}
-```
-│   ├── ImageReportTypeRepository.java:```
-package mine.profile.website.repository;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.ImageReportType;
-
-@Repository
-public interface ImageReportTypeRepository extends JpaRepository<ImageReportType, Long> {
+    @Query("SELECT b.room.roomNumber, COUNT(b) FROM Bed b GROUP BY b.room.roomNumber")
+    List<Object[]> countBedsByRoomNumber();
 
 }
 ```
-│   ├── CarePlanGoalRepository.java:```
-package mine.profile.website.repository;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.CarePlanGoal;
-
-@Repository
-public interface CarePlanGoalRepository extends JpaRepository<CarePlanGoal, Long> {
-}
-```
-│   ├── BillingRepository.java:```
-
+├── BillingRepository.java:```
 package mine.profile.website.repository;
 
 import java.util.List;
@@ -235,9 +197,220 @@ public interface BillingRepository extends JpaRepository<Billing, Long> {
 
     @Query("SELECT b FROM Billing b WHERE b.patient.id = :patientId ORDER BY b.billDate DESC")
     List<Billing> findByPatientIdOrderByBillDateDesc(@Param("patientId") Long patientId);
+
+    @Query("SELECT b FROM Billing b")
+    List<Billing> findAllBills();
+
+    @Query("SELECT SUM(b.totalAmount) FROM Billing b")
+    Double getTotalRevenue();
+
+    @Query("SELECT SUM(b.totalAmount) - COALESCE((SELECT SUM(pm.amount) FROM Payment pm WHERE pm.billing = b), 0) FROM Billing b")
+    Double getPendingBills();
 }
 ```
-│   ├── AppointmentRepository.java:```
+├── CarePlanGoalRepository.java:```
+package mine.profile.website.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.CarePlanGoal;
+
+@Repository
+public interface CarePlanGoalRepository extends JpaRepository<CarePlanGoal, Long> {
+}
+```
+├── DepartmentRepository.java:```
+// DepartmentRepository.java
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Department;
+
+@Repository
+public interface DepartmentRepository extends JpaRepository<Department, Long> {
+    List<Department> findByNameContainingIgnoreCase(String name);
+}
+```
+├── DocumentRepository.java:```
+// DocumentRepository.java
+package mine.profile.website.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Document;
+
+@Repository
+public interface DocumentRepository extends JpaRepository<Document, Long> {
+
+    Page<Document> findByPatientId(Long patientId, Pageable pageable);
+
+}
+```
+├── DocumentTypeRepository.java:```
+// DocumentTypeRepository.java
+package mine.profile.website.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.DocumentType;
+
+@Repository
+public interface DocumentTypeRepository extends JpaRepository<DocumentType, Long> {
+}
+```
+├── ImageReportRepository.java:```
+package mine.profile.website.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.ImageReport;
+
+@Repository
+public interface ImageReportRepository extends JpaRepository<ImageReport, Long> {
+    Page<ImageReport> findByPatientId(Long patientId, Pageable pageable);
+}
+```
+├── ImageReportTypeRepository.java:```
+package mine.profile.website.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.ImageReportType;
+
+@Repository
+public interface ImageReportTypeRepository extends JpaRepository<ImageReportType, Long> {
+
+}
+```
+├── InventoryRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import mine.profile.website.models.Inventory;
+
+public interface InventoryRepository extends JpaRepository<Inventory, Long> {
+    Optional<Inventory> findByProductId(Long productId);
+}
+```
+├── LabResultRepository.java:```
+package mine.profile.website.repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.LabResult;
+
+@Repository
+public interface LabResultRepository extends JpaRepository<LabResult, Long> {
+    Page<LabResult> findByPatientId(Long patientId, Pageable pageable);
+
+    Page<LabResult> findByLabTestId(Long labTestId, Pageable pageable);
+
+    Page<LabResult> findByPatientIdAndResultDateTimeBetween(Long patientId, LocalDateTime startDate,
+            LocalDateTime endDate, Pageable pageable);
+
+    Page<LabResult> findByPerformedById(Long userId, Pageable pageable);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(lr) FROM LabResult lr")
+    long countAllLabResults();
+
+    @Query("SELECT lr.labTest.testName, COUNT(lr) FROM LabResult lr GROUP BY lr.labTest.testName ORDER BY COUNT(lr) DESC")
+    List<Object[]> countLabResultsByTest();
+}
+```
+├── LabTestRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.LabTest;
+
+@Repository
+public interface LabTestRepository extends JpaRepository<LabTest, Long> {
+    List<LabTest> findByTestNameContainingIgnoreCase(String testName);
+
+    List<LabTest> findByTestCode(String testCode);
+
+}
+```
+├── MedicationAdministrationRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.MedicationAdministration;
+
+@Repository
+public interface MedicationAdministrationRepository extends JpaRepository<MedicationAdministration, Long> {
+    Page<MedicationAdministration> findAll(Pageable pageable);
+
+    Page<MedicationAdministration> findByPatientId(Long patientId, Pageable pageable);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(ma) FROM MedicationAdministration ma")
+    long countAllMedicationAdministrations();
+
+    @Query("SELECT ma.prescribedMedication.medication.name, COUNT(ma) FROM MedicationAdministration ma GROUP BY ma.prescribedMedication.medication.name ORDER BY COUNT(ma) DESC")
+    List<Object[]> countMedicationAdministrationsByMedication();
+}
+```
+├── MedicationRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Medication;
+
+@Repository
+public interface MedicationRepository extends JpaRepository<Medication, Long> {
+    @Query("SELECT m FROM Medication m WHERE LOWER(m.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+    Page<Medication> searchMedications(@Param("searchTerm") String searchTerm, Pageable pageable);
+
+    // Dashboard Queries
+    @Query("SELECT pm.medication.name, COUNT(pm) FROM PrescribedMedication pm GROUP BY pm.medication.name ORDER BY COUNT(pm) DESC")
+    List<Object[]> countPrescribedMedicationByMedication();
+}
+```
+├── NursingCarePlanRepository.java:```
 package mine.profile.website.repository;
 
 import java.util.List;
@@ -247,16 +420,261 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import mine.profile.website.models.Appointment;
+import mine.profile.website.models.NursingCarePlan;
 
 @Repository
-public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
-    List<Appointment> findByPatientId(Long patientId);
+public interface NursingCarePlanRepository extends JpaRepository<NursingCarePlan, Long> {
+    List<NursingCarePlan> findByPatientId(Long patientId);
 
-    Page<Appointment> findByPatientId(Long patientId, Pageable pageable);
+    Page<NursingCarePlan> findByPatientId(Long patientId, Pageable pageable);
 }
 ```
-│   ├── RoomRepository.java:```
+├── PatientProductUsageRepository.java:```
+package mine.profile.website.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.PatientProductUsage;
+
+@Repository
+public interface PatientProductUsageRepository extends JpaRepository<PatientProductUsage, Long> {
+    Page<PatientProductUsage> findByPatientId(Long patientId, Pageable pageable);
+
+}
+```
+├── PatientRepository.java:```
+package mine.profile.website.repository;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Patient;
+
+@Repository
+public interface PatientRepository extends JpaRepository<Patient, Long>, JpaSpecificationExecutor<Patient> {
+
+    List<Patient> findByFirstName(String firstName);
+
+    List<Patient> findByLastName(String lastName);
+
+    List<Patient> findByFirstNameContainingIgnoreCase(String firstName);
+
+    List<Patient> findByLastNameContainingIgnoreCase(String lastName);
+
+    List<Patient> findByDateOfBirth(LocalDate dateOfBirth);
+
+    List<Patient> findByGender(String gender);
+
+    List<Patient> findByEmail(String email);
+
+    List<Patient> findByPhoneNumber(String phoneNumber);
+
+    List<Patient> findByBloodType(String bloodType);
+
+    @Query(value = "SELECT p FROM Patient p WHERE lower(concat(p.firstName,' ',p.lastName)) LIKE lower(:name)")
+    List<Patient> searchByFullName(@Param("name") String name);
+
+    @Query(value = "SELECT * FROM patient WHERE YEAR(date_of_birth) = :year", nativeQuery = true)
+    List<Patient> findByYearOfBirth(@Param("year") int year);
+
+    @Query("SELECT p FROM Patient p WHERE " +
+            "LOWER(p.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(p.medicalRecordNumber) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Patient> searchPatients(@Param("search") String search, Pageable pageable);
+
+    Page<Patient> findAll(Pageable pageable);
+
+    Page<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
+            String firstName, String lastName, String medicalRecordNumber, Pageable pageable);
+
+    List<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrMedicalRecordNumberContainingIgnoreCase(
+            String firstName, String lastName, String medicalRecordNumber);
+
+    @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.unit.id = :unitId")
+    List<Patient> findPatientsByUnitId(@Param("unitId") Long unitId);
+
+    @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.id = :roomId")
+    List<Patient> findPatientsByRoomId(@Param("roomId") Long roomId);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(p) FROM Patient p")
+    long countAllPatients();
+
+    @Query("SELECT COUNT(p) FROM Patient p WHERE p.gender = 'Male'")
+    long countMalePatients();
+
+    @Query("SELECT COUNT(p) FROM Patient p WHERE p.gender = 'Female'")
+    long countFemalePatients();
+
+    @Query("SELECT p.bloodType, COUNT(p) FROM Patient p GROUP BY p.bloodType")
+    List<Object[]> countPatientsByBloodType();
+
+    @Query(value = "SELECT YEAR(date_of_birth) as year, count(*) from patient group by year", nativeQuery = true)
+    List<Object[]> countPatientsByBirthYear();
+
+}
+```
+├── PaymentRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import mine.profile.website.models.Payment;
+
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    List<Payment> findByBillingId(Long billingId);
+}
+```
+├── PermissionRepository.java:```
+// PermissionRepository.java
+package mine.profile.website.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import mine.profile.website.models.Permission;
+
+public interface PermissionRepository extends JpaRepository<Permission, Long> {
+    Optional<Permission> findByName(String name);
+}
+```
+├── PrescribedMedicationRepository.java:```
+package mine.profile.website.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import mine.profile.website.models.PrescribedMedication;
+
+public interface PrescribedMedicationRepository extends JpaRepository<PrescribedMedication, Long> {
+
+}
+```
+├── PrescriptionRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Patient;
+import mine.profile.website.models.Prescription;
+
+@Repository
+public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
+    Page<Prescription> findByPatient(Patient patient, Pageable pageable);
+
+    List<Prescription> findByPatientId(Long patientId);
+}
+```
+├── ProcedureLogRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import mine.profile.website.models.ProcedureLog;
+
+public interface ProcedureLogRepository extends JpaRepository<ProcedureLog, Long> {
+    List<ProcedureLog> findByBillingId(Long billingId);
+
+    Page<ProcedureLog> findByUserId(Long userId, Pageable pageable);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(pl) FROM ProcedureLog pl")
+    long countAllProcedureLogs();
+
+    @Query("SELECT pl.procedure.name, COUNT(pl) FROM ProcedureLog pl GROUP BY pl.procedure.name ORDER BY COUNT(pl) DESC")
+    List<Object[]> countProcedureLogsByProcedure();
+
+    @Query(value = "SELECT DATE(start_time) as date, count(*) from procedure_log group by date", nativeQuery = true)
+    List<Object[]> countProceduresByDate();
+}
+```
+├── ProcedureRepository.java:```
+package mine.profile.website.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import mine.profile.website.models.Procedure;
+
+public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
+
+    @Query("SELECT p FROM Procedure p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(p.code) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+    Page<Procedure> searchByNameOrCode(@Param("searchTerm") String searchTerm, Pageable pageable);
+
+}
+```
+├── ProductRepository.java:```
+package mine.profile.website.repository;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import mine.profile.website.models.Product;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product, Long> {
+    @Query("SELECT p FROM Product p WHERE " +
+            "LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "LOWER(p.code) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+    Page<Product> searchProducts(@Param("searchTerm") String searchTerm, Pageable pageable);
+
+    // Dashboard Queries
+    @Query("SELECT ppu.product.name, COUNT(ppu) FROM PatientProductUsage ppu GROUP BY ppu.product.name ORDER BY COUNT(ppu) DESC")
+    List<Object[]> countProductUsageByProduct();
+
+}
+```
+├── RoleRepository.java:```
+// RoleRepository.java
+package mine.profile.website.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import mine.profile.website.models.Role;
+
+public interface RoleRepository extends JpaRepository<Role, Long> {
+    Optional<Role> findByName(String name);
+}
+```
+├── RoomRepository.java:```
 package mine.profile.website.repository;
 
 import org.springframework.data.domain.Page;
@@ -278,203 +696,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
 }
 ```
-│   ├── VitalSignRepository.java:```
-
-package mine.profile.website.repository;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import mine.profile.website.models.VitalSign;
-
-public interface VitalSignRepository extends JpaRepository<VitalSign, Long> {
-    List<VitalSign> findByPatientId(Long patientId);
-
-    Page<VitalSign> findByPatientId(Long patientId, Pageable pageable);
-
-    List<VitalSign> findByPatientIdAndTimestampBetween(Long patientId, LocalDateTime startTime, LocalDateTime endTime);
-}
-
-```
-│   ├── ProductRepository.java:```
-package mine.profile.website.repository;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.Product;
-
-@Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
-    @Query("SELECT p FROM Product p WHERE " +
-            "LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(p.code) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
-    Page<Product> searchProducts(@Param("searchTerm") String searchTerm, Pageable pageable);
-}
-```
-│   ├── PatientProductUsageRepository.java:```
-package mine.profile.website.repository;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.PatientProductUsage;
-
-@Repository
-public interface PatientProductUsageRepository extends JpaRepository<PatientProductUsage, Long> {
-    Page<PatientProductUsage> findByPatientId(Long patientId, Pageable pageable);
-
-}
-```
-│   ├── AssessmentRepository.java:```
-package mine.profile.website.repository;
-
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.Assessment;
-
-@Repository
-public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
-    List<Assessment> findByPatientId(Long patientId);
-
-    Page<Assessment> findByPatientId(Long patientId, Pageable pageable);
-
-}
-```
-│   └── history
-│   ├── MedicationHistoryRepository.java:```
-package mine.profile.website.repository.history;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import mine.profile.website.models.history.MedicationHistory;
-
-public interface MedicationHistoryRepository extends JpaRepository<MedicationHistory, Long> {
-
-}
-```
-│   ├── LabTestRepository.java:```
-package mine.profile.website.repository;
-
-import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.LabTest;
-
-@Repository
-public interface LabTestRepository extends JpaRepository<LabTest, Long> {
-    List<LabTest> findByTestNameContainingIgnoreCase(String testName);
-
-    List<LabTest> findByTestCode(String testCode);
-
-}
-```
-│   ├── NursingCarePlanRepository.java:```
-package mine.profile.website.repository;
-
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.NursingCarePlan;
-
-@Repository
-public interface NursingCarePlanRepository extends JpaRepository<NursingCarePlan, Long> {
-    List<NursingCarePlan> findByPatientId(Long patientId);
-
-    Page<NursingCarePlan> findByPatientId(Long patientId, Pageable pageable);
-}
-```
-│   ├── AdmissionRepository.java:```
-package mine.profile.website.repository;
-
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import mine.profile.website.models.Admission;
-
-public interface AdmissionRepository extends JpaRepository<Admission, Long> {
-    List<Admission> findByPatientId(Long patientId);
-
-    Page<Admission> findByPatientId(Long patientId, Pageable pageable);
-
-    Page<Admission> findByBedId(Long bedId, Pageable pageable);
-
-    Page<Admission> findByPatientIdAndBedId(Long patientId, Long bedId, Pageable pageable);
-
-    List<Admission> findByDischargeDateIsNull();
-
-    Admission findByBedId(Long bedId);
-
-}
-```
-│   ├── ProcedureRepository.java:```
-package mine.profile.website.repository;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
-import mine.profile.website.models.Procedure;
-
-public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
-
-    @Query("SELECT p FROM Procedure p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(p.code) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
-    Page<Procedure> searchByNameOrCode(@Param("searchTerm") String searchTerm, Pageable pageable);
-
-}
-```
-│   ├── LabResultRepository.java:```
-package mine.profile.website.repository;
-
-import java.time.LocalDateTime;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.LabResult;
-
-@Repository
-public interface LabResultRepository extends JpaRepository<LabResult, Long> {
-    Page<LabResult> findByPatientId(Long patientId, Pageable pageable);
-
-    Page<LabResult> findByLabTestId(Long labTestId, Pageable pageable);
-
-    Page<LabResult> findByPatientIdAndResultDateTimeBetween(Long patientId, LocalDateTime startDate,
-            LocalDateTime endDate, Pageable pageable);
-
-    Page<LabResult> findByPerformedById(Long userId, Pageable pageable);
-}
-```
-│   ├── UnitRepository.java:```
+├── UnitRepository.java:```
 package mine.profile.website.repository;
 
 import java.util.List;
@@ -492,11 +714,13 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     @Query("SELECT u FROM Unit u WHERE CAST(u.unitType AS string) LIKE %:searchTerm%")
     List<Unit> findByUnitTypeContaining(@Param("searchTerm") String searchTerm);
 
+    List<Unit> findByNameContaining(String searchTerm);
+
 }
 
 ```
-│   ├── DepartmentRepository.java:```
-// DepartmentRepository.java
+├── UserActivityRepository.java:```
+// UserActivityRepository.java
 package mine.profile.website.repository;
 
 import java.util.List;
@@ -504,48 +728,15 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import mine.profile.website.models.Department;
+import mine.profile.website.models.UserActivity;
 
 @Repository
-public interface DepartmentRepository extends JpaRepository<Department, Long> {
-    List<Department> findByNameContainingIgnoreCase(String name);
+public interface UserActivityRepository extends JpaRepository<UserActivity, Long> {
+    List<UserActivity> findByState(String state);
+
 }
 ```
-│   ├── NurseActivityRepository.java:```
-package mine.profile.website.repository;
-
-import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.NurseActivity;
-
-@Repository
-public interface NurseActivityRepository extends JpaRepository<NurseActivity, Long> {
-    List<NurseActivity> findByNurseId(Long nurseId);
-}
-```
-│   ├── MedicationRepository.java:```
-// mine.profile.website.repository.MedicationRepository.java
-package mine.profile.website.repository;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-import mine.profile.website.models.Medication;
-
-@Repository
-public interface MedicationRepository extends JpaRepository<Medication, Long> {
-    @Query("SELECT m FROM Medication m WHERE LOWER(m.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
-    Page<Medication> searchMedications(@Param("searchTerm") String searchTerm, Pageable pageable);
-}
-```
-│   ├── UserRepository.java:```
+├── UserRepository.java:```
 package mine.profile.website.repository;
 
 import java.util.List;
@@ -581,39 +772,33 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "LOWER(u.firstName) LIKE LOWER(CONCAT('%',:search,'%')) OR " +
             "LOWER(u.lastName) LIKE LOWER(CONCAT('%',:search,'%')) OR " +
             "LOWER(u.specialty) LIKE LOWER(CONCAT('%',:search,'%')) OR " +
-            "LOWER(u.role) LIKE LOWER(CONCAT('%',:search,'%'))")
+            "LOWER(u.role.name) LIKE LOWER(CONCAT('%',:search,'%'))")
     Page<User> searchUsers(@Param("search") String search, Pageable pageable);
 }
 ```
-│   ├── PaymentRepository.java:```
+├── VitalSignRepository.java:```
 package mine.profile.website.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import mine.profile.website.models.Payment;
-
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    List<Payment> findByBillingId(Long billingId);
-}
-```
-│   ├── MedicationAdministrationRepository.java:```
-package mine.profile.website.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
 
-import mine.profile.website.models.MedicationAdministration;
+import mine.profile.website.models.VitalSign;
 
-@Repository
-public interface MedicationAdministrationRepository extends JpaRepository<MedicationAdministration, Long> {
+public interface VitalSignRepository extends JpaRepository<VitalSign, Long> {
+    List<VitalSign> findByPatientId(Long patientId);
 
-    // Added method for paginated results
-    Page<MedicationAdministration> findAll(Pageable pageable);
+    Page<VitalSign> findByPatientId(Long patientId, Pageable pageable);
 
-    Page<MedicationAdministration> findByPatientId(Long patientId, Pageable pageable);
+    List<VitalSign> findByPatientIdAndTimestampBetween(Long patientId, LocalDateTime startTime, LocalDateTime endTime);
+
+    // Dashboard Queries
+    @Query("SELECT COUNT(vs) FROM VitalSign vs")
+    long countAllVitalSigns();
+
 }
 ```

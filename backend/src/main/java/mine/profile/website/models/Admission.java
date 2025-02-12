@@ -33,11 +33,16 @@ public class Admission {
     @OneToOne
     @JoinColumn(name = "bed_id")
     private Bed bed;
+    @ManyToOne
+    @JoinColumn(name = "admission_type_id")
+    private AdmissionType admissionType;
 
-    public Admission(LocalDateTime admissionDate, LocalDateTime dischargeDate, Patient patient, Bed bed) {
+    public Admission(LocalDateTime admissionDate, LocalDateTime dischargeDate, Patient patient, Bed bed,
+            AdmissionType admissionType) {
         this.admissionDate = admissionDate;
         this.dischargeDate = dischargeDate;
         this.patient = patient;
         this.bed = bed;
+        this.admissionType = admissionType;
     }
 }

@@ -1,7 +1,7 @@
-// UserService.java
+// backend/src/main/java/mine/profile/website/service/UserService.java
 package mine.profile.website.service;
 
-import java.util.Collections;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,9 +18,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.persistence.EntityNotFoundException;
-import mine.profile.website.dtos.NurseDTO;
 import mine.profile.website.dtos.UserDTO;
 import mine.profile.website.models.Patient;
 import mine.profile.website.models.Role;
@@ -28,9 +28,11 @@ import mine.profile.website.models.Room;
 import mine.profile.website.models.Unit;
 import mine.profile.website.models.User;
 import mine.profile.website.repository.PatientRepository;
+import mine.profile.website.repository.RoleRepository;
 import mine.profile.website.repository.RoomRepository;
 import mine.profile.website.repository.UnitRepository;
 import mine.profile.website.repository.UserRepository;
+import mine.profile.website.util.FileHandler;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -44,26 +46,35 @@ public class UserService implements UserDetailsService {
     private RoomRepository roomRepository;
     @Autowired
     private PatientRepository patientRepository;
+    @Autowired
+    private RoleRepository roleRepository; // Inject RoleRepository
+    @Autowired
+    private FileHandler fileHandler;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private NurseService nurseService; // Inject NurseService
-
-    private Role getRoleFromString(String roleName) {
-        try {
-            return Role.valueOf(roleName);
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid role name: {}", roleName);
-            throw new IllegalArgumentException("Invalid role name: " + roleName);
-        }
-    }
-
     @Transactional
-    public UserDTO createUser(UserDTO userDTO) {
+    public UserDTO createUser(UserDTO userDTO, MultipartFile profilePictureFile) {
         log.info("Creating user with details: {}", userDTO);
         User user = userDTO.toEntity();
+
+        // Set the role based on the provided roleId
+        if (userDTO.getRoleId() != null) {
+            Role role = roleRepository.findById(userDTO.getRoleId())
+                    .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + userDTO.getRoleId()));
+            user.setRole(role);
+        }
+
+        // Handle profile picture upload
+        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+            try {
+                String imageUrl = fileHandler.saveFile(profilePictureFile);
+                user.setProfilePictureURL(imageUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save profile picture: " + e.getMessage(), e);
+            }
+        }
 
         User savedUser = userRepository.save(user);
         log.info("User created successfully with ID: {}", savedUser.getId());
@@ -71,30 +82,21 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public UserDTO registerUser(UserDTO userDTO) {
+    public UserDTO registerUser(UserDTO userDTO, MultipartFile profilePictureFile) {
         log.info("Registering user with details: {}", userDTO);
         String rawPassword = userDTO.getPassword();
         if (rawPassword == null) {
             throw new IllegalArgumentException("rawPassword cannot be null");
         }
         userDTO.setPassword(passwordEncoder.encode(rawPassword));
-        UserDTO createdUserDto = createUser(userDTO);
-
-        // Create nurse if the user role is NURSE
-        if (userDTO.getRole().equals("NURSE")) {
-            NurseDTO nurseDTO = new NurseDTO();
-            User user = createdUserDto.toEntity();
-            nurseDTO.setUser(user);
-
-            nurseService.createNurse(nurseDTO);
-            log.info("Nurse created for user with ID: {}", createdUserDto.getId());
-        }
+        UserDTO createdUserDto = createUser(userDTO, profilePictureFile);
 
         return createdUserDto;
     }
 
     @Transactional
-    public UserDTO updateUser(Long id, UserDTO userDTO) {
+    public UserDTO updateUser(Long id, UserDTO userDTO, MultipartFile profilePictureFile,
+            String removedProfilePictureUrl) {
         log.info("Updating user with ID: {} and details: {}", id, userDTO);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> {
@@ -115,10 +117,25 @@ public class UserService implements UserDetailsService {
         if (userDTO.getSpecialty() != null) {
             user.setSpecialty(userDTO.getSpecialty());
         }
-        if (userDTO.getRole() != null) {
-            user.setRole(getRoleFromString(userDTO.getRole()));
+        if (userDTO.getRoleId() != null) {
+            Role role = roleRepository.findById(userDTO.getRoleId())
+                    .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + userDTO.getRoleId()));
+            user.setRole(role);
+        }
+        // Handle profile picture update/removal
+        if (removedProfilePictureUrl != null && user.getProfilePictureURL() != null
+                && user.getProfilePictureURL().equals(removedProfilePictureUrl)) {
+            user.setProfilePictureURL(null);
         }
 
+        if (profilePictureFile != null && !profilePictureFile.isEmpty()) {
+            try {
+                String imageUrl = fileHandler.saveFile(profilePictureFile);
+                user.setProfilePictureURL(imageUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save profile picture: " + e.getMessage(), e);
+            }
+        }
         // Only encode the password if a new password was provided.
         if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
@@ -170,9 +187,11 @@ public class UserService implements UserDetailsService {
         log.info("User deleted successfully with ID: {}", id);
     }
 
-    public List<UserDTO> findByRole(String role) {
-        log.info("Searching for users with role: {}", role);
-        return userRepository.findByRole(getRoleFromString(role)).stream()
+    public List<UserDTO> findByRole(Long roleId) { // Changed parameter to Long roleId
+        log.info("Searching for users with role ID: {}", roleId);
+        Role role = roleRepository.findById(roleId) // Find the role first
+                .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + roleId));
+        return userRepository.findByRole(role).stream()
                 .map(UserDTO::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -281,6 +300,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         log.info("Loading user by username: {}", username);
         User user = userRepository.findByUsername(username)
@@ -288,15 +308,18 @@ public class UserService implements UserDetailsService {
                     log.error("User not found with username: {}", username);
                     return new UsernameNotFoundException("User not found with username: " + username);
                 });
+
+        List<GrantedAuthority> authorities = user.getRole().getPermissions().stream()
+                .map(permission -> new SimpleGrantedAuthority(permission.getName()))
+                .collect(Collectors.toList());
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                mapRolesToAuthorities(Collections.singletonList(user.getRole())));
-    }
-
-    private List<GrantedAuthority> mapRolesToAuthorities(List<Role> roles) {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
-                .collect(Collectors.toList());
+                true, // ADD THIS! Pass the value from your User entity.
+                true, // accountNonExpired (usually true)
+                true, // credentialsNonExpired (usually true)
+                true, // accountNonLocked (usually true)
+                authorities);
     }
 }

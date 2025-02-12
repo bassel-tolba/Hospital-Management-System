@@ -1,5 +1,6 @@
 package mine.profile.website.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,8 +56,16 @@ public class PaymentService {
                     .max((a1, a2) -> a1.getAdmissionDate().compareTo(a2.getAdmissionDate()))
                     .orElse(null);
         }
-        if (latestAdmission != null && latestAdmission.getDischargeDate() == null) {
-            throw new IllegalStateException("Cannot process payment until the current admission stay is over.");
+
+        if (latestAdmission != null) {
+            LocalDateTime dischargeDate = latestAdmission.getDischargeDate();
+
+            if (dischargeDate == null) {
+                throw new IllegalStateException("Cannot process payment because the current admission is still open.");
+            } else if (dischargeDate.isAfter(LocalDateTime.now())) {
+                throw new IllegalStateException("Cannot process payment until the current admission stay is over. " +
+                        "Please update the discharge date to the current time or a past time to proceed.");
+            }
         }
 
         Payment payment = paymentDTO.toEntity(billing);

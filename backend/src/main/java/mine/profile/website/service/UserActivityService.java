@@ -1,7 +1,6 @@
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityNotFoundException;
 import mine.profile.website.dtos.UserActivityDTO;
 import mine.profile.website.models.ActivityTarget;
-import mine.profile.website.models.Bed;
 import mine.profile.website.models.Patient;
 import mine.profile.website.models.Room;
 import mine.profile.website.models.Unit;
@@ -98,91 +96,84 @@ public class UserActivityService {
 
     @Transactional
     public List<UserActivityDTO> getAvailableActivitiesForUser(Long userId) {
-        try {
-            User user = userRepository.getById(userId);
-            List<UserActivity> pendingActivities = userActivityRepository.findAll();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-            Set<Long> allPotentialUserPatients = new HashSet<>();
-            List<String> allPotentialUserPatientsNames = new ArrayList<>();
-
-            Set<UnitType> userUnitTypes = getUserUnitTypes(user);
-            Set<Long> forcedActivities = new HashSet<>();
-
-            if (user.getUnits() != null) {
-                for (Unit unit : user.getUnits()) {
-                    if (unit != null) {
-                        if (unit.getRooms() != null) {
-                            for (Room room : unit.getRooms()) {
-                                if (room != null) {
-                                    if (room.getBeds() != null) {
-                                        for (Bed bed : room.getBeds()) {
-                                            if (bed != null && bed.getAdmission() != null
-                                                    && bed.getAdmission().getPatient() != null) {
-                                                Patient patient = bed.getAdmission().getPatient();
-                                                allPotentialUserPatients.add(patient.getId());
-                                                allPotentialUserPatientsNames
-                                                        .add(patient.getFirstName() + " " + patient.getLastName());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (user.getRooms() != null) {
-                for (Room room : user.getRooms()) {
-                    if (room != null) {
-                        if (room.getBeds() != null) {
-                            for (Bed bed : room.getBeds()) {
-                                if (bed != null && bed.getAdmission() != null
-                                        && bed.getAdmission().getPatient() != null) {
-                                    Patient patient = bed.getAdmission().getPatient();
-                                    allPotentialUserPatients.add(patient.getId());
-                                    allPotentialUserPatientsNames
-                                            .add(patient.getFirstName() + " " + patient.getLastName());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (user.getPatients() != null) {
-                for (Patient patient : user.getPatients()) {
-                    if (patient != null) {
-                        allPotentialUserPatients.add(patient.getId());
-                        allPotentialUserPatientsNames.add(patient.getFirstName() + " " + patient.getLastName());
-                    }
-                }
-            }
-
-            // Apply forced activity logic
-            if (userUnitTypes.contains(UnitType.LABORATORY)) {
-                forcedActivities.addAll(pendingActivities.stream()
-                        .filter(activity -> activity.getActivityType() == UserActivityType.LAB_TEST)
-                        .map(UserActivity::getId)
-                        .collect(Collectors.toSet()));
-
-            }
-            if (userUnitTypes.contains(UnitType.RADIOLOGY)) {
-                forcedActivities.addAll(pendingActivities.stream()
-                        .filter(activity -> activity.getActivityType() == UserActivityType.IMAGE_REPORT)
-                        .map(UserActivity::getId)
-                        .collect(Collectors.toSet()));
-            }
-
-            Set<Long> finalForcedActivities = forcedActivities;
-            return pendingActivities.stream()
-                    .filter(activity -> isActivityApplicable(activity, allPotentialUserPatients, user.getUsername())
-                            || finalForcedActivities.contains(activity.getId()))
-                    .map(UserActivityDTO::fromEntity)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            System.out.println("Failed to get available activities for user with ID: " + userId + e);
-            throw new RuntimeException("Failed to get available activities", e);
+        if (!user.isEnabled()) {
+            throw new RuntimeException("User is not enabled");
         }
+
+        List<UserActivity> pendingActivities = userActivityRepository.findByStateIgnoreCaseOrStateIgnoreCase("pending",
+                "inprogress"); // Query by state
+        List<Unit> userUnits = user.getUnits();
+
+        return pendingActivities.stream()
+                .filter(activity -> isActivityApplicable(activity, user))
+                // Apply Role and Unit-Based filtering
+                .filter(activity -> isAllowedActivity(activity, user, userUnits))
+                .map(UserActivityDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isAllowedActivity(UserActivity activity, User user, List<Unit> userUnits) {
+        UserActivityType type = activity.getActivityType();
+        String role = user.getRoleName();
+
+        if ("LAB_TECHNICIAN".equalsIgnoreCase(role) && type == UserActivityType.LAB_TEST) {
+            return userUnits != null && userUnits.stream().anyMatch(unit -> unit.getUnitType() == UnitType.LABORATORY);
+        }
+
+        if ("RADIOLOGY_TECHNICIAN".equalsIgnoreCase(role) && type == UserActivityType.IMAGE_REPORT) {
+            return userUnits != null && userUnits.stream().anyMatch(unit -> unit.getUnitType() == UnitType.RADIOLOGY);
+        }
+
+        if ("NURSE".equalsIgnoreCase(role)) {
+            return isNurseAllowedActivityType(type);
+        }
+
+        // If none of the above conditions match, allow the activity
+        return true;
+    }
+
+    private boolean isActivityApplicable(UserActivity activity, User user) {
+        ActivityTarget activityTarget = activity.getActivityTarget();
+
+        // If activity target is null or doesn't target specific patients, it's not
+        // applicable
+        if (activityTarget == null || activityTarget.getPatients() == null || activityTarget.getPatients().isEmpty()) {
+            return false;
+        }
+
+        // Iterate through each patient associated with the activity
+        for (Patient activityPatient : activityTarget.getPatients()) {
+            if (isUserAuthorizedForPatient(user, activityPatient)) {
+                return true; // User is authorized for at least one patient in the activity
+            }
+        }
+
+        return false; // User is not authorized for any of the patients
+    }
+
+    private boolean isUserAuthorizedForPatient(User user, Patient patient) {
+        // 1. Check if user is assigned to the patient's Unit
+        if (patient.getUnit() != null && user.getUnits() != null
+                && user.getUnits().stream().anyMatch(unit -> unit.getId().equals(patient.getUnit().getId()))) {
+            return true;
+        }
+
+        // 2. Check if user is assigned to the patient's Room
+        if (patient.getRoom() != null && user.getRooms() != null
+                && user.getRooms().stream().anyMatch(room -> room.getId().equals(patient.getRoom().getId()))) {
+            return true;
+        }
+
+        // 3. Check if the patient is directly assigned to the user
+        if (user.getPatients() != null && user.getPatients().stream()
+                .anyMatch(assignedPatient -> assignedPatient.getId().equals(patient.getId()))) {
+            return true;
+        }
+
+        return false;
     }
 
     private Set<UnitType> getUserUnitTypes(User user) {
@@ -195,47 +186,20 @@ public class UserActivityService {
         return unitTypes;
     }
 
-    @Transactional
-    private boolean isActivityApplicable(UserActivity activity, Set<Long> allPotentialUserPatients, String userName) {
-        ActivityTarget activityTarget = activity.getActivityTarget();
-        Set<Long> activityPatients = new HashSet<>();
-        List<String> activityPatientsNames = new ArrayList<>();
-
-        if (activityTarget.getUnit() != null) {
-            activityTarget.getUnit().getRooms().stream()
-                    .flatMap(room -> room.getBeds().stream())
-                    .filter(bed -> bed.getAdmission() != null && bed.getAdmission().getPatient() != null)
-                    .map(bed -> bed.getAdmission().getPatient())
-                    .forEach(patient -> {
-                        activityPatients.add(patient.getId());
-                        activityPatientsNames.add(patient.getFirstName() + " " + patient.getLastName());
-
-                    });
-
-        }
-        if (activityTarget.getRoom() != null) {
-            activityTarget.getRoom().getBeds().stream()
-                    .filter(bed -> bed.getAdmission() != null && bed.getAdmission().getPatient() != null)
-                    .map(bed -> bed.getAdmission().getPatient())
-                    .forEach(patient -> {
-                        activityPatients.add(patient.getId());
-                        activityPatientsNames.add(patient.getFirstName() + " " + patient.getLastName());
-                    });
-        }
-
-        if (activityTarget.getPatients() != null) {
-            activityTarget.getPatients().forEach(patient -> {
-                activityPatients.add(patient.getId());
-                activityPatientsNames.add(patient.getFirstName() + " " + patient.getLastName());
-
-            });
-
-        }
-
-        // Check if there's any overlap
-        return activityPatients.stream().anyMatch(allPotentialUserPatients::contains);
+    private boolean isNurseAllowedActivityType(UserActivityType type) {
+        return type == UserActivityType.ASSESSMENT ||
+                type == UserActivityType.VITAL_SIGNS ||
+                type == UserActivityType.MEDICATION_ADMINISTRATION ||
+                type == UserActivityType.PRODUCT;
     }
 
+    private boolean isNurseOnlyActivity(UserActivityType type) {
+        return type == UserActivityType.VITAL_SIGNS ||
+                type == UserActivityType.MEDICATION_ADMINISTRATION ||
+                type == UserActivityType.ASSESSMENT;
+    }
+
+    @Transactional
     public UserActivityDTO updateActivityState(Long id, String state) {
         log.info("Updating activity with id : {} and state : {}", id, state);
         UserActivity userActivity = userActivityRepository.findById(id)
@@ -251,6 +215,7 @@ public class UserActivityService {
         return UserActivityDTO.fromEntity(savedUserActivity);
     }
 
+    @Transactional
     public List<UserActivityDTO> getAllActivities() {
         log.info("Fetching all activities");
         return userActivityRepository.findAll().stream()
@@ -258,6 +223,7 @@ public class UserActivityService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public UserActivityDTO getActivityById(Long id) {
         log.info("Fetching activity by ID : {}", id);
         UserActivity userActivity = userActivityRepository.findById(id)
@@ -269,6 +235,7 @@ public class UserActivityService {
         return UserActivityDTO.fromEntity(userActivity);
     }
 
+    @Transactional
     public void deleteActivityById(Long id) {
         log.info("Deleting activity by ID : {}", id);
         if (!userActivityRepository.existsById(id)) {

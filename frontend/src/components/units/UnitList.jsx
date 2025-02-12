@@ -1,83 +1,108 @@
 import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Typography, Modal, Form, Select } from "antd";
+import { Table, Input, Button, Space, Typography, Modal, Form, Select, InputNumber, Tag, Tooltip } from "antd";
 import { useUnitStore } from "../../services/unit.service";
-import { SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { UnitType } from "../../models/UnitType"; // Import the UnitType enum
+import {
+	SearchOutlined,
+	EditOutlined,
+	DeleteOutlined,
+	PlusOutlined,
+	HomeOutlined,
+	EnvironmentOutlined,
+	InfoCircleOutlined,
+	UserOutlined,
+} from "@ant-design/icons";
+import { UnitType } from "../../models/UnitType";
+import { Row, Col } from "antd";
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const UnitList = () => {
-	const { units, loading, total, searchUnits, deleteUnit, createUnit, updateUnit, getAllUnits, setLoading } = useUnitStore();
+	const { units, loading, total, searchUnits, deleteUnit, createUnit, updateUnit, setLoading } = useUnitStore();
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [selectedUnit, setSelectedUnit] = useState(null);
 	const [form] = Form.useForm();
 	const [searchTerm, setSearchTerm] = useState("");
+	const [locationType, setLocationType] = useState("custom");
 
 	useEffect(() => {
-		console.log("useEffect: Component mounted or dependencies changed");
 		fetchUnits();
 	}, []);
 
 	const fetchUnits = async () => {
-		console.log("fetchUnits: Fetching units from server");
 		setLoading(true);
 		try {
-			// Perform an empty search before fetching all units
-			await searchUnits("");
-			await getAllUnits();
-			console.log("fetchUnits: Units received:", units);
+			await searchUnits(searchTerm);
 		} catch (error) {
-			console.error("fetchUnits: error in getting units:", error);
+			console.error("Error fetching units:", error);
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const showModal = (unit) => {
-		console.log("showModal: Opening modal, unit:", unit);
 		setSelectedUnit(unit);
 		if (unit) {
 			form.setFieldsValue({
-				name: unit.unitType, // Set the form value from unitType
+				name: unit.name,
+				unitType: unit.unitType,
+				location: unit.location,
+				description: unit.description,
 			});
+			const locationValues = unit.location ? unit.location.split("-") : [];
+			if (locationValues.length == 2 && (locationValues[0] == "floor" || locationValues[0] == "place")) {
+				setLocationType(locationValues[0]);
+				form.setFieldsValue({
+					locationNumber: parseInt(locationValues[1]),
+				});
+			} else {
+				setLocationType("custom");
+			}
 		} else {
+			setLocationType("custom");
 			form.resetFields();
 		}
-
 		setIsModalVisible(true);
 	};
 
 	const handleCancel = () => {
-		console.log("handleCancel: Closing modal");
 		setIsModalVisible(false);
 		setSelectedUnit(null);
 		form.resetFields();
+		setLocationType("custom");
+	};
+
+	const handleLocationTypeChange = (value) => {
+		setLocationType(value);
+		if (value !== "custom") {
+			form.setFieldsValue({ location: `${value}-` });
+		} else {
+			form.setFieldsValue({ location: "" });
+		}
+	};
+
+	const handleLocationNumberChange = (value) => {
+		if (locationType != "custom") {
+			form.setFieldsValue({ location: `${locationType}-${value}` });
+		}
 	};
 
 	const handleFormSubmit = async () => {
-		console.log("handleFormSubmit: Submitting form");
 		try {
 			const values = await form.validateFields();
-			const unitData = { ...values };
 			if (selectedUnit) {
-				console.log("handleFormSubmit: Updating unit with id:", selectedUnit.id, "data", unitData);
-				await updateUnit(selectedUnit.id, unitData);
+				await updateUnit(selectedUnit.id, values);
 			} else {
-				console.log("handleFormSubmit: Creating new unit:", unitData);
-				await createUnit(unitData);
+				await createUnit(values);
 			}
 			fetchUnits();
 			setIsModalVisible(false);
-			form.resetFields();
-			setSelectedUnit(null);
 		} catch (error) {
-			console.log("error in handle form submit", error);
+			console.error("Error submitting form:", error);
 		}
 	};
 
 	const handleDelete = async (unitId) => {
-		console.log("handleDelete: Deleting unit with id:", unitId);
 		try {
 			await deleteUnit(unitId);
 			fetchUnits();
@@ -85,58 +110,107 @@ const UnitList = () => {
 			console.error("Error deleting unit:", error);
 		}
 	};
-	const handleSearch = async (value) => {
-		console.log("handleSearch: Searching units with value:", value);
+
+	const handleSearch = (value) => {
 		setSearchTerm(value);
-		try {
-			await searchUnits(value);
-		} catch (error) {
-			console.log("error in handle search submit", error);
-		}
+		fetchUnits();
+	};
+
+	const getUnitTypeColor = (unitType) => {
+		const colors = {
+			APARTMENT: "blue",
+			HOUSE: "green",
+			OFFICE: "geekblue",
+			RETAIL: "orange",
+			// Add more types as needed
+		};
+		return colors[unitType] || "default";
 	};
 
 	const columns = [
 		{
+			title: "Unit Name",
+			dataIndex: "name",
+			key: "name",
+			render: (text) => (
+				<Space>
+					<HomeOutlined />
+					<span>{text}</span>
+				</Space>
+			),
+		},
+		{
 			title: "Unit Type",
-			dataIndex: "name", // Changed from "unitType" to "name"
+			dataIndex: "unitType",
 			key: "unitType",
-			render: (text) => {
-				console.log("render: Rendering unitType:", text);
-				const unitType = UnitType[text];
-				const displayName = unitType ? unitType.displayName : text;
-				console.log("render: Display name:", displayName);
-				return displayName;
-			},
+			render: (unitType) => <Tag color={getUnitTypeColor(unitType)}>{unitType ? UnitType[unitType].displayName : "N/A"}</Tag>,
+		},
+		{
+			title: "Location",
+			dataIndex: "location",
+			key: "location",
+			render: (location) => (
+				<Space>
+					<EnvironmentOutlined />
+					<span>{location}</span>
+				</Space>
+			),
+		},
+		{
+			title: "Description",
+			dataIndex: "description",
+			key: "description",
+			render: (description) => (
+				<Tooltip title={description}>
+					{description ? description.slice(0, 50) + (description.length > 50 ? "..." : "") : "No description"}
+				</Tooltip>
+			),
 		},
 		{
 			title: "Actions",
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-						Delete
-					</Button>
+					<Tooltip title="Edit Unit">
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)} />
+					</Tooltip>
+					<Tooltip title="Delete Unit">
+						<Button danger type="primary" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+					</Tooltip>
 				</Space>
 			),
 		},
 	];
 
 	return (
-		<div style={{ padding: 20 }}>
-			<Title level={2}>Unit List</Title>
-			<Space style={{ marginBottom: 16 }}>
-				<Input.Search placeholder="Search by Unit Name..." onSearch={handleSearch} style={{ width: 300 }} />
-				<Button type="primary" onClick={() => showModal(null)}>
-					Add New Unit
-				</Button>
-			</Space>
+		<div style={{ padding: 24 }}>
+			<Title level={2}>
+				<Space>
+					<HomeOutlined />
+					Unit List
+				</Space>
+			</Title>
 
-			<Table columns={columns} dataSource={units} loading={loading} rowKey="id" pagination={false} />
+			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+				<Col xs={24} sm={12} md={8}>
+					<Input.Search placeholder="Search by Unit Name..." onSearch={handleSearch} prefix={<SearchOutlined />} />
+				</Col>
+				<Col xs={24} sm={12} md={8}>
+					<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
+						Add New Unit
+					</Button>
+				</Col>
+			</Row>
+
+			<Table columns={columns} dataSource={units} loading={loading} rowKey="id" pagination={false} scroll={{ x: true }} />
+
 			<Modal
-				title={selectedUnit ? "Edit Unit" : "Add Unit"}
+				title={
+					<Space>
+						{selectedUnit ? <EditOutlined /> : <PlusOutlined />}
+						{selectedUnit ? "Edit Unit" : "Add New Unit"}
+					</Space>
+				}
 				visible={isModalVisible}
 				onCancel={handleCancel}
 				footer={[
@@ -148,15 +222,57 @@ const UnitList = () => {
 					</Button>,
 				]}>
 				<Form form={form} layout="vertical">
-					<Form.Item label="Unit Type" name="name" rules={[{ required: true, message: "Please select a unit type" }]}>
-						<Select placeholder="Select a unit type">
-							{Object.keys(UnitType).map((key) => (
-								<Option key={key} value={key}>
-									{UnitType[key].displayName}
-								</Option>
-							))}
-						</Select>
-					</Form.Item>
+					<Row gutter={[16, 16]}>
+						<Col xs={24} sm={24} md={12}>
+							<Form.Item label="Unit Name" name="name" rules={[{ required: true, message: "Please enter unit name" }]}>
+								<Input prefix={<HomeOutlined />} placeholder="Enter unit name" />
+							</Form.Item>
+						</Col>
+						<Col xs={24} sm={24} md={12}>
+							<Form.Item label="Unit Type" name="unitType" rules={[{ required: true, message: "Please select a unit type" }]}>
+								<Select placeholder="Select a unit type">
+									{Object.keys(UnitType).map((key) => (
+										<Option key={key} value={key}>
+											<Tag color={getUnitTypeColor(key)}>{UnitType[key].displayName}</Tag>
+										</Option>
+									))}
+								</Select>
+							</Form.Item>
+						</Col>
+					</Row>
+
+					<Row gutter={[16, 16]}>
+						<Col xs={24} sm={24} md={12}>
+							<Form.Item label="Location Type">
+								<Select defaultValue="custom" onChange={handleLocationTypeChange}>
+									<Option value="floor">Floor</Option>
+									<Option value="place">Place</Option>
+									<Option value="custom">Custom</Option>
+								</Select>
+							</Form.Item>
+						</Col>
+						{locationType !== "custom" ? (
+							<Col xs={24} sm={24} md={12}>
+								<Form.Item label="Location Number">
+									<InputNumber style={{ width: "100%" }} onChange={handleLocationNumberChange} min={1} />
+								</Form.Item>
+							</Col>
+						) : (
+							<Col xs={24} sm={24} md={12}>
+								<Form.Item label="Custom Location" name="location">
+									<Input prefix={<EnvironmentOutlined />} placeholder="Enter custom location" />
+								</Form.Item>
+							</Col>
+						)}
+					</Row>
+
+					<Row gutter={[16, 16]}>
+						<Col span={24}>
+							<Form.Item label="Description" name="description">
+								<Input.TextArea placeholder="Enter description" rows={4} showCount maxLength={500} />
+							</Form.Item>
+						</Col>
+					</Row>
 				</Form>
 			</Modal>
 		</div>

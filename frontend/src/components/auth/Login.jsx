@@ -52,7 +52,7 @@ const AnimatedAlert = styled(Alert)`
 const Login = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
-	const { status, error, login, clearError, setSuccess } = useAuthStore();
+	const { status, error, login, clearError } = useAuthStore();
 
 	const handleSubmit = async () => {
 		try {
@@ -91,7 +91,7 @@ const Login = () => {
 							/>
 						</Form.Item>
 						<Form.Item style={{ textAlign: "center" }}>
-							<AnimatedButton type="primary" htmlType="submit" disabled={status === "loading"}>
+							<AnimatedButton type="default" htmlType="submit" disabled={status === "loading"}>
 								<LoginOutlined /> Login
 							</AnimatedButton>
 						</Form.Item>

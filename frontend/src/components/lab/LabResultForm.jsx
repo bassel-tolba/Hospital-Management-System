@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button, Space, notification, Input, Table } from "antd";
+import { Form, Button, Space, notification, Input, Table, Row, Col } from "antd";
 import { useLabStore } from "../../services/lab.service";
 import { v4 as uuidv4 } from "uuid";
 
@@ -95,7 +95,7 @@ const LabResultForm = ({ form, labTestId, onSubmit, onCancel, selectedLabResult,
 			rows.forEach((row, i) => {
 				const key = structureRows[i][0]; // Assuming the first element is the key for resultMap
 				resultMap[key] = { ...row };
-				//remove the isEditable fields from the result
+				// Remove the isEditable fields from the result
 				headers.forEach((header) => {
 					delete resultMap[key][`${header}_isEditable`];
 				});
@@ -135,13 +135,19 @@ const LabResultForm = ({ form, labTestId, onSubmit, onCancel, selectedLabResult,
 
 	return (
 		<>
-			{rows?.length > 0 && <Table bordered columns={columns} dataSource={rows} pagination={false} />}
-			<Space>
-				<Button onClick={onCancel}>Cancel</Button>
-				<Button type="primary" onClick={handleFormSubmit} loading={false}>
-					{selectedLabResult ? "Update" : "Save"}
-				</Button>
-			</Space>
+			{rows?.length > 0 && <Table bordered columns={columns} dataSource={rows} pagination={false} scroll={{ x: true }} />}
+			<Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+				<Col xs={24} sm={12}>
+					<Button block onClick={onCancel}>
+						Cancel
+					</Button>
+				</Col>
+				<Col xs={24} sm={12}>
+					<Button type="default" block onClick={handleFormSubmit} loading={false}>
+						{selectedLabResult ? "Update" : "Save"}
+					</Button>
+				</Col>
+			</Row>
 		</>
 	);
 };

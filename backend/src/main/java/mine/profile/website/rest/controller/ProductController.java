@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import mine.profile.website.dtos.ProductDTO;
+import mine.profile.website.exception.InsufficientStockException;
 import mine.profile.website.service.ProductService;
 
 @RestController
@@ -66,5 +68,23 @@ public class ProductController {
 
         Page<ProductDTO> productPage = productService.searchProducts(searchTerm, page, size);
         return ResponseEntity.ok(productPage);
+    }
+
+    @PatchMapping("/{id}/increase-stock")
+    public ResponseEntity<ProductDTO> increaseProductStock(
+            @PathVariable Long id, @RequestParam int quantity) {
+        ProductDTO updatedProduct = productService.increaseStock(id, quantity);
+        return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{id}/decrease-stock")
+    public ResponseEntity<ProductDTO> decreaseProductStock(
+            @PathVariable Long id, @RequestParam int quantity) {
+        try {
+            ProductDTO updatedProduct = productService.decreaseStock(id, quantity);
+            return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+        } catch (InsufficientStockException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // Or another appropriate status
+        }
     }
 }

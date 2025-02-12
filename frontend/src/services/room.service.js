@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const ROOM_API_BASE_URL = ` http://localhost:8080/rooms`;
+const ROOM_API_BASE_URL = ` http://localhost:8080/api/rooms`;
 
 export const useRoomStore = create((set, get) => ({
 	rooms: [],

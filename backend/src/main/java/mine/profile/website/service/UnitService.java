@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import mine.profile.website.dtos.UnitDTO;
-import mine.profile.website.mapper.EntityMapper;
 import mine.profile.website.models.Unit;
 import mine.profile.website.repository.UnitRepository;
 
@@ -18,28 +17,24 @@ public class UnitService {
     @Autowired
     private UnitRepository unitRepository;
 
-    @Autowired
-    private EntityMapper entityMapper;
-
     @Transactional
     public UnitDTO createUnit(UnitDTO unitDTO) {
-
-        Unit unit = entityMapper.toEntity(unitDTO);
+        Unit unit = unitDTO.toEntity();
         Unit savedUnit = unitRepository.save(unit);
-        return entityMapper.toDto(savedUnit);
+        return new UnitDTO(savedUnit);
     }
 
     @Transactional
     public UnitDTO getUnitById(Long id) {
         return unitRepository.findById(id)
-                .map(entityMapper::toDto)
+                .map(UnitDTO::new)
                 .orElse(null);
     }
 
     @Transactional
     public List<UnitDTO> getAllUnits() {
         return unitRepository.findAll().stream()
-                .map(entityMapper::toDto)
+                .map(UnitDTO::new)
                 .collect(Collectors.toList());
     }
 
@@ -47,10 +42,12 @@ public class UnitService {
     public UnitDTO updateUnit(Long id, UnitDTO unitDTO) {
         return unitRepository.findById(id)
                 .map(unit -> {
-
-                    Unit unitEntity = entityMapper.toEntity(unitDTO);
-                    unit.setUnitType(unitEntity.getUnitType());
-                    return entityMapper.toDto(unitRepository.save(unit));
+                    Unit updatedUnit = unitDTO.toEntity();
+                    unit.setUnitType(updatedUnit.getUnitType());
+                    unit.setName(updatedUnit.getName());
+                    unit.setLocation(updatedUnit.getLocation());
+                    unit.setDescription(updatedUnit.getDescription());
+                    return new UnitDTO(unitRepository.save(unit));
                 })
                 .orElse(null);
     }
@@ -62,10 +59,9 @@ public class UnitService {
 
     @Transactional
     public List<UnitDTO> searchUnits(String searchTerm) {
-        List<Unit> units = unitRepository.findByUnitTypeContaining(searchTerm);
+        List<Unit> units = unitRepository.findByNameContaining(searchTerm);
         return units.stream()
-                .map(entityMapper::toDto)
+                .map(UnitDTO::new)
                 .collect(Collectors.toList());
     }
-
 }

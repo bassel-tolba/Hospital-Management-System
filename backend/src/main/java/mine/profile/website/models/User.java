@@ -1,11 +1,10 @@
+// backend/src/main/java/mine/profile/website/models/User.java
 package mine.profile.website.models;
 
 import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,16 +34,17 @@ public class User {
 
     private String password;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(fetch = FetchType.EAGER) // Changed to ManyToOne
+    @JoinColumn(name = "role_id") // Explicit join column
     private Role role;
 
     private String firstName;
-
     private String lastName;
-
     private String specialty;
+    private boolean enabled = true;
 
-    private boolean enabled;
+    // NEW: Profile Picture URL
+    private String profilePictureURL;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_unit", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "unit_id"))
@@ -60,4 +61,7 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<MedicationAdministration> medicationAdministrations;
 
+    public String getRoleName() {
+        return this.role != null ? this.role.getName() : null;
+    }
 }

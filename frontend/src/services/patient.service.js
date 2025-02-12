@@ -1,7 +1,7 @@
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
-import { useAuthStore } from "./auth.service"; // Import useAuthStore
+import { useAuthStore } from "./auth.service";
 
 const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
 
@@ -16,13 +16,25 @@ export const usePatientStore = create((set, get) => ({
 	setTotal: (total) => set({ total }),
 	clearError: () => set({ error: null }),
 
-	createPatient: async (patientData) => {
+	createPatient: async (patientData, profilePicture) => {
 		set({ loading: true, error: null });
 		try {
-			const user = useAuthStore.getState().user; // Get the token
-			const response = await axios.post(PATIENT_API_BASE_URL, patientData, {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"patient",
+				new Blob([JSON.stringify(patientData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+
+			const response = await axios.post(PATIENT_API_BASE_URL, formData, {
 				headers: {
-					Authorization: `Bearer ${user?.token}`, // Set the token in the header
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
 				},
 			});
 			set({ loading: false });
@@ -44,10 +56,10 @@ export const usePatientStore = create((set, get) => ({
 	getPatientById: async (patientId) => {
 		set({ loading: true, error: null });
 		try {
-			const user = useAuthStore.getState().user; // Get the token
+			const user = useAuthStore.getState().user;
 			const response = await axios.get(`${PATIENT_API_BASE_URL}/${patientId}`, {
 				headers: {
-					Authorization: `Bearer ${user?.token}`, // Set the token in the header
+					Authorization: `Bearer ${user?.token}`,
 				},
 			});
 			set({ loading: false });
@@ -66,10 +78,10 @@ export const usePatientStore = create((set, get) => ({
 	getAllPatients: async () => {
 		set({ loading: true, error: null });
 		try {
-			const user = useAuthStore.getState().user; // Get the token
+			const user = useAuthStore.getState().user;
 			const response = await axios.get(PATIENT_API_BASE_URL, {
 				headers: {
-					Authorization: `Bearer ${user?.token}`, // Set the token in the header
+					Authorization: `Bearer ${user?.token}`,
 				},
 			});
 			set({ loading: false });
@@ -84,13 +96,27 @@ export const usePatientStore = create((set, get) => ({
 		}
 	},
 
-	updatePatient: async (patientId, patientData) => {
+	updatePatient: async (patientId, patientData, profilePicture, removedProfilePictureUrl) => {
 		set({ loading: true, error: null });
 		try {
-			const user = useAuthStore.getState().user; // Get the token
-			const response = await axios.put(`${PATIENT_API_BASE_URL}/${patientId}`, patientData, {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"patient",
+				new Blob([JSON.stringify(patientData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+			if (removedProfilePictureUrl) {
+				formData.append("removedProfilePictureUrls", new Blob([JSON.stringify([removedProfilePictureUrl])], { type: "application/json" }));
+			}
+			const response = await axios.put(`${PATIENT_API_BASE_URL}/${patientId}`, formData, {
 				headers: {
-					Authorization: `Bearer ${user?.token}`, // Set the token in the header
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
 				},
 			});
 			set({ loading: false });
@@ -112,10 +138,10 @@ export const usePatientStore = create((set, get) => ({
 	deletePatient: async (patientId) => {
 		set({ loading: true, error: null });
 		try {
-			const user = useAuthStore.getState().user; // Get the token
+			const user = useAuthStore.getState().user;
 			await axios.delete(`${PATIENT_API_BASE_URL}/${patientId}`, {
 				headers: {
-					Authorization: `Bearer ${user?.token}`, // Set the token in the header
+					Authorization: `Bearer ${user?.token}`,
 				},
 			});
 			set({ loading: false });
@@ -132,7 +158,6 @@ export const usePatientStore = create((set, get) => ({
 			throw error;
 		}
 	},
-	// In patient.service.js
 
 	searchPatients: async (searchParams) => {
 		set({ loading: true, error: null });
@@ -171,10 +196,10 @@ export const usePatientStore = create((set, get) => ({
 	searchPatientByFullName: async (name) => {
 		set({ loading: true, error: null });
 		try {
-			const user = useAuthStore.getState().user; // Get the token
+			const user = useAuthStore.getState().user;
 			const response = await axios.get(`${PATIENT_API_BASE_URL}/search/name?name=${name}`, {
 				headers: {
-					Authorization: `Bearer ${user?.token}`, // Set the token in the header
+					Authorization: `Bearer ${user?.token}`,
 				},
 			});
 			set({ loading: false });
