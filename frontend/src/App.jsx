@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useMemo, useCallback } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import Profile from "./components/auth/Profile";
@@ -34,6 +33,7 @@ import {
 	Input,
 	Card,
 	notification,
+	Avatar, // Import Avatar
 } from "antd";
 import ImageReportList from "./components/imageReports/ImageReportList";
 import LabTestList from "./components/lab/LabTestList";
@@ -629,6 +629,15 @@ const AppContent = ({ children }) => {
 		setColorMode(value);
 	};
 
+	const transformImageUrl = (url) => {
+		if (!url) return null;
+		let fileUrl = url;
+		if (fileUrl.startsWith(".")) {
+			fileUrl = fileUrl.substring(1);
+		}
+		return `http://localhost:8080${fileUrl}`;
+	};
+
 	const breadcrumbItems = useMemo(() => {
 		const pathSegments = location.pathname.split("/").filter(Boolean);
 		return pathSegments.map((segment, index) => {
@@ -741,7 +750,7 @@ const AppContent = ({ children }) => {
 					/>
 
 					<div style={{ display: "flex", alignItems: "center" }}>
-						<VoiceNavigation onNavigate={handleNavigation} /> {/* Add the component here */}
+						<VoiceNavigation onNavigate={handleNavigation} />
 						<Select
 							defaultValue="light"
 							style={{ width: 120, marginRight: 16 }}
@@ -761,12 +770,24 @@ const AppContent = ({ children }) => {
 								{ value: "purple_dark", label: "Purple Dark" },
 							]}
 						/>
-						{user && (
-							<Tooltip title={user.role} placement="bottom">
-								<Typography variant="body2" sx={{ marginRight: 2, fontWeight: 500 }}>
-									{user.role}
-								</Typography>
-							</Tooltip>
+						{/* User Avatar and Link to Profile */}
+						{user ? (
+							<RouterLink to="/profile">
+								<Avatar
+									size={40}
+									src={user.profilePictureURL ? transformImageUrl(user.profilePictureURL) : null}
+									icon={!user.profilePictureURL ? <UserOutlined /> : null}
+									style={{
+										marginLeft: 16,
+										cursor: "pointer",
+										objectFit: "cover",
+										border: "2px solid #ddd",
+										borderColor: isDarkMode ? "#fff" : "snow",
+									}}
+								/>
+							</RouterLink>
+						) : (
+							<Avatar size={40} icon={<UserOutlined />} style={{ marginLeft: 16 }} />
 						)}
 					</div>
 				</StyledHeader>

@@ -1,11 +1,12 @@
 package mine.profile.website.rest.controller;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,26 +34,39 @@ public class GeminiAssessmentController {
     @Autowired
     private GeminiRestService geminiRestService;
 
-    // Helper function to generate the dynamic prompt
     private String generateAssessmentPrompt(String templateName, String currentHtml, Long patientId) {
-        // Basic prompt structure. This is VERY important.
-        String basePrompt = "You are extracting information from audio to fill in placeholders within an HTML assessment template.  The output MUST be a single JSON object, and NOTHING ELSE. Do NOT include any introductory or concluding text.\n"
-                + "\n"
-                + "**Instructions:**\n"
-                + "\n"
-                + "1. **Placeholders:** The template uses placeholders enclosed in square brackets, like this: `[Placeholder Name]`.\n"
-                + "2. **Extract Values:** Extract the values corresponding to these placeholders from the audio.\n"
-                + "3. **Missing Information:** If a field is not *explicitly* mentioned in the audio, *do not include it in the JSON*.  Do NOT use 'did not get' or any other default value.\n"
-                + "4. **Output Format:**  Return *only* a JSON object where the keys are the placeholder names (WITHOUT the brackets) and the values are the extracted information. For example, `{\"Patient Name\": \"John Doe\", \"Temperature\": \"98.6\"}`.  Do NOT include any extra text or explanations.\n"
-                + "5. **Patient ID:** I am also giving the patientId, don't add it to your response, is just for your knowledge\n"
-                + "\n"
-                + "**Template Name:** " + templateName + "\n\n"
-                + "Here is the current HTML content (for context, but extract from AUDIO):\n"
-                + "```html\n"
-                + currentHtml + "\n"
-                + "```\n";
-
-        return basePrompt;
+        // Clear, concise, and well-structured prompt. Crucially, it emphasizes JSON
+        // output and placeholder handling.
+        return "You are a medical AI assistant. Your task is to extract information from provided audio and use it to populate a medical assessment template.  "
+                +
+                "The template is provided in HTML format.  You MUST ONLY extract information that is explicitly mentioned in the audio. Do NOT make assumptions or infer any information.\n\n"
+                +
+                "**Input:**\n" +
+                "*  Audio recording of a medical assessment.\n" +
+                "*  HTML template with placeholders. Placeholders are enclosed in square brackets, e.g., `[Patient Name]`.\n"
+                +
+                "*  Patient ID (for context, but NOT to be included in the output).\n" +
+                "*  Template Name (for context, but NOT to be included in the output).\n\n" +
+                "**Output:**\n" +
+                "*  A SINGLE JSON object.  Do NOT include ANY text other than the JSON object.  No introductions, no explanations, no apologies.\n"
+                +
+                "*  The JSON keys MUST be the placeholder names *without* the square brackets.\n" +
+                "*  The JSON values MUST be the extracted information from the audio, formatted appropriately for medical documentation (e.g., correct units, abbreviations).\n"
+                +
+                "*  If a placeholder's value is NOT mentioned in the audio, do NOT include it in the JSON.  Do NOT use default values. Do NOT guess.\n\n"
+                +
+                "**Example:**\n" +
+                "If the audio says '...the patient's temperature is 37.5 degrees Celsius...' and the HTML has a placeholder `[Temperature]`, then a *part* of your JSON output should be:\n"
+                +
+                "`{\"Temperature\": \"37.5°C\"}`\n\n" +
+                "**Important Considerations:**\n" +
+                "*  **Medical Terminology:**  You must understand medical terms and abbreviations.\n" +
+                "*  **Context:** Pay attention to the relationships between different parts of the assessment.\n" +
+                "*  **Formatting:** Use standard medical notation and units.\n" +
+                "* **Strict JSON:** Only valid JSON is accepted. No comments, no extra text.\n\n" +
+                "Patient ID: " + patientId + "\n" +
+                "Template Name: " + templateName + "\n\n" +
+                "HTML Template:\n```html\n" + currentHtml + "\n```";
     }
 
     @PostMapping(value = "/transcribe-and-populate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -60,17 +74,19 @@ public class GeminiAssessmentController {
             @RequestPart("audio") MultipartFile audioFile,
             @RequestPart("templateName") String templateName,
             @RequestPart("currentHtml") String currentHtml,
-            @RequestPart("patientId") String patientId) { // Change to String
+            @RequestPart("patientId") String patientId) {
         logger.info("Received transcribeAndPopulateAssessment request for template: {}", templateName);
 
         try {
-            // Parse patientId to Long
             Long patientIdLong = Long.parseLong(patientId);
 
-            // Generate the dynamic prompt
+            // Use the original HTML. Do NOT clean it.
+            logger.info("Original HTML: {}", currentHtml);
+
+            // Generate the dynamic prompt, using the *original* HTML.
             String dynamicPrompt = generateAssessmentPrompt(templateName, currentHtml, patientIdLong);
 
-            // Call Gemini
+            // Call Gemini.
             String rawGeminiResponse = geminiRestService.transcribeAndProcess(audioFile, dynamicPrompt);
             logger.info("Raw Gemini response: {}", rawGeminiResponse);
 
@@ -79,17 +95,18 @@ public class GeminiAssessmentController {
                         .body(Map.of("message", "Gemini returned an empty or null response."));
             }
 
-            // Post-process the Gemini response to get the JSON
+            // Post-process the Gemini response to extract the JSON.
             String jsonString = postProcessResponse(rawGeminiResponse);
             logger.info("Post-processed JSON: {}", jsonString);
-            // Parse the JSON response
+
+            // Parse the JSON.
             Gson gson = new Gson();
-            Map<String, Object> extractedData = gson.fromJson(jsonString, HashMap.class);
+            Map<String, Object> extractedData = gson.fromJson(jsonString, Map.class);
 
-            // Replace placeholders in the HTML
+            // Replace placeholders in the *original* HTML using the improved method.
             String updatedHtml = replacePlaceholders(currentHtml, extractedData);
+            logger.info("Updated HTML: {}", updatedHtml);
 
-            // Return the updated HTML
             return ResponseEntity.ok(Map.of("updatedHtml", updatedHtml));
 
         } catch (NumberFormatException e) {
@@ -100,61 +117,67 @@ public class GeminiAssessmentController {
             logger.error("JSON parsing error", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Invalid JSON returned by Gemini."));
-        } catch (IOException e) {
-            logger.error("IO Error", e);
+        } catch (IOException | RuntimeException e) { // Combined exception handling
+            logger.error("Error during processing", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to transcribe or process: " + e.getMessage()));
-        } catch (RuntimeException e) {
-            logger.error("Runtime Error", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to transcribe or process.: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("Unexpected Error", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An unexpected error occurred: " + e.getMessage()));
         }
     }
 
     private String replacePlaceholders(String html, Map<String, Object> data) {
-        // Use a regular expression to find placeholders like [Placeholder Name]
-        Pattern pattern = Pattern.compile("\\[([^\\]]+)\\]"); // Corrected regex
-        Matcher matcher = pattern.matcher(html);
+        Document doc = Jsoup.parse(html);
+        Pattern pattern = Pattern.compile("\\[([^\\]]+)\\]");
 
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            String placeholder = matcher.group(1); // Get the content inside the brackets
-            String replacement = data.containsKey(placeholder) ? data.get(placeholder).toString() : null; // Get value,
-                                                                                                          // handle null
+        // Iterate through all *text nodes* in the document. This is the key
+        // improvement.
+        doc.getAllElements().stream()
+                .flatMap(element -> element.textNodes().stream())
+                .forEach(textNode -> {
+                    String originalText = textNode.text();
+                    Matcher matcher = pattern.matcher(originalText);
+                    StringBuffer sb = new StringBuffer();
 
-            if (replacement != null) {
-                // Escape the replacement string for use in replaceAll (important!)
-                replacement = Matcher.quoteReplacement(replacement);
-                matcher.appendReplacement(sb, replacement);
-            } else {
-                // If no replacement, keep the original placeholder (don't remove it)
-                matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0))); // Keep original
-            }
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
+                    while (matcher.find()) {
+                        String placeholder = matcher.group(1);
+                        String replacement = data.containsKey(placeholder) ? String.valueOf(data.get(placeholder))
+                                : null;
+
+                        if (replacement != null) {
+                            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+                        } else {
+                            // Keep the original placeholder (don't remove) if no match.
+                            matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
+                        }
+                    }
+                    matcher.appendTail(sb);
+
+                    // *Only* update the text node if the text has actually changed.
+                    if (!sb.toString().equals(originalText)) {
+                        textNode.text(sb.toString());
+                    }
+                });
+
+        return doc.outerHtml(); // Return the *complete* HTML document.
     }
 
     private String postProcessResponse(String responseBody) {
-
+        // This method remains largely the same, extracting the JSON string from the
+        // Gemini response.
         try {
             Gson gson = new Gson();
             JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
 
-            // --- Basic Structure Validation (Important) ---
-            if (!jsonResponse.has("candidates") || !jsonResponse.getAsJsonArray("candidates").isJsonArray() ||
-                    jsonResponse.getAsJsonArray("candidates").size() == 0) {
+            if (!jsonResponse.has("candidates")
+                    || !jsonResponse.getAsJsonArray("candidates").isJsonArray()
+                    || jsonResponse.getAsJsonArray("candidates").size() == 0) {
                 throw new IOException("Invalid response structure from Gemini API: Missing 'candidates' array.");
             }
 
             JsonObject candidate = jsonResponse.getAsJsonArray("candidates").get(0).getAsJsonObject();
-            if (!candidate.has("content") || !candidate.getAsJsonObject("content").has("parts") ||
-                    !candidate.getAsJsonObject("content").getAsJsonArray("parts").isJsonArray() ||
-                    candidate.getAsJsonObject("content").getAsJsonArray("parts").size() == 0) {
+            if (!candidate.has("content")
+                    || !candidate.getAsJsonObject("content").has("parts")
+                    || !candidate.getAsJsonObject("content").getAsJsonArray("parts").isJsonArray()
+                    || candidate.getAsJsonObject("content").getAsJsonArray("parts").size() == 0) {
                 throw new IOException(
                         "Invalid response structure from Gemini API: Missing or invalid 'content' or 'parts'.");
             }
