@@ -1151,8 +1151,8 @@ const PdfGenerator = ({ type, mode, data, columns, fileNamePrefix, children, lab
 			const options = {
 				margin: 0,
 				filename: filename,
-				image: { type: "jpeg", quality: 0.98 },
-				html2canvas: { scale: 2, useCORS: true },
+				image: { type: "jpeg", quality: 1 },
+				html2canvas: { scale: 4, useCORS: true },
 				jsPDF: {
 					unit: "mm",
 					format: "a4",
@@ -1178,7 +1178,7 @@ const PdfGenerator = ({ type, mode, data, columns, fileNamePrefix, children, lab
 				: "/" + (url.startsWith("./") ? url.substring(1) : url)
 		}`;
 
-		return `http://localhost:8080${processedUrl}`;
+		return `${processedUrl}`;
 	};
 
 	return <div onClick={generatePdf}>{children}</div>;

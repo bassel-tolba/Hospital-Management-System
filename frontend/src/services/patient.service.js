@@ -1,3 +1,4 @@
+// services/patient.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
@@ -10,6 +11,8 @@ export const usePatientStore = create((set, get) => ({
 	loading: false,
 	error: null,
 	total: 0,
+	// Remove sortBy
+
 	setPatients: (patients) => set({ patients }),
 	setLoading: (loading) => set({ loading }),
 	setError: (error) => set({ error }),
@@ -111,7 +114,12 @@ export const usePatientStore = create((set, get) => ({
 				formData.append("profilePicture", profilePicture);
 			}
 			if (removedProfilePictureUrl) {
-				formData.append("removedProfilePictureUrls", new Blob([JSON.stringify([removedProfilePictureUrl])], { type: "application/json" }));
+				formData.append(
+					"removedProfilePictureUrls",
+					new Blob([JSON.stringify([removedProfilePictureUrl])], {
+						type: "application/json",
+					})
+				);
 			}
 			const response = await axios.put(`${PATIENT_API_BASE_URL}/${patientId}`, formData, {
 				headers: {
@@ -164,17 +172,18 @@ export const usePatientStore = create((set, get) => ({
 		try {
 			const user = useAuthStore.getState().user;
 
-			const params = new URLSearchParams(searchParams).toString();
+			// Construct URL with all search parameters
+			const url = `${PATIENT_API_BASE_URL}/search?${new URLSearchParams(searchParams).toString()}`;
 
-			const response = await axios.get(`${PATIENT_API_BASE_URL}/search?${params}`, {
+			const response = await axios.get(url, {
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
 				},
 			});
 
 			if (response.status === 401) {
-				//handle logout
-				console.log("user needs to log out");
+				// Handle logout
+				console.log("User needs to log out");
 				return;
 			}
 
@@ -213,4 +222,5 @@ export const usePatientStore = create((set, get) => ({
 			throw error;
 		}
 	},
+	// Remove sortBySeverity and clearSorting
 }));

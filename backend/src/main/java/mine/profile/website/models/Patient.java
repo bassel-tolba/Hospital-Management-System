@@ -1,3 +1,4 @@
+// models/Patient.java
 package mine.profile.website.models;
 
 import java.time.LocalDate;
@@ -9,12 +10,15 @@ import java.util.Optional;
 import org.hibernate.annotations.Where;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,6 +52,7 @@ public class Patient {
     // NEW: Image URL field
     private String profilePictureURL;
 
+    @Column(unique = true) // VERY IMPORTANT: Ensures uniqueness in the database
     private String medicalRecordNumber;
 
     private String bloodType;
@@ -56,6 +61,11 @@ public class Patient {
 
     @Lob
     private String medicalHistory;
+
+    // Change severityLevel to Integer and add validation
+    @Min(value = 1, message = "Severity level must be at least 1")
+    @Max(value = 5, message = "Severity level must be at most 5")
+    private Integer severityLevel;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Appointment> appointments;
@@ -81,9 +91,7 @@ public class Patient {
     }
 
     public Room getRoom() {
-        return getCurrentAdmission()
-                .map(admission -> admission.getBed().getRoom())
-                .orElse(null);
+        return getCurrentAdmission().map(admission -> admission.getBed().getRoom()).orElse(null);
     }
 
     // Helper method to get the *current* (active) admission
@@ -94,8 +102,9 @@ public class Patient {
 
         // Find the *latest* admission that is still active
         return admissions.stream()
-                .filter(admission -> admission.getDischargeDate() == null
-                        || admission.getDischargeDate().isAfter(LocalDateTime.now()))
+                .filter(
+                        admission -> admission.getDischargeDate() == null
+                                || admission.getDischargeDate().isAfter(LocalDateTime.now()))
                 .max(Comparator.comparing(Admission::getAdmissionDate)); // Most recent, active admission
     }
 }

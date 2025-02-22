@@ -1,3 +1,4 @@
+// dtos/PatientDTO.java
 package mine.profile.website.dtos;
 
 import java.time.LocalDate;
@@ -6,6 +7,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,17 +41,36 @@ public class PatientDTO {
     private String bloodType;
     private String allergies;
     private String medicalHistory;
+    @Min(value = 1, message = "Severity level must be at least 1")
+    @Max(value = 5, message = "Severity level must be at most 5")
+    private Integer severityLevel; // Add severityLevel
     private List<Long> appointmentIds;
     private List<Long> prescriptionIds;
     private List<Long> admissionIds;
     private List<Long> assessmentIds;
     private List<Long> nursingCarePlanIds;
 
-    public PatientDTO(Long id, @NotBlank(message = "First name is required") String firstName,
-            @NotBlank(message = "Last name is required") String lastName, LocalDate dateOfBirth, String gender,
-            String address, String phoneNumber, String email, String profilePictureURL, String medicalRecordNumber,
-            String bloodType, String allergies, String medicalHistory, List<Long> appointmentIds,
-            List<Long> prescriptionIds, List<Long> admissionIds, List<Long> assessmentIds,
+    public PatientDTO(
+            Long id,
+            @NotBlank(message = "First name is required") String firstName,
+            @NotBlank(message = "Last name is required") String lastName,
+            LocalDate dateOfBirth,
+            String gender,
+            String address,
+            String phoneNumber,
+            String email,
+            String profilePictureURL,
+            String medicalRecordNumber,
+            String bloodType,
+            String allergies,
+            String medicalHistory,
+            @Min(value = 1, message = "Severity level must be at least 1") @Max(value = 5, message = "Severity level must be at most 5") Integer severityLevel, // Add
+                                                                                                                                                                // to
+                                                                                                                                                                // constructor
+            List<Long> appointmentIds,
+            List<Long> prescriptionIds,
+            List<Long> admissionIds,
+            List<Long> assessmentIds,
             List<Long> nursingCarePlanIds) {
         this.id = id;
         this.firstName = firstName;
@@ -63,6 +85,7 @@ public class PatientDTO {
         this.bloodType = bloodType;
         this.allergies = allergies;
         this.medicalHistory = medicalHistory;
+        this.severityLevel = severityLevel; // Initialize in constructor
         this.appointmentIds = appointmentIds;
         this.prescriptionIds = prescriptionIds;
         this.admissionIds = admissionIds;
@@ -85,7 +108,7 @@ public class PatientDTO {
         patient.setBloodType(this.bloodType);
         patient.setAllergies(this.allergies);
         patient.setMedicalHistory(this.medicalHistory);
-
+        patient.setSeverityLevel(this.severityLevel); // Set severityLevel
         return patient;
     }
 
@@ -104,26 +127,37 @@ public class PatientDTO {
         patientDTO.setBloodType(patient.getBloodType());
         patientDTO.setAllergies(patient.getAllergies());
         patientDTO.setMedicalHistory(patient.getMedicalHistory());
+        patientDTO.setSeverityLevel(patient.getSeverityLevel()); // Set severityLevel
 
         if (patient.getAppointments() != null) {
-            patientDTO.setAppointmentIds(patient.getAppointments().stream().map(appointment -> appointment.getId())
-                    .collect(Collectors.toList()));
+            patientDTO.setAppointmentIds(
+                    patient.getAppointments().stream()
+                            .map(appointment -> appointment.getId())
+                            .collect(Collectors.toList()));
         }
         if (patient.getPrescriptions() != null) {
-            patientDTO.setPrescriptionIds(patient.getPrescriptions().stream().map(prescription -> prescription.getId())
-                    .collect(Collectors.toList()));
+            patientDTO.setPrescriptionIds(
+                    patient.getPrescriptions().stream()
+                            .map(prescription -> prescription.getId())
+                            .collect(Collectors.toList()));
         }
         if (patient.getAdmissions() != null) {
             patientDTO.setAdmissionIds(
-                    patient.getAdmissions().stream().map(admission -> admission.getId()).collect(Collectors.toList()));
+                    patient.getAdmissions().stream()
+                            .map(admission -> admission.getId())
+                            .collect(Collectors.toList()));
         }
         if (patient.getAssessments() != null) {
-            patientDTO.setAssessmentIds(patient.getAssessments().stream().map(assessment -> assessment.getId())
-                    .collect(Collectors.toList()));
+            patientDTO.setAssessmentIds(
+                    patient.getAssessments().stream()
+                            .map(assessment -> assessment.getId())
+                            .collect(Collectors.toList()));
         }
         if (patient.getNursingCarePlans() != null) {
-            patientDTO.setNursingCarePlanIds(patient.getNursingCarePlans().stream()
-                    .map(nursingCarePlan -> nursingCarePlan.getId()).collect(Collectors.toList()));
+            patientDTO.setNursingCarePlanIds(
+                    patient.getNursingCarePlans().stream()
+                            .map(nursingCarePlan -> nursingCarePlan.getId())
+                            .collect(Collectors.toList()));
         }
 
         return patientDTO;

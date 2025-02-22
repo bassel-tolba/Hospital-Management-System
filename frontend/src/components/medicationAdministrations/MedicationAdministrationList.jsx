@@ -1,3 +1,4 @@
+// MedicationAdministrationList.js
 import React, { useState, useEffect, useCallback } from "react";
 import {
 	Table,
@@ -17,6 +18,7 @@ import {
 	Row,
 	Col,
 	message,
+	notification,
 } from "antd";
 import { useMedicationAdministrationStore } from "../../services/medicationAdministration.service";
 import { usePrescriptionStore } from "../../services/prescription.service";
@@ -24,7 +26,7 @@ import { usePatientStore } from "../../services/patient.service";
 import { useUserStore } from "../../services/user.service";
 import { useAuthStore } from "../../services/auth.service";
 import { useMedicationStore } from "../../services/medication.service";
-import { EditOutlined, DeleteOutlined, MedicineBoxOutlined } from "@ant-design/icons";
+import { DeleteOutlined, MedicineBoxOutlined } from "@ant-design/icons";
 import { format, formatDistance, isToday, isYesterday, differenceInDays, differenceInMonths } from "date-fns";
 import dayjs from "dayjs";
 
@@ -74,8 +76,8 @@ const MedicationAdministrationList = () => {
 		createMedicationAdministration,
 		setLoading,
 	} = useMedicationAdministrationStore();
-	const { fetchAllPrescriptions, fetchPrescriptionsByPatientId } = usePrescriptionStore();
-	const { searchPatients, getAllPatients } = usePatientStore();
+	const { fetchPrescriptionsByPatientId } = usePrescriptionStore();
+	const { searchPatients } = usePatientStore();
 	const { users, getAllUsers } = useUserStore();
 	const { user, hasAuthority } = useAuthStore(); // Get hasAuthority
 	const { medications, fetchAllMedications } = useMedicationStore();
@@ -85,8 +87,7 @@ const MedicationAdministrationList = () => {
 	const [form] = Form.useForm();
 	const [currentPage, setCurrentPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
-	const [searchParams, setSearchParams] = useState({});
-	const [patientFilter, setPatientFilter] = useState(null);
+	const [searchParams, setSearchParams] = useState({}); //Keep for future searching options
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [selectedPatient, setSelectedPatient] = useState(null);
 	const [prescriptionOptions, setPrescriptionOptions] = useState([]);
@@ -94,17 +95,15 @@ const MedicationAdministrationList = () => {
 	const [selectedMedication, setSelectedMedication] = useState(null);
 	const [selectedPrescribedMedication, setSelectedPrescribedMedication] = useState(null);
 	const [calculatedPrice, setCalculatedPrice] = useState(null);
-	const [patients, setPatients] = useState([]);
-	const [prescriptions, setPrescriptions] = useState([]);
 	const [fetchedUsers, setFetchedUsers] = useState({});
 	const [fetchedMedications, setFetchedMedications] = useState({});
 	const [amount, setAmount] = useState(null);
 	const [prescriptionDetails, setPrescriptionDetails] = useState(null);
+	const [administrationsTotal, setAdministrationsTotal] = useState(0);
 
 	// Define permission checks
 	const canCreateMedicationAdministration = hasAuthority("CREATE_MEDICATION_ADMINISTRATION");
 	const canReadMedicationAdministration = hasAuthority("READ_MEDICATION_ADMINISTRATION");
-	const canUpdateMedicationAdministration = hasAuthority("UPDATE_MEDICATION_ADMINISTRATION");
 	const canDeleteMedicationAdministration = hasAuthority("DELETE_MEDICATION_ADMINISTRATION");
 
 	// Use useCallback to memoize functions that are dependencies of useEffect
@@ -122,42 +121,11 @@ const MedicationAdministrationList = () => {
 		return medicationMap;
 	}, [fetchAllMedications]);
 
-	const fetchAdministrations = useCallback(async () => {
-		if (!canReadMedicationAdministration) {
-			notification.error({
-				message: "Permission Denied",
-				description: "You do not have permission to view medication administrations.",
-			});
-			return;
-		}
-		setLoading(true);
-		try {
-			await searchMedicationAdministrations({
-				...searchParams,
-				page: currentPage - 1,
-				size: pageSize,
-				patientId: patientFilter,
-			});
-		} catch (error) {
-			notification.error({
-				message: "Error",
-				description: `Failed to fetch medication administrations: ${error.message}`,
-			});
-		} finally {
-			setLoading(false);
-		}
-	}, [searchParams, currentPage, pageSize, patientFilter, searchMedicationAdministrations, setLoading, canReadMedicationAdministration]);
-
 	useEffect(() => {
 		const fetchData = async () => {
 			setLoading(true);
 			try {
 				await getAllUsers();
-				await fetchAdministrations();
-				const allPatients = await getAllPatients();
-				setPatients(allPatients || []);
-				const allPrescriptions = await fetchAllPrescriptions();
-				setPrescriptions(allPrescriptions || []);
 				await fetchAllMedications();
 				// Pre-fetch all users and medications
 				const fetchedUsers = await fetchAllUsersWithMap();
@@ -174,22 +142,12 @@ const MedicationAdministrationList = () => {
 			}
 		};
 		fetchData();
-	}, [
-		currentPage,
-		pageSize,
-		searchParams,
-		patientFilter,
-		getAllUsers,
-		fetchAllMedications,
-		fetchAdministrations,
-		fetchAllUsersWithMap,
-		fetchAllMedicationsWithMap,
-		setLoading,
-	]);
+	}, [getAllUsers, fetchAllMedications, fetchAllUsersWithMap, fetchAllMedicationsWithMap, setLoading]);
 
 	const handlePageChange = (page, pageSize) => {
 		setCurrentPage(page);
 		setPageSize(pageSize);
+		fetchAdministrationsForPatient(selectedPatient.id, page, pageSize);
 	};
 
 	const handlePatientSearch = async (value) => {
@@ -211,31 +169,56 @@ const MedicationAdministrationList = () => {
 			setPatientOptions([]);
 		}
 	};
+	const fetchAdministrationsForPatient = useCallback(
+		async (patientId, page = 1, size = 10) => {
+			if (!patientId) return;
+
+			try {
+				const response = await searchMedicationAdministrations({ patientId, page: page - 1, size });
+				setAdministrationsTotal(response.total); // Use total from the response
+			} catch (error) {
+				console.error("Failed to fetch medication administrations:", error);
+				// Handle error appropriately
+			}
+		},
+		[searchMedicationAdministrations]
+	);
 
 	const handlePatientSelect = async (value, option) => {
 		const selectedPatient = option?.patient;
 		setSelectedPatient(selectedPatient);
 		form.setFieldsValue({ patientId: value });
-		if (selectedPatient) {
-			await fetchPrescriptionsForPatient(selectedPatient.id);
-		}
+
+		// Reset other selections ONLY when a patient is selected
 		setPrescriptionDetails(null);
 		setSelectedMedication(null);
 		setSelectedPrescribedMedication(null);
+		setPrescriptionOptions([]); // Clear previous prescriptions
+		setCalculatedPrice(null);
+		setAmount(null);
+
+		if (selectedPatient) {
+			// Fetch prescriptions for the selected patient
+			await fetchPrescriptionsForPatient(selectedPatient.id); // AWAIT here
+
+			// Fetch medication administrations for the selected patient
+			await fetchAdministrationsForPatient(selectedPatient.id);
+		}
+
+		// DO NOT clear prescriptionOptions here.  It's now handled above, before fetching.
 	};
 	const fetchPrescriptionsForPatient = async (patientId) => {
 		try {
-			const response = await fetchPrescriptionsByPatientId(patientId, 0, 10);
-			const filteredPrescriptions = response?.content?.filter((prescription) => isPrescriptionValid(prescription));
+			const response = await fetchPrescriptionsByPatientId(patientId, 0, 9999999);
+			// Correctly handle the Page object and filter prescriptions
+			const filteredPrescriptions = response?.content?.filter((prescription) => isPrescriptionValid(prescription)) ?? [];
 
 			setPrescriptionOptions(
-				filteredPrescriptions?.map((prescription) => {
-					return {
-						label: `Prescription ID: ${prescription.id}`,
-						value: prescription.id,
-						prescription,
-					};
-				}) || []
+				filteredPrescriptions.map((prescription) => ({
+					label: `Prescription ID: ${prescription.id}`,
+					value: prescription.id,
+					prescription,
+				}))
 			);
 		} catch (error) {
 			console.error("Failed to fetch prescriptions:", error);
@@ -249,19 +232,8 @@ const MedicationAdministrationList = () => {
 		form.setFieldsValue({ prescriptionId: value });
 		setPrescriptionDetails(selectedPrescription);
 		setSelectedPrescribedMedication(null);
-		// NEW LOGIC: Handle single medication prescription
-		// if (selectedPrescription?.prescribedMedications && selectedPrescription.prescribedMedications.length === 1) {
-		// 	const prescribedMedication = selectedPrescription.prescribedMedications[0];
-		// 	setSelectedPrescribedMedication(prescribedMedication);
-		// 	const medicationName = prescribedMedication?.medicationName;
-		// 	const medicationId = prescribedMedication?.medicationId;
-		// 	setSelectedMedication(medications?.find((m) => m.id === medicationId));
-		// 	form.setFieldsValue({ medicationId: medicationId });
-		// 	calculatePrice(medicationId);
-		// } else {
 		setSelectedMedication(null);
 		setCalculatedPrice(null);
-		// }
 	};
 
 	const handlePrescribedMedicationSelect = (value, option) => {
@@ -274,57 +246,18 @@ const MedicationAdministrationList = () => {
 	};
 
 	const showModal = (administration) => {
+		//Removed the update logic in this function
 		setSelectedAdministration(administration);
-		setSelectedPatient(null);
-		setSelectedPrescription(null);
-		setPrescriptionOptions([]);
-		setPrescriptionDetails(null);
-		setSelectedMedication(null);
-		setSelectedPrescribedMedication(null);
-		setCalculatedPrice(null);
-		setAmount(null);
-		if (administration) {
-			form.setFieldsValue(administration);
-			setAmount(administration.amount);
-			const patient = patients?.find((p) => p.id === administration.patientId);
+		form.resetFields();
 
-			if (patient) {
-				form.setFieldsValue({ patientId: patient.id });
-				setSelectedPatient(patient);
-				fetchPrescriptionsForPatient(patient.id);
-			}
-			if (administration.prescriptionId) {
-				const prescription = prescriptions?.find((p) => p.id === administration.prescriptionId);
-				if (prescription) {
-					setSelectedPrescription(prescription);
-					form.setFieldsValue({ prescriptionId: prescription.id });
-					setPrescriptionDetails(prescription);
-					// if (prescription?.prescribedMedications && prescription.prescribedMedications.length === 1) {
-					// 	const prescribedMedication = prescription.prescribedMedications[0];
-					// 	setSelectedPrescribedMedication(prescribedMedication);
-					// 	const medicationId = prescribedMedication?.medicationId;
-					// 	setSelectedMedication(medications?.find((m) => m.id === medicationId));
-					// 	form.setFieldsValue({ medicationId: medicationId });
-					// 	calculatePrice(medicationId);
-					// }
-				}
-			}
-
-			const medicationId = administration.medicationId;
-			if (medicationId) {
-				setSelectedMedication(medications?.find((m) => m.id === medicationId));
-				calculatePrice(medicationId);
-			}
-		} else {
-			form.resetFields();
-			if (user) {
-				form.setFieldsValue({ userId: user.id });
-			}
+		if (user) {
+			form.setFieldsValue({ userId: user.id });
 		}
+
 		setIsModalVisible(true);
-		setPatientOptions([]);
-		setPrescriptionDetails(null);
-		setAmount(null);
+		setPatientOptions([]); // Clear previous patient options
+		setPrescriptionDetails(null); //clear if im adding not updating
+		setAmount(null); //clear
 	};
 
 	const handleCancel = () => {
@@ -345,6 +278,7 @@ const MedicationAdministrationList = () => {
 	};
 
 	const handleFormSubmit = async () => {
+		//Removed Update Logic from submit
 		if (!canCreateMedicationAdministration) {
 			notification.error({
 				message: "Permission Denied",
@@ -373,19 +307,10 @@ const MedicationAdministrationList = () => {
 			}
 
 			payload.amount = amount;
-			if (selectedAdministration) {
-				if (!canUpdateMedicationAdministration) {
-					notification.error({
-						message: "Permission Denied",
-						description: "You do not have permission to update medication administrations.",
-					});
-					return;
-				}
-				// await updateMedicationAdministration(selectedAdministration.id, values); //update not implemented yet
-			} else {
-				await createMedicationAdministration(payload);
-			}
-			fetchAdministrations();
+
+			await createMedicationAdministration(payload);
+
+			if (selectedPatient?.id) fetchAdministrationsForPatient(selectedPatient.id); //refresh only this patient admins
 			setIsModalVisible(false);
 			setSelectedAdministration(null);
 			form.resetFields();
@@ -419,7 +344,7 @@ const MedicationAdministrationList = () => {
 		}
 		try {
 			await deleteMedicationAdministration(administrationId);
-			fetchAdministrations();
+			if (selectedPatient?.id) fetchAdministrationsForPatient(selectedPatient.id); //refresh list
 			message.success("Administration Deleted Successfully!");
 		} catch (error) {
 			console.error("Error deleting administration:", error);
@@ -428,11 +353,6 @@ const MedicationAdministrationList = () => {
 				description: "There was an error when deleting the administration",
 			});
 		}
-	};
-
-	const handlePatientFilterChange = (value) => {
-		setPatientFilter(value);
-		setCurrentPage(1);
 	};
 
 	const getUserName = (userId) => {
@@ -456,31 +376,12 @@ const MedicationAdministrationList = () => {
 	};
 
 	const onAmountChange = (event) => {
-		if (!canCreateMedicationAdministration && !canUpdateMedicationAdministration) return;
+		if (!canCreateMedicationAdministration) return;
 		const newAmount = event.target.value;
 		setAmount(newAmount);
 		calculatePrice(selectedMedication?.id || form.getFieldValue("medicationId"));
 	};
 
-	const getPatientName = (prescriptionId, record) => {
-		const prescription = prescriptions?.find((p) => p.id === prescriptionId);
-		const patientId = prescription?.patientId || record.patientId;
-		const patient = patients?.find((p) => p.id === patientId);
-		return patient ? `${patient.firstName} ${patient.lastName}` : "N/A";
-	};
-	const getMedicationName = (medicationId, prescriptionId) => {
-		let medication;
-		if (prescriptionId) {
-			const prescription = prescriptions?.find((p) => p.id === prescriptionId);
-			if (prescription?.prescribedMedications?.[0]?.medicationId) {
-				medication = fetchedMedications[prescription?.prescribedMedications?.[0]?.medicationId];
-			}
-		} else if (medicationId) {
-			medication = fetchedMedications[medicationId];
-		}
-
-		return medication ? medication.name : "N/A";
-	};
 	const isPrescribed = (prescriptionId) => {
 		return !!prescriptionId;
 	};
@@ -516,12 +417,6 @@ const MedicationAdministrationList = () => {
 
 	const columns = [
 		{
-			title: "Patient",
-			dataIndex: "prescriptionId",
-			key: "patientId",
-			render: (prescriptionId, record) => (canReadMedicationAdministration ? getPatientName(prescriptionId, record) : "***"), // Data masking
-		},
-		{
 			title: (
 				<>
 					Medication
@@ -538,6 +433,7 @@ const MedicationAdministrationList = () => {
 					return "***";
 				}
 				const isPrescribedValue = isPrescribed(record.prescriptionId);
+				//const fetchedMedicationName = getMedicationName(record.medicationId, record.prescriptionId);
 				return (
 					<>
 						{medicationName} {isPrescribedValue && <MedicineBoxOutlined style={{ marginLeft: 5, color: "#1890ff" }} />}
@@ -549,7 +445,6 @@ const MedicationAdministrationList = () => {
 			title: "User",
 			dataIndex: "user",
 			key: "user",
-			render: (userId) => (canReadMedicationAdministration ? getUserName(userId) : "***"), // Data masking
 		},
 		{
 			title: "Amount",
@@ -574,11 +469,6 @@ const MedicationAdministrationList = () => {
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					{canUpdateMedicationAdministration && (
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-							Edit
-						</Button>
-					)}
 					{canDeleteMedicationAdministration && (
 						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
 							Delete
@@ -593,29 +483,39 @@ const MedicationAdministrationList = () => {
 		<div style={{ padding: 20 }}>
 			<Title level={2}>Medication Administration List</Title>
 			<Space style={{ marginBottom: 16 }}>
-				<Select
-					placeholder="Filter by Patient"
-					style={{ width: 200 }}
-					onChange={handlePatientFilterChange}
-					allowClear
-					disabled={!canReadMedicationAdministration}>
-					{patients?.map((patient) => (
-						<Option key={patient.id} value={patient.id}>
-							{`${patient.firstName} ${patient.lastName}`}
-						</Option>
-					))}
-				</Select>
 				{canCreateMedicationAdministration && (
 					<Button type="default" onClick={() => showModal(null)}>
 						Add New Administration
 					</Button>
 				)}
 			</Space>
+			<Form layout="inline" style={{ marginBottom: 16 }}>
+				<Form.Item label="Filter by Patient" name="patientFilter">
+					<AutoComplete
+						options={patientOptions}
+						onSearch={handlePatientSearch}
+						onSelect={handlePatientSelect}
+						placeholder="Search for a patient"
+						style={{ width: 200 }}
+						allowClear
+						disabled={!canReadMedicationAdministration}
+					/>
+				</Form.Item>
+			</Form>
+
 			<Table columns={columns} dataSource={medicationAdministrations} loading={loading} rowKey="id" pagination={false} />
-			<Pagination current={currentPage} pageSize={pageSize} total={total} onChange={handlePageChange} style={{ marginTop: 20 }} />
+			{selectedPatient && (
+				<Pagination
+					current={currentPage}
+					pageSize={pageSize}
+					total={administrationsTotal}
+					onChange={handlePageChange}
+					style={{ marginTop: 20 }}
+				/>
+			)}
 
 			<Modal
-				title={selectedAdministration ? "Edit Administration" : "Add Administration"}
+				title={"Add Administration"}
 				open={isModalVisible}
 				onCancel={handleCancel}
 				width={800} // Increased modal width
@@ -623,9 +523,9 @@ const MedicationAdministrationList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					(selectedAdministration ? canUpdateMedicationAdministration : canCreateMedicationAdministration) && (
+					canCreateMedicationAdministration && (
 						<Button key="submit" type="default" onClick={handleFormSubmit}>
-							{selectedAdministration ? "Update" : "Save"}
+							Save
 						</Button>
 					),
 				]}>
@@ -646,7 +546,7 @@ const MedicationAdministrationList = () => {
 										options={patientOptions}
 										onSearch={handlePatientSearch}
 										onSelect={handlePatientSelect}
-										disabled={!canCreateMedicationAdministration && !canUpdateMedicationAdministration}
+										disabled={!canCreateMedicationAdministration}
 										placeholder="Search for a patient"
 										filterOption={false}
 									/>
@@ -656,7 +556,7 @@ const MedicationAdministrationList = () => {
 								<Form.Item label="Prescription" name="prescriptionId">
 									<Select
 										placeholder="Select a prescription"
-										disabled={!canCreateMedicationAdministration && !canUpdateMedicationAdministration}
+										disabled={!canCreateMedicationAdministration}
 										options={prescriptionOptions.map((option) => ({
 											...option,
 											label: (
@@ -682,10 +582,9 @@ const MedicationAdministrationList = () => {
 									<Descriptions.Item label="Note">{prescriptionDetails.note}</Descriptions.Item>
 									<Descriptions.Item label="Select Medication">
 										<Select
-											//disabled={selectedAdministration && prescriptionDetails?.prescribedMedications?.length === 1}
 											placeholder="Select a medication"
 											style={{ width: "100%" }}
-											disabled={!canCreateMedicationAdministration && !canUpdateMedicationAdministration}
+											disabled={!canCreateMedicationAdministration}
 											onSelect={handlePrescribedMedicationSelect}
 											options={prescriptionDetails?.prescribedMedications?.map((prescribedMedication) => ({
 												label: (
@@ -749,9 +648,7 @@ const MedicationAdministrationList = () => {
 									</Form.Item>
 								) : (
 									<Form.Item label="User" name="userId" rules={[{ required: true, message: "Please select a user" }]}>
-										<Select
-											placeholder="Select a user"
-											disabled={!canCreateMedicationAdministration && !canUpdateMedicationAdministration}>
+										<Select placeholder="Select a user" disabled={!canCreateMedicationAdministration}>
 											{users?.map((user) => (
 												<Option key={user.id} value={user.id}>
 													{`${user.firstName} ${user.lastName}`}
@@ -763,11 +660,7 @@ const MedicationAdministrationList = () => {
 							</Col>
 							<Col xs={24} sm={12}>
 								<Form.Item label="Amount" name="amount" rules={[{ required: true, message: "Please enter an amount" }]}>
-									<Input
-										type="number"
-										onChange={onAmountChange}
-										disabled={!canCreateMedicationAdministration && !canUpdateMedicationAdministration}
-									/>
+									<Input type="number" onChange={onAmountChange} disabled={!canCreateMedicationAdministration} />
 								</Form.Item>
 							</Col>
 						</Row>

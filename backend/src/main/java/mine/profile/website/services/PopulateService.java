@@ -378,7 +378,6 @@ public class PopulateService {
         Medication medication = new Medication();
         medication.setName(faker.medical().medicineName());
         medication.setDosage(faker.medical().hospitalName());
-        medication.setStock(random.nextInt(100));
         medication.setPrice(BigDecimal.valueOf(random.nextDouble() * 50)); // USE BIGDECIMAL
         return medication;
 

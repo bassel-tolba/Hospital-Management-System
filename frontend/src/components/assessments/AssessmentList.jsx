@@ -1,47 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Table, Button, Space, Typography, Modal, Form, DatePicker, Spin, Row, Col, notification, AutoComplete, Select, Progress } from "antd";
-import { useAuthStore } from "../../services/auth.service";
-import axios from "axios";
-import { EditOutlined, DeleteOutlined, PlusOutlined, FileTextOutlined, AudioOutlined } from "@ant-design/icons";
+// AssessmentList.js
+import React, { useState, useEffect } from "react";
+import { Table, Button, Space, Typography, Modal, AutoComplete, Row, Col, Spin, notification } from "antd";
+import { EditOutlined, DeleteOutlined, PlusOutlined, FileTextOutlined } from "@ant-design/icons";
 import moment from "moment";
-import { usePatientStore } from "../../services/patient.service";
-import CKEditorComponent from "../../CKEditorComponent";
-import assessmentTemplates from "./templates";
+import axios from "axios";
+import { useAuthStore } from "../../services/auth.service";
+import AssessmentForm from "./AssessmentForm";
 import html2pdf from "html2pdf.js";
-
+import { usePatientStore } from "../../services/patient.service";
+import jsPDF from "jspdf";
+import "jspdf-autotable"; // Import for table support (even if not used now, good to have)
 const { Title } = Typography;
 
 const AssessmentList = ({ darkMode }) => {
 	const [assessments, setAssessments] = useState([]);
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState(null);
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [selectedAssessment, setSelectedAssessment] = useState(null);
-	const [form] = Form.useForm();
 	const [page, setPage] = useState(0);
 	const [size, setSize] = useState(10);
 	const [total, setTotal] = useState(0);
-	const [searchParams, setSearchParams] = useState({});
 	const [patientOptions, setPatientOptions] = useState([]);
-	const [patientSearchTerm, setPatientSearchTerm] = useState("");
-	const [selectedPatientId, setSelectedPatientId] = useState(null);
-	const { patients, searchPatients } = usePatientStore();
-	const [editorNotes, setEditorNotes] = useState("");
-	const [selectedTemplate, setSelectedTemplate] = useState(null);
-	const [editorInitialized, setEditorInitialized] = useState(false);
-	const [isEditorReady, setIsEditorReady] = useState(false); // Track if CKEditor is ready
-	const isEditorReadyRef = useRef(false); // Ref for isEditorReady
-	const [pendingAudioBlob, setPendingAudioBlob] = useState(null);
-
+	const [searchParams, setSearchParams] = useState({});
 	const { user, hasAuthority } = useAuthStore();
 	const API_BASE_URL = `http://localhost:8080/api/assessments`;
-	const [isRecording, setIsRecording] = useState(false);
-	const mediaRecorder = useRef(null);
-	const recordedChunks = useRef([]);
-	const [isTranscribing, setIsTranscribing] = useState(false);
-	const [transcriptionProgress, setTranscriptionProgress] = useState(0);
-
-	const ckEditorRef = useRef(null);
+	const { patients, searchPatients } = usePatientStore();
 
 	const canCreateAssessment = hasAuthority("CREATE_ASSESSMENT");
 	const canReadAssessment = hasAuthority("READ_ASSESSMENT");
@@ -52,46 +35,8 @@ const AssessmentList = ({ darkMode }) => {
 		fetchAssessments();
 	}, [page, size, searchParams]);
 
-	useEffect(() => {
-		if (!isModalVisible) {
-			form.resetFields();
-			setEditorNotes("");
-			setSelectedPatientId(null);
-			setSelectedTemplate(null);
-			setEditorInitialized(false);
-			setPatientSearchTerm("");
-			setPatientOptions([]);
-			setIsEditorReady(false);
-			setPendingAudioBlob(null); // Reset on modal close
-			isEditorReadyRef.current = false; // Reset the ref too
-		}
-	}, [isModalVisible, form]);
-
-	useEffect(() => {
-		if (selectedAssessment) {
-			form.setFieldsValue({
-				...selectedAssessment,
-				assessmentDateTime: moment(selectedAssessment.assessmentDateTime),
-				patientId: selectedAssessment.patientId,
-			});
-			setSelectedPatientId(selectedAssessment.patientId);
-			setEditorNotes(selectedAssessment.notes);
-		}
-	}, [selectedAssessment, form]);
-
-	const handleTemplateSelect = (value) => {
-		setSelectedTemplate(value);
-		if (editorNotes === "" || !editorInitialized) {
-			setEditorNotes(assessmentTemplates[value]);
-			setEditorInitialized(true);
-			//This setData is for immediate visual feedback
-			if (ckEditorRef.current && ckEditorRef.current.editor) {
-				ckEditorRef.current.editor.setData(assessmentTemplates[value]);
-			}
-		}
-	};
-
 	const fetchAssessments = async () => {
+		// ... (rest of your fetchAssessments function remains the same)
 		if (!canReadAssessment) {
 			notification.error({ message: "Permission Denied", description: "You do not have permission." });
 			return;
@@ -109,7 +54,7 @@ const AssessmentList = ({ darkMode }) => {
 			setAssessments(response.data.content);
 			setTotal(response.data.totalElements);
 		} catch (error) {
-			setError(error.message);
+			//setError(error.message); No need to set a separate error state
 			notification.error({ message: "Error", description: `Failed to fetch: ${error.message}` });
 		} finally {
 			setLoading(false);
@@ -120,13 +65,17 @@ const AssessmentList = ({ darkMode }) => {
 		setSelectedAssessment(assessment);
 		setIsModalVisible(true);
 	};
-
 	const handleCancel = () => {
 		setIsModalVisible(false);
+		setSelectedAssessment(null);
 	};
-
+	const handleSave = () => {
+		fetchAssessments();
+		setIsModalVisible(false);
+		setSelectedAssessment(null);
+	};
 	const handlePatientSearch = async (value) => {
-		setPatientSearchTerm(value);
+		// ... (rest of your handlePatientSearch function remains the same)
 		if (value) {
 			try {
 				const searchResults = await searchPatients({ searchTerm: value, page: 0, size: 10 });
@@ -145,46 +94,8 @@ const AssessmentList = ({ darkMode }) => {
 		}
 	};
 
-	const handlePatientSelect = (patientId) => {
-		setSelectedPatientId(patientId);
-	};
-
-	const handleFormSubmit = async () => {
-		try {
-			const values = await form.validateFields();
-			const formattedDateTime = values.assessmentDateTime.format("YYYY-MM-DDTHH:mm:ss");
-			const assessmentData = { ...values, assessmentDateTime: formattedDateTime, patientId: selectedPatientId, notes: editorNotes };
-
-			setLoading(true);
-			if (selectedAssessment) {
-				if (!canUpdateAssessment) {
-					notification.error({ message: "Permission Denied", description: "No update permission." });
-					return;
-				}
-				await axios.put(`${API_BASE_URL}/${selectedAssessment.id}`, assessmentData, {
-					headers: { Authorization: `Bearer ${user?.token}` },
-				});
-				notification.success({ message: "Success", description: "Assessment updated." });
-			} else {
-				if (!canCreateAssessment) {
-					notification.error({ message: "Permission Denied", description: "No create permission." });
-					return;
-				}
-				await axios.post(API_BASE_URL, assessmentData, {
-					headers: { Authorization: `Bearer ${user?.token}` },
-				});
-				notification.success({ message: "Success", description: "Assessment created." });
-			}
-			fetchAssessments();
-			handleCancel();
-		} catch (error) {
-			notification.error({ message: "Error", description: `Save failed: ${error.message}` });
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	const handleDelete = async (id) => {
+		// ... (rest of your handleDelete function remains the same)
 		if (!canDeleteAssessment) {
 			notification.error({ message: "Permission Denied", description: "No delete permission." });
 			return;
@@ -202,15 +113,16 @@ const AssessmentList = ({ darkMode }) => {
 	};
 
 	const handleSearchPatientFilter = (patientId) => {
+		// ... (rest of your handleSearchPatientFilter function remains the same)
 		setSearchParams({ ...searchParams, patientId: patientId });
 		setPage(0);
 	};
 
 	const handleTableChange = (pagination) => {
+		// ... (rest of your handleTableChange function remains the same)
 		setPage(pagination.current - 1);
 		setSize(pagination.pageSize);
 	};
-
 	const exportPdf = async (notes, assessmentDateTime) => {
 		if (!canReadAssessment) {
 			notification.error({ message: "Permission Denied", description: "No export permission." });
@@ -220,178 +132,49 @@ const AssessmentList = ({ darkMode }) => {
 			notification.error({ message: "Error", description: "No notes to export." });
 			return;
 		}
+
 		try {
+			const iframe = document.createElement("iframe");
+			iframe.style.display = "none";
+			document.body.appendChild(iframe);
+			const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+
+			const container = iframeDocument.createElement("div");
+			container.innerHTML = notes;
+			container.className = "assessment-container";
+
+			const styleSheet = iframeDocument.createElement("style");
+
+			iframeDocument.head.appendChild(styleSheet);
+			iframeDocument.body.appendChild(container);
+
 			const formattedDateTime = moment(assessmentDateTime).format("YYYY-MM-DD_HH-mm-ss");
 			const options = {
-				margin: 10,
+				margin: [10, 5, 15, 5], // top, right, bottom, left - adjusted for more consistent margins
 				filename: `assessment_${formattedDateTime}.pdf`,
 				image: { type: "jpeg", quality: 1 },
-				html2canvas: { scale: 2 },
-				jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+				html2canvas: {
+					scale: 4,
+					useCORS: true,
+					letterRendering: true,
+					logging: false,
+				},
+				jsPDF: {
+					unit: "mm",
+					format: "a4",
+					orientation: "portrait",
+					compress: true,
+				},
+				pagebreak: { mode: ["avoid-all", "css", "legacy"] },
 			};
-			await html2pdf().from(notes).set(options).save();
+
+			await html2pdf().from(iframeDocument.body).set(options).save();
+			document.body.removeChild(iframe);
 			notification.success({ message: "Success", description: "PDF exported." });
 		} catch (error) {
 			notification.error({ message: "Error", description: `PDF generation failed: ${error.message}` });
 		}
 	};
-
-	const setCKEditorRef = (editorInstance) => {
-		console.log("Setting editor ref:", editorInstance);
-		ckEditorRef.current = {
-			editor: editorInstance, // Store it in the correct structure
-		};
-	};
-
-	const onEditorReady = (editor) => {
-		console.log("Editor ready called, ref status:", !!ckEditorRef.current?.editor);
-		// Use the passed editor instance
-		if (ckEditorRef.current?.editor) {
-			setIsEditorReady(true);
-			isEditorReadyRef.current = true;
-			if (pendingAudioBlob) {
-				transcribeAndPopulate(pendingAudioBlob);
-				setPendingAudioBlob(null);
-			}
-		} else {
-			console.warn("Editor ready called but ref not set properly");
-			// Try to recover using the passed editor instance
-			ckEditorRef.current = { editor };
-			setIsEditorReady(true);
-			isEditorReadyRef.current = true;
-		}
-	};
-	useEffect(() => {
-		console.log("Editor ref status:", {
-			hasRef: !!ckEditorRef.current,
-			hasEditor: !!ckEditorRef.current?.editor,
-			isReady: isEditorReady,
-		});
-	}, [isEditorReady]);
-
-	const startRecording = async () => {
-		console.log("Start recording - editor status:", {
-			hasRef: !!ckEditorRef.current,
-			hasEditor: !!ckEditorRef.current?.editor,
-			isReady: isEditorReady,
-		});
-
-		if (!ckEditorRef.current?.editor) {
-			console.error("Editor ref not properly initialized:", ckEditorRef.current);
-			notification.error({
-				message: "Editor Error",
-				description: "Editor initialization issue. Please refresh the page and try again.",
-			});
-			return;
-		}
-
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			mediaRecorder.current = new MediaRecorder(stream);
-			mediaRecorder.current.ondataavailable = (event) => event.data.size > 0 && recordedChunks.current.push(event.data);
-			mediaRecorder.current.onstop = async () => {
-				if (!ckEditorRef.current?.editor) {
-					notification.error({
-						message: "Editor Error",
-						description: "Editor lost during recording. Please try again.",
-					});
-					return;
-				}
-				const audioBlob = new Blob(recordedChunks.current, { type: "audio/webm" });
-				recordedChunks.current = [];
-				if (isEditorReadyRef.current) {
-					await transcribeAndPopulate(audioBlob);
-				} else {
-					setPendingAudioBlob(audioBlob);
-				}
-			};
-			mediaRecorder.current.start();
-			setIsRecording(true);
-		} catch (error) {
-			notification.error({ message: "Microphone Error", description: "Could not access microphone." });
-		}
-	};
-
-	const stopRecording = () => {
-		if (mediaRecorder.current?.state === "recording") {
-			mediaRecorder.current.stop();
-		}
-	};
-
-	const transcribeAndPopulate = async (audioBlob) => {
-		if (!selectedTemplate || !editorInitialized) {
-			notification.warning({ message: "Template Not Selected", description: "Please select an assessment template." });
-			setIsRecording(false);
-			return;
-		}
-		if (!selectedPatientId) {
-			notification.warning({ message: "Patient Not Selected", description: "Please select a patient." });
-			setIsRecording(false);
-			return;
-		}
-
-		// Add this check
-		if (!ckEditorRef.current?.editor) {
-			notification.error({ message: "Editor Error", description: "Editor not fully initialized. Please try again." });
-			setIsRecording(false);
-			return;
-		}
-
-		setIsTranscribing(true);
-		setTranscriptionProgress(0);
-		const progressInterval = setInterval(() => {
-			setTranscriptionProgress((prev) => (prev >= 90 ? 90 : prev + 10));
-		}, 200);
-
-		try {
-			const formData = new FormData();
-			formData.append("audio", audioBlob);
-			formData.append("templateName", selectedTemplate);
-			// Add safety check here too
-			formData.append("currentHtml", ckEditorRef.current?.editor?.getData() || "");
-			formData.append("patientId", selectedPatientId.toString());
-
-			const response = await axios.post("http://localhost:8080/api/assessments/ai/transcribe-and-populate", formData, {
-				headers: { Authorization: `Bearer ${user?.token}` },
-			});
-
-			clearInterval(progressInterval);
-			setTranscriptionProgress(100);
-
-			if (response.status === 200) {
-				ckEditorRef.current.editor.setData(response.data.updatedHtml);
-				setEditorNotes(response.data.updatedHtml);
-				notification.success({ message: "Success", description: "Transcription successful!" });
-			} else {
-				throw new Error(`Transcription failed: ${response.status}`);
-			}
-		} catch (error) {
-			console.error("Error transcribing:", error);
-			notification.error({
-				message: "Transcription Error",
-				description: `Failed to transcribe: ${error.response?.data?.message || error.message}`,
-			});
-		} finally {
-			setIsTranscribing(false);
-			setTranscriptionProgress(0);
-			setIsRecording(false);
-		}
-	};
-
-	const templateOptions = Object.keys(assessmentTemplates).map((key) => ({
-		label: key,
-		value: key,
-	}));
-	//NEW LOGS
-	useEffect(() => {
-		console.log("selectedTemplate:", !!selectedTemplate);
-		console.log("isTranscribing:", isTranscribing);
-		console.log("selectedPatientId:", !!selectedPatientId);
-		console.log("isEditorReady:", isEditorReady);
-		console.log("canCreateAssessment:", canCreateAssessment);
-		console.log("canUpdateAssessment:", canUpdateAssessment);
-	}, [selectedTemplate, isTranscribing, selectedPatientId, isEditorReady, canCreateAssessment, canUpdateAssessment]);
-
 	if (loading) {
 		return (
 			<div style={{ textAlign: "center", padding: "20px" }}>
@@ -401,6 +184,7 @@ const AssessmentList = ({ darkMode }) => {
 	}
 
 	return (
+		// ... (rest of your JSX remains the same)
 		<div style={{ padding: 20 }}>
 			<Title level={2}>Patient Assessments</Title>
 			<Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
@@ -423,139 +207,74 @@ const AssessmentList = ({ darkMode }) => {
 					)}
 				</Col>
 			</Row>
-			<div style={{ margin: "0 -16px" }}>
-				<Table
-					columns={[
-						{
-							title: "Date & Time",
-							dataIndex: "assessmentDateTime",
-							key: "assessmentDateTime",
-							render: (text) => (canReadAssessment ? moment(text).format("YYYY-MM-DD HH:mm:ss") : "***"),
-						},
-						{
-							title: "Actions",
-							key: "actions",
-							render: (text, record) => (
-								<Space size="middle">
-									{canUpdateAssessment && (
-										<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-											Edit
-										</Button>
-									)}
-									{canDeleteAssessment && (
-										<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-											Delete
-										</Button>
-									)}
-									{canReadAssessment && (
-										<Button
-											type="default"
-											icon={<FileTextOutlined />}
-											onClick={() => exportPdf(record.notes, record.assessmentDateTime)}>
-											Export PDF
-										</Button>
-									)}
-								</Space>
-							),
-						},
-					]}
-					dataSource={assessments}
-					loading={loading}
-					rowKey="id"
-					pagination={{
-						current: page + 1,
-						pageSize: size,
-						total,
-						onChange: (page, pageSize) => {
-							setPage(page - 1);
-							setSize(pageSize);
-						},
-					}}
-					scroll={{ x: "max-content" }}
-				/>
-			</div>
+			<Table
+				columns={[
+					{
+						title: "Date & Time",
+						dataIndex: "assessmentDateTime",
+						key: "assessmentDateTime",
+						render: (text) => (canReadAssessment ? moment(text).format("YYYY-MM-DD HH:mm:ss") : "***"),
+					},
+					{
+						title: "Actions",
+						key: "actions",
+						render: (text, record) => (
+							<Space size="middle">
+								{canUpdateAssessment && (
+									<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+										Edit
+									</Button>
+								)}
+								{canDeleteAssessment && (
+									<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+										Delete
+									</Button>
+								)}
+								{canReadAssessment && (
+									<Button
+										type="default"
+										icon={<FileTextOutlined />}
+										onClick={() => exportPdf(record.notes, record.assessmentDateTime)}>
+										Export PDF
+									</Button>
+								)}
+							</Space>
+						),
+					},
+				]}
+				dataSource={assessments}
+				loading={loading}
+				rowKey="id"
+				pagination={{
+					current: page + 1,
+					pageSize: size,
+					total,
+					onChange: (page, pageSize) => {
+						setPage(page - 1);
+						setSize(pageSize);
+					},
+				}}
+				scroll={{ x: "max-content" }}
+			/>
+
 			<Modal
 				title={selectedAssessment ? "Edit Assessment" : "Add Assessment"}
 				open={isModalVisible}
 				onCancel={handleCancel}
-				maskClosable={false}
-				destroyOnClose={true}
-				footer={[
-					<Button key="cancel" onClick={handleCancel}>
-						Cancel
-					</Button>,
-					(selectedAssessment ? canUpdateAssessment : canCreateAssessment) && (
-						<Button key="submit" type="default" onClick={handleFormSubmit}>
-							{selectedAssessment ? "Update" : "Save"}
-						</Button>
-					),
-				]}
+				footer={null} // Remove default footer
 				width="90%"
 				style={{ top: 20 }}
-				bodyStyle={{ overflowX: "auto" }}>
-				<Form
-					form={form}
-					layout="vertical"
-					initialValues={
-						selectedAssessment ? { ...selectedAssessment, assessmentDateTime: moment(selectedAssessment.assessmentDateTime) } : {}
-					}>
-					<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
-						<AutoComplete
-							options={patientOptions}
-							onSearch={handlePatientSearch}
-							placeholder="Search for a patient"
-							disabled={!canCreateAssessment && !canUpdateAssessment}
-							filterOption={false}
-							onSelect={(patientId) => {
-								setSelectedPatientId(patientId);
-								form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId });
-							}}
-						/>
-					</Form.Item>
-					<Form.Item
-						label="Assessment Date & Time"
-						name="assessmentDateTime"
-						rules={[{ required: true, message: "Please select date and time" }]}>
-						<DatePicker showTime style={{ width: "100%" }} />
-					</Form.Item>
-					<Form.Item label="Select Template">
-						<Select
-							disabled={!canCreateAssessment && !canUpdateAssessment}
-							placeholder="Select a template"
-							options={templateOptions}
-							onChange={handleTemplateSelect}
-							style={{ width: "100%" }}
-						/>
-					</Form.Item>
-					<Form.Item>
-						<Button
-							type={isRecording ? "danger" : "default"}
-							icon={<AudioOutlined />}
-							onClick={isRecording ? stopRecording : startRecording}
-							disabled={
-								!selectedTemplate ||
-								isTranscribing ||
-								!selectedPatientId ||
-								!isEditorReady ||
-								(!canCreateAssessment && !canUpdateAssessment)
-							}>
-							{isRecording ? "Recording..." : "Populate with AI"}
-						</Button>
-						{isTranscribing && <Progress percent={transcriptionProgress} status="active" style={{ marginTop: 8 }} />}
-					</Form.Item>
-
-					<Form.Item label="Notes" style={{ marginBottom: 0 }}>
-						<div style={{ minHeight: "60vh" }}>
-							<CKEditorComponent
-								onBeforeLoad={setCKEditorRef}
-								onReady={onEditorReady}
-								onChange={(data) => setEditorNotes(data)}
-								data={editorNotes}
-								darkMode={darkMode}
-							/>
-						</div>
-					</Form.Item>
-				</Form>
+				bodyStyle={{ overflowX: "auto" }}
+				maskClosable={false}
+				destroyOnClose={true}>
+				<AssessmentForm
+					assessment={selectedAssessment}
+					onSave={handleSave}
+					onCancel={handleCancel}
+					darkMode={darkMode}
+					canCreateAssessment={canCreateAssessment}
+					canUpdateAssessment={canUpdateAssessment}
+				/>
 			</Modal>
 		</div>
 	);

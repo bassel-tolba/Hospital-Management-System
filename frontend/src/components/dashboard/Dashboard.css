@@ -1,15 +1,110 @@
-.dashboard-layout {
-	min-height: 100vh;
+/* src/components/dashboard/Dashboard.css */
+
+/* Dashboard Card */
+.dashboard-card {
+	margin-bottom: 24px;
+	transition: all 0.7s ease;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
 }
 
-.dashboard-header {
-	background: #001529;
-	padding: 0 24px;
+.dashboard-card .ant-card-head {
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.dashboard-title {
+	margin-bottom: 24px !important;
+	color: #1f1f1f;
+	transition: all 0.7s ease;
+}
+
+/* Date Range Selector */
+.date-range-selector {
+	transition: all 0.7s ease;
+	margin-bottom: 24px;
+}
+
+.custom-date-picker {
+	width: 100%;
+	max-width: 400px;
+}
+
+/* Filters Section */
+.dashboard-filters {
+	transition: all 0.7s ease;
+	margin: 24px 0;
+	padding: 16px;
+	border-radius: 4px;
+}
+
+.filter-item {
 	display: flex;
 	align-items: center;
+	gap: 12px;
 }
 
+.filter-label {
+	color: #595959;
+	font-size: 14px;
+}
+
+/* Dashboard Content */
 .dashboard-content {
-	background: #f0f2f5;
-	padding: 20px;
+	margin-top: 24px;
+}
+
+.loading-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 200px;
+}
+
+.error-message {
+	padding: 16px;
+	background: #fff2f0;
+	border: 1px solid #ffccc7;
+	border-radius: 4px;
+}
+
+.error-message h4 {
+	color: #cf1322;
+	margin-bottom: 8px;
+}
+
+/* Statistics Card */
+.stat-card {
+	height: 100%;
+	transition: all 0.7s ease;
+}
+
+.stat-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.admission-statistic .ant-statistic-title {
+	color: #8c8c8c;
+	font-size: 16px;
+	margin-bottom: 8px;
+}
+
+.admission-statistic .ant-statistic-content {
+	transition: all 0.7s ease;
+
+	font-size: 28px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+	.dashboard-filters {
+		padding: 12px;
+	}
+
+	.filter-item {
+		margin-bottom: 12px;
+	}
+
+	.dashboard-title {
+		font-size: 20px !important;
+		margin-bottom: 16px !important;
+	}
 }

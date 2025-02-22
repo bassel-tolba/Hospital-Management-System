@@ -136,7 +136,7 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 		if (fileUrl.startsWith(".")) {
 			fileUrl = fileUrl.substring(1);
 		}
-		return `http://localhost:8080${fileUrl}`;
+		return `${fileUrl}`;
 	};
 
 	const handleWrappedSubmit = async () => {

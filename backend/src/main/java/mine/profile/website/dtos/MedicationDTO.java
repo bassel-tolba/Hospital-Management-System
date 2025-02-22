@@ -33,7 +33,6 @@ public class MedicationDTO {
         dto.setPrice(medication.getPrice());
         dto.setAmountPerUnit(medication.getAmountPerUnit());
         dto.setPricingUnit(medication.getPricingUnit());
-        dto.setStock(medication.getStock());
         return dto;
     }
 
@@ -49,7 +48,6 @@ public class MedicationDTO {
         entity.setPrice(dto.getPrice());
         entity.setAmountPerUnit(dto.getAmountPerUnit());
         entity.setPricingUnit(dto.getPricingUnit());
-        entity.setStock(dto.getStock());
         return entity;
     }
 }

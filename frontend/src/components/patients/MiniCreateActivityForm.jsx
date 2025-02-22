@@ -1,11 +1,9 @@
 // MiniCreateActivityForm.js
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Select, Spin, AutoComplete, message, Card, Typography } from "antd";
+import { Form, Input, Button, Select, Spin, message, Card, Typography } from "antd";
 import { useActivityStore } from "../../services/activity.service";
 import { useLabStore } from "../../services/lab.service";
 import { useImageReportTypeStore } from "../../services/imageReportType.service";
-import { useProductStore } from "../../services/product.service"; // Import Product store
-import { useMedicationAdministrationStore } from "../../services/medicationAdministration.service"; // Import Medication store
 
 import { LoadingOutlined } from "@ant-design/icons"; // More specific loading icon
 
@@ -17,8 +15,6 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 	const { createActivity, loading, error, clearError } = useActivityStore();
 	const { labTests, fetchLabTests, loading: labLoading } = useLabStore();
 	const { imageReportTypes, fetchImageReportTypes, loading: imageReportLoading } = useImageReportTypeStore();
-	const { searchProducts, loading: productLoading } = useProductStore(); // Use Product store
-	const { searchMedicationAdministrations, loading: medicationLoading } = useMedicationAdministrationStore(); // Import Medication store
 
 	const [formData, setFormData] = useState({
 		activityType: "",
@@ -28,10 +24,6 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 	});
 	const [selectedLabTest, setSelectedLabTest] = useState(null);
 	const [selectedImageReportType, setSelectedImageReportType] = useState(null);
-	const [selectedProduct, setSelectedProduct] = useState(null);
-	const [selectedMedicationAdministration, setSelectedMedicationAdministration] = useState(null);
-	const [productOptions, setProductOptions] = useState([]); // For product autocomplete
-	const [medicationOptions, setMedicationOptions] = useState([]); // For medication autocomplete
 
 	const [form] = Form.useForm();
 
@@ -49,66 +41,8 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 			fetchLabTests();
 		} else if (formData.activityType === "IMAGE_REPORT") {
 			fetchImageReportTypes(0, 10000); // Good practice to have pagination limits, even for "all"
-		} else if (formData.activityType === "PRODUCT") {
-			// Fetch products (adjust as needed for your API)
-			searchProducts({ page: 0, size: 10 });
-		} else if (formData.activityType === "MEDICATION_ADMINISTRATION") {
-			searchMedicationAdministrations({ page: 0, size: 10, patientId });
 		}
-	}, [formData.activityType, fetchLabTests, fetchImageReportTypes, searchProducts, searchMedicationAdministrations, patientId]);
-
-	//Product Auto Complete
-	useEffect(() => {
-		if (formData.activityType === "PRODUCT" && searchProducts) {
-			// Fetch and set product options
-			const fetchProducts = async () => {
-				try {
-					const response = await searchProducts({ page: 0, size: 10 });
-					if (response && Array.isArray(response.products)) {
-						// Add a check here
-						const options = response.products.map((product) => ({
-							label: product.name,
-							value: product.id,
-						}));
-						setProductOptions(options);
-					} else {
-						console.error("Invalid response from searchProducts:", response);
-						setProductOptions([]);
-					}
-				} catch (error) {
-					console.error("Error fetching products", error);
-					setProductOptions([]); // Set to empty array on error
-				}
-			};
-			fetchProducts();
-		}
-	}, [formData.activityType, searchProducts]);
-
-	//medication Auto Complete
-	useEffect(() => {
-		if (formData.activityType === "MEDICATION_ADMINISTRATION" && searchMedicationAdministrations) {
-			// Fetch and set product options
-			const fetchMedicationAdministrations = async () => {
-				try {
-					const response = await searchMedicationAdministrations({ page: 0, size: 10, patientId });
-					if (response && Array.isArray(response.medicationAdministrations)) {
-						const options = response.medicationAdministrations.map((medicationAdministration) => ({
-							label: `${medicationAdministration.medicationName} - ${medicationAdministration.amount} `,
-							value: medicationAdministration.id,
-						}));
-						setMedicationOptions(options);
-					} else {
-						console.error("Invalid response from searchMedicationAdministrations:", response);
-						setMedicationOptions([]);
-					}
-				} catch (error) {
-					console.error("Error fetching searchMedicationAdministrations", error);
-					setMedicationOptions([]);
-				}
-			};
-			fetchMedicationAdministrations();
-		}
-	}, [formData.activityType, searchMedicationAdministrations, patientId]);
+	}, [formData.activityType, fetchLabTests, fetchImageReportTypes]);
 
 	useEffect(() => {
 		form.setFieldsValue({
@@ -124,8 +58,6 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 		if (name === "activityType") {
 			setSelectedLabTest(null);
 			setSelectedImageReportType(null);
-			setSelectedProduct(null);
-			setSelectedMedicationAdministration(null);
 			form.setFieldsValue({ description: null }); // Clear description
 		}
 
@@ -147,21 +79,6 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 		const description = selectedReportType ? selectedReportType.name : "";
 		setFormData((prev) => ({ ...prev, description }));
 		form.setFieldsValue({ description }); // Update form's description
-	};
-
-	const handleProductSelect = (value) => {
-		const selected = productOptions.find((product) => product.value === value);
-		setSelectedProduct(selected);
-		const description = selected ? selected.label : ""; // Use label for description
-		setFormData((prev) => ({ ...prev, description }));
-		form.setFieldsValue({ description });
-	};
-	const handleMedicationAdministrationSelect = (value) => {
-		const selected = medicationOptions.find((medication) => medication.value === value);
-		setSelectedMedicationAdministration(selected);
-		const description = selected ? selected.label : ""; // Use label for description
-		setFormData((prev) => ({ ...prev, description }));
-		form.setFieldsValue({ description });
 	};
 
 	const getLabTestOptions = () => {
@@ -189,10 +106,6 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 				description = selectedLabTest.testName;
 			} else if (formData.activityType === "IMAGE_REPORT" && selectedImageReportType) {
 				description = selectedImageReportType.name;
-			} else if (formData.activityType === "PRODUCT" && selectedProduct) {
-				description = selectedProduct.label; // Use product name
-			} else if (formData.activityType === "MEDICATION_ADMINISTRATION" && selectedMedicationAdministration) {
-				description = selectedMedicationAdministration.label; // Use product name
 			} else {
 				description = values.description;
 			}
@@ -210,8 +123,6 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 
 			setSelectedLabTest(null);
 			setSelectedImageReportType(null);
-			setSelectedProduct(null);
-			setSelectedMedicationAdministration(null);
 			form.resetFields(); // Reset Ant Design form fields
 
 			onActivityCreated();
@@ -223,7 +134,7 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 	};
 
 	// --- Loading and Error States ---
-	const combinedLoading = loading || labLoading || imageReportLoading || productLoading || medicationLoading;
+	const combinedLoading = loading || labLoading || imageReportLoading;
 	if (combinedLoading) {
 		return (
 			<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100px" }}>
@@ -266,7 +177,7 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 						label="Lab Test"
 						name="labTest"
 						rules={[{ required: formData.activityType === "LAB_TEST", message: "Please select a lab test" }]}>
-						<AutoComplete
+						<Select
 							placeholder="Select a Lab Test"
 							options={getLabTestOptions()}
 							onSelect={handleLabTestSelect}
@@ -281,7 +192,7 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 						label="Image Report Type"
 						name="imageReportType"
 						rules={[{ required: formData.activityType === "IMAGE_REPORT", message: "Please select an image report type" }]}>
-						<AutoComplete
+						<Select
 							placeholder="Select an Image Report Type"
 							options={getImageReportTypeOptions()}
 							onSelect={handleImageReportTypeSelect}
@@ -291,51 +202,17 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 					</Form.Item>
 				)}
 
-				{formData.activityType === "PRODUCT" && (
-					<Form.Item
-						label="Product"
-						name="product"
-						rules={[{ required: formData.activityType === "PRODUCT", message: "Please select a product" }]}>
-						<AutoComplete
-							placeholder="Select a Product"
-							options={productOptions}
-							onSelect={handleProductSelect}
-							filterOption={(inputValue, option) => option?.label?.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
-							allowClear
-						/>
-					</Form.Item>
-				)}
-
-				{formData.activityType === "MEDICATION_ADMINISTRATION" && (
-					<Form.Item
-						label="Medication Administration"
-						name="medicationAdministration"
-						rules={[
-							{ required: formData.activityType === "MEDICATION_ADMINISTRATION", message: "Please select a medication administration" },
-						]}>
-						<AutoComplete
-							placeholder="Select a Medication Administration"
-							options={medicationOptions}
-							onSelect={handleMedicationAdministrationSelect}
-							filterOption={(inputValue, option) => option?.label?.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
-							allowClear
-						/>
-					</Form.Item>
-				)}
-
-				{(formData.activityType === "VITAL_SIGNS" || formData.activityType === "ASSESSMENT") && (
-					<Form.Item
-						label="Description"
-						name="description"
-						rules={[
-							{
-								required: true,
-								message: "Please enter a description",
-							},
-						]}>
-						<TextArea rows={4} placeholder="Enter description" />
-					</Form.Item>
-				)}
+				<Form.Item
+					label="Description"
+					name="description"
+					rules={[
+						{
+							required: true,
+							message: "Please enter a description",
+						},
+					]}>
+					<TextArea rows={4} placeholder="Enter description" />
+				</Form.Item>
 
 				<Form.Item>
 					<Button type="primary" htmlType="submit" loading={loading} block>

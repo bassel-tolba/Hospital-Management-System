@@ -115,7 +115,7 @@ const DocumentList = () => {
 				if (fileUrl.startsWith(".")) {
 					fileUrl = fileUrl.substring(1);
 				}
-				const fileUrlWithBase = `http://localhost:8080${fileUrl}`;
+				const fileUrlWithBase = `${fileUrl}`;
 				setUploadList([
 					{
 						uid: "initialFile",
@@ -290,7 +290,7 @@ const DocumentList = () => {
 			if (fileUrl.startsWith(".")) {
 				fileUrl = fileUrl.substring(1);
 			}
-			const fileUrlWithBase = `http://localhost:8080${fileUrl}`;
+			const fileUrlWithBase = `${fileUrl}`;
 			const response = await axios.get(fileUrlWithBase, { responseType: "blob" });
 
 			const contentDisposition = response.headers["content-disposition"];

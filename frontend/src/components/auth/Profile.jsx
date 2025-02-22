@@ -103,7 +103,7 @@ const transformImageUrl = (url) => {
 	if (fileUrl.startsWith(".")) {
 		fileUrl = fileUrl.substring(1);
 	}
-	return `http://localhost:8080${fileUrl}`;
+	return `${fileUrl}`;
 };
 const Profile = () => {
 	const { user, logout, status, error, clearError } = useAuthStore();

@@ -1,27 +1,36 @@
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import mine.profile.website.dtos.PatientProductUsageDTO;
+import mine.profile.website.dtos.history.ProductHistoryDTO;
 import mine.profile.website.exception.InsufficientStockException;
 import mine.profile.website.models.Billing;
-import mine.profile.website.models.Inventory;
 import mine.profile.website.models.Patient;
 import mine.profile.website.models.PatientProductUsage;
 import mine.profile.website.models.Product;
+import mine.profile.website.models.history.ProductHistory;
 import mine.profile.website.repository.BillingRepository;
 import mine.profile.website.repository.InventoryRepository;
 import mine.profile.website.repository.PatientProductUsageRepository;
 import mine.profile.website.repository.PatientRepository;
 import mine.profile.website.repository.ProductRepository;
+import mine.profile.website.repository.history.ProductHistoryRepository;
 
 @Service
 public class PatientProductUsageService {
@@ -31,17 +40,26 @@ public class PatientProductUsageService {
     private final ProductRepository productRepository;
     private final BillingRepository billingRepository;
     private final InventoryRepository inventoryRepository;
+    private final ProductHistoryRepository productHistoryRepository;
+    private final ObjectMapper objectMapper;
+    private final ProductService productService;
 
     public PatientProductUsageService(PatientProductUsageRepository patientProductUsageRepository,
             PatientRepository patientRepository,
             ProductRepository productRepository,
             BillingRepository billingRepository,
-            InventoryRepository inventoryRepository) {
+            InventoryRepository inventoryRepository,
+            ProductHistoryRepository productHistoryRepository,
+            ObjectMapper objectMapper,
+            ProductService productService) {
         this.patientProductUsageRepository = patientProductUsageRepository;
         this.patientRepository = patientRepository;
         this.productRepository = productRepository;
         this.billingRepository = billingRepository;
         this.inventoryRepository = inventoryRepository;
+        this.productHistoryRepository = productHistoryRepository;
+        this.objectMapper = objectMapper;
+        this.productService = productService;
     }
 
     @Transactional
@@ -75,12 +93,14 @@ public class PatientProductUsageService {
         PatientProductUsage usage = PatientProductUsageDTO.toEntity(dto);
         usage.setPatient(patient);
         usage.setProduct(product);
+
         Billing billing = null;
         List<Billing> bills = billingRepository.findByPatientIdOrderByBillDateDesc(patient.getId());
         if (!bills.isEmpty()) {
             billing = bills.get(0); // Get the most recent bill
         }
         usage.setBilling(billing);
+
         if (dto.getStartTime() != null) {
             usage.setStartTime(dto.getStartTime());
         } else {
@@ -90,36 +110,51 @@ public class PatientProductUsageService {
         if (dto.getEndTime() != null) {
             usage.setEndTime(dto.getEndTime());
         }
+
         if (dto.getQuantity() != null) {
             usage.setQuantity(dto.getQuantity());
         }
-        if (billing != null) {
 
-            Billing savedBilling = billingRepository.save(billing);
+        // Adjust stock *ONLY* for PER_UNIT
+        if (product.getPricingModel() == Product.PricingModel.PER_UNIT) {
+            try {
+                productService.decreaseStock(product.getId(), usage.getQuantity().intValue(), "Product Usage");
+            } catch (InsufficientStockException e) {
+                throw e;
+            }
         }
+
         PatientProductUsage savedUsage = patientProductUsageRepository.save(usage);
-
-        // Decrease stock if applicable and if the usage was saved successfully
-        decreaseStockForUsage(savedUsage);
-
+        createProductHistoryFromUsage(savedUsage, "PRODUCT_USAGE");
         return PatientProductUsageDTO.toDto(savedUsage);
     }
 
-    private void decreaseStockForUsage(PatientProductUsage usage) {
-        Product product = usage.getProduct();
-        if (product.getPricingModel() == Product.PricingModel.PER_UNIT) {
-            Inventory inventory = inventoryRepository.findByProductId(product.getId())
-                    .orElseThrow(
-                            () -> new IllegalStateException("Inventory not found for product: " + product.getId()));
+    private void createProductHistoryFromUsage(PatientProductUsage usage, String action) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication != null ? authentication.getName() : "system";
+        String changes = "";
 
-            try {
-                inventory.decreaseStock(usage.getQuantity().intValue()); // Assuming quantity is the number of units
-                inventoryRepository.save(inventory);
-            } catch (InsufficientStockException e) {
-                throw e; // Re-throw to be handled by a global exception handler
-            }
+        try {
+            Map<String, Object> usageDetails = new HashMap<>();
+            usageDetails.put("patientId", usage.getPatient().getId());
+            usageDetails.put("productId", usage.getProduct().getId());
+            usageDetails.put("startTime", usage.getStartTime());
+            usageDetails.put("endTime", usage.getEndTime());
+            usageDetails.put("quantity", usage.getQuantity());
+
+            changes = objectMapper.writeValueAsString(usageDetails);
+        } catch (Exception e) {
+            changes = "Could not map usage details";
         }
-        // No stock reduction for PER_TIME, PER_USE, or FIXED
+
+        ProductHistory history = new ProductHistory();
+        history.setProduct(usage.getProduct());
+        history.setAction(action);
+        history.setTimestamp(LocalDateTime.now());
+        history.setUserName(username);
+        history.setChanges(changes);
+
+        productHistoryRepository.save(history);
     }
 
     @Transactional
@@ -146,6 +181,23 @@ public class PatientProductUsageService {
 
     @Transactional
     public void deleteById(Long id) {
-        patientProductUsageRepository.deleteById(id);
+        PatientProductUsage usage = patientProductUsageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid PatientProductUsage ID: " + id));
+
+        Product product = usage.getProduct();
+
+        // Increase stock *ONLY* for PER_UNIT
+        if (product.getPricingModel() == Product.PricingModel.PER_UNIT) {
+            productService.increaseStock(product.getId(), usage.getQuantity().intValue(), "Reverted Product Usage");
+        }
+
+        createProductHistoryFromUsage(usage, "PRODUCT_USAGE_REVERTED");
+        patientProductUsageRepository.delete(usage);
+    }
+
+    @Transactional
+    public List<ProductHistoryDTO> getAllProductHistory() {
+        return productHistoryRepository.findAll().stream().map(ProductHistoryDTO::toDto)
+                .collect(Collectors.toList());
     }
 }

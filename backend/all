@@ -6903,7 +6903,7 @@ import mine.profile.website.util.FileHandler;
 public class FileServingController {
 
     @Value("${file.upload.directory}")
-    private String fileUploadDirectory;
+    private String fileUploadDirectory = "/api/uploads";
 
     private final FileHandler fileHandler;
 

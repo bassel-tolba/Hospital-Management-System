@@ -1,8 +1,11 @@
 package mine.profile.website.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import mine.profile.website.models.PatientProductUsage;
@@ -11,4 +14,12 @@ import mine.profile.website.models.PatientProductUsage;
 public interface PatientProductUsageRepository extends JpaRepository<PatientProductUsage, Long> {
     Page<PatientProductUsage> findByPatientId(Long patientId, Pageable pageable);
 
+    // Override findAll to exclude deleted patients
+    @Override
+    @Query("SELECT ppu FROM PatientProductUsage ppu WHERE ppu.patient.deleted = false")
+    List<PatientProductUsage> findAll();
+
+    @Override
+    @Query("SELECT ppu FROM PatientProductUsage ppu WHERE ppu.patient.deleted = false")
+    Page<PatientProductUsage> findAll(Pageable pageable);
 }

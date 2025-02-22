@@ -68,7 +68,7 @@ public class MedicationAdministrationService {
         Medication medication = prescribedMedication.getMedication();
         double amount = dto.getAmount();
 
-        if (medication.getStock() < amount) {
+        if (medication.getTotalStock() < amount) {
             throw new IllegalStateException("مفيش دوا كفايه  " + medication.getName());
         }
         if (amount < 0) {
@@ -136,7 +136,7 @@ public class MedicationAdministrationService {
         Medication medication = prescribedMedication.getMedication();
         double amount = administration.getAmount();
 
-        medicationService.increaseStock(medication.getId(), (int) amount, "Reverted Medication Administration");
+        medicationService.decreaseStock(medication.getId(), -(int) amount, "Reverted Medication Administration");
         prescribedMedication.setExpired(false);
         prescribedMedicationRepository.save(prescribedMedication);
 

@@ -70,12 +70,12 @@ const generateImageUrl = (url) => {
 			: "/" + (url.startsWith("./") ? url.substring(1) : url)
 	}`;
 
-	return `http://localhost:8080${processedUrl}`;
+	return `${processedUrl}`;
 };
 const generateDocumentUrl = (url) => {
 	if (!url) return null;
 	const processedUrl = url.startsWith("./") ? url.substring(1) : url;
-	return `http://localhost:8080${processedUrl.startsWith("/") ? processedUrl : "/" + processedUrl}`;
+	return `${processedUrl.startsWith("/") ? processedUrl : "/" + processedUrl}`;
 };
 
 // -----------------------------------------------------------------------------

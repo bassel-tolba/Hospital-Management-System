@@ -1,7 +1,19 @@
-import React, { useState, useEffect } from "react"; // <--- IMPORT useState AND useEffect
+// src/components/ProductList.js
+import React, { useState, useEffect } from "react";
 import { Table, Input, Button, Space, Typography, Modal, Form, Pagination, Select, InputNumber, Row, Col, Alert, Tooltip } from "antd";
 import { useProductStore } from "../../services/product.service";
-import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined, MinusOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+	SearchOutlined,
+	EditOutlined,
+	DeleteOutlined,
+	PlusOutlined,
+	MinusOutlined,
+	InfoCircleOutlined,
+	HistoryOutlined,
+	UnorderedListOutlined,
+} from "@ant-design/icons";
+import ProductHistory from "./ProductHistory";
+import AllProductHistory from "./AllProductHistory";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -20,25 +32,12 @@ const ProductList = () => {
 	const [timeUnit, setTimeUnit] = useState(null);
 	const [stockChangeType, setStockChangeType] = useState(null);
 	const [stockChangeQuantity, setStockChangeQuantity] = useState(0);
+	const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+	const [isAllHistoryVisible, setIsAllHistoryVisible] = useState(false);
 
 	useEffect(() => {
 		fetchProducts();
 	}, [page, size, searchParams]);
-
-	// useEffect(() => {
-	// 	const currentPricingModel = form.getFieldValue("pricingModel");
-	// 	setPricingModel(currentPricingModel);
-
-	// 	if (currentPricingModel !== "PER_TIME") {
-	// 		form.setFieldsValue({ unit: null });
-	// 	}
-	// }, [form]);
-
-	// useEffect(() => {
-	// 	if (pricingModel === "PER_TIME" && timeUnit) {
-	// 		form.setFieldsValue({ unit: `${timeUnit} hours` });
-	// 	}
-	// }, [timeUnit, pricingModel, form]);
 
 	const fetchProducts = async () => {
 		setLoading(true);
@@ -50,13 +49,14 @@ const ProductList = () => {
 		setSelectedProduct(product);
 		if (product) {
 			form.setFieldsValue(product);
-			setPricingModel(product.pricingModel); // set pricing model on edit
+			setPricingModel(product.pricingModel);
 			if (product.pricingModel === "PER_TIME") {
 				setTimeUnit(product.quantity);
+				form.setFieldsValue({ unit: `${product.quantity} hours` }); // Set unit field
 			}
 		} else {
 			form.resetFields();
-			setPricingModel(null); // Reset pricing model
+			setPricingModel(null);
 			setTimeUnit(null);
 		}
 		setIsModalVisible(true);
@@ -87,6 +87,9 @@ const ProductList = () => {
 	const handleFormSubmit = async () => {
 		try {
 			const values = await form.validateFields();
+			if (values.pricingModel === "PER_TIME" && values.quantity) {
+				values.unit = `${values.quantity} hours`; // Set unit based on quantity
+			}
 			if (selectedProduct) {
 				await updateProduct(selectedProduct.id, values);
 			} else {
@@ -141,6 +144,24 @@ const ProductList = () => {
 	const handlePageSizeChange = (current, newSize) => {
 		setPage(1);
 		setSize(newSize);
+	};
+
+	const showHistoryModal = (product) => {
+		setSelectedProduct(product);
+		setIsHistoryModalVisible(true);
+	};
+
+	const handleHistoryModalClose = () => {
+		setIsHistoryModalVisible(false);
+		setSelectedProduct(null);
+	};
+
+	const showAllHistory = () => {
+		setIsAllHistoryVisible(true);
+	};
+
+	const handleAllHistoryClose = () => {
+		setIsAllHistoryVisible(false);
 	};
 
 	const columns = [
@@ -199,6 +220,9 @@ const ProductList = () => {
 					<Button type="default" icon={<MinusOutlined />} onClick={() => showStockModal(record, "decrease")}>
 						Decrease Stock
 					</Button>
+					<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)}>
+						History
+					</Button>
 					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
 						Delete
 					</Button>
@@ -206,6 +230,26 @@ const ProductList = () => {
 			),
 		},
 	];
+
+	const handlePricingModelChange = (value) => {
+		setPricingModel(value);
+		if (value === "PER_TIME") {
+			if (timeUnit) {
+				form.setFieldsValue({ unit: `${timeUnit} hours` });
+			} else {
+				form.setFieldsValue({ unit: "" }); // Clear if timeUnit is not set
+			}
+		} else {
+			form.setFieldsValue({ unit: "" }); // Clear unit for other pricing models
+		}
+	};
+
+	const handleTimeUnitChange = (value) => {
+		setTimeUnit(value);
+		if (pricingModel === "PER_TIME") {
+			form.setFieldsValue({ unit: `${value} hours` });
+		}
+	};
 
 	const getPriceCalculationText = () => {
 		const currentPricingModel = form.getFieldValue("pricingModel");
@@ -261,7 +305,6 @@ const ProductList = () => {
 		<div className="main-container" style={{ padding: 20 }}>
 			<Title level={2}>Product List</Title>
 
-			{/* Responsive Search and Add Button */}
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={18}>
 					<Input.Search placeholder="Search by code, name, description..." onSearch={handleSearch} style={{ width: "100%" }} />
@@ -272,13 +315,16 @@ const ProductList = () => {
 					</Button>
 				</Col>
 			</Row>
+			<Row justify="end" style={{ marginBottom: 16 }}>
+				<Button type="default" icon={<UnorderedListOutlined />} onClick={showAllHistory}>
+					View All History
+				</Button>
+			</Row>
 
-			{/* Scrollable Table */}
 			<div style={{ overflowX: "auto", margin: "0 -16px" }}>
 				<Table columns={columns} dataSource={products} loading={loading} rowKey="id" pagination={false} />
 			</div>
 
-			{/* Responsive Pagination */}
 			<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
 				<Pagination
 					current={page}
@@ -290,7 +336,6 @@ const ProductList = () => {
 				/>
 			</div>
 
-			{/* Responsive Modal */}
 			<Modal
 				title={selectedProduct ? "Edit Product" : "Add Product"}
 				visible={isModalVisible}
@@ -339,9 +384,7 @@ const ProductList = () => {
 						</Col>
 						<Col xs={24} sm={12}>
 							<Form.Item label="Pricing Model" name="pricingModel" rules={[{ required: true, message: "Please select pricing model" }]}>
-								<Select onChange={(value) => setPricingModel(value)} value={pricingModel}>
-									{" "}
-									{/* Set value here */}
+								<Select onChange={handlePricingModelChange} value={pricingModel}>
 									<Option value="PER_UNIT">Per Unit</Option>
 									<Option value="PER_TIME">Per Time</Option>
 									<Option value="PER_USE">Per Use</Option>
@@ -378,7 +421,7 @@ const ProductList = () => {
 									label="Time Unit (hours)"
 									name="quantity"
 									rules={[{ required: pricingModel === "PER_TIME", message: "Please input time unit" }]}>
-									<InputNumber style={{ width: "100%" }} onChange={(value) => setTimeUnit(value)} value={timeUnit} />
+									<InputNumber style={{ width: "100%" }} onChange={handleTimeUnitChange} value={timeUnit} />
 								</Form.Item>
 							</Col>
 						)}
@@ -387,7 +430,7 @@ const ProductList = () => {
 					<Row gutter={16}>
 						<Col xs={24}>
 							<Form.Item label="Unit" name="unit">
-								<Input />
+								<Input disabled={pricingModel === "PER_TIME"} />
 							</Form.Item>
 						</Col>
 					</Row>
@@ -400,7 +443,6 @@ const ProductList = () => {
 				</Form>
 			</Modal>
 
-			{/* Stock Change Modal */}
 			<Modal
 				title={`Change Stock`}
 				visible={isStockModalVisible}
@@ -430,6 +472,13 @@ const ProductList = () => {
 					</Row>
 				</Form>
 			</Modal>
+			<ProductHistory
+				productId={selectedProduct?.id}
+				productName={selectedProduct?.name}
+				visible={isHistoryModalVisible}
+				onClose={handleHistoryModalClose}
+			/>
+			<AllProductHistory visible={isAllHistoryVisible} onClose={handleAllHistoryClose} />
 		</div>
 	);
 };

@@ -1,4 +1,6 @@
 .main-container {
+	transition: all 0.9s ease;
+
 	max-width: 1200px; /* Limit maximum width for large screens */
 	margin: 0 auto; /* Center the container */
 	padding: 20px; /* Add some padding */

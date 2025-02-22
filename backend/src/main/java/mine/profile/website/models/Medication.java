@@ -15,7 +15,6 @@ import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import mine.profile.website.exception.InsufficientStockException;
 
 @Entity
 @Getter
@@ -29,10 +28,10 @@ public class Medication {
     private String name;
     private String dosage;
     private String imageURL;
-    private int stock;
+    // private int stock; // REMOVE THIS
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal price;
+    private BigDecimal price; // This is now the *selling* price
 
     private double amountPerUnit;
 
@@ -42,27 +41,21 @@ public class Medication {
     @OneToMany(mappedBy = "medication", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PrescribedMedication> prescribedMedications;
 
+    @OneToMany(mappedBy = "medication", cascade = CascadeType.ALL, orphanRemoval = true) // Add this relationship
+    private List<MedicationBatch> batches;
+
     public BigDecimal calculatePrice(double amount) {
         return this.price.multiply(BigDecimal.valueOf(amount * this.amountPerUnit));
     }
 
-    public void increaseStock(int quantity) {
-        if (quantity > 0) {
-            this.stock += quantity;
-        } else {
-            throw new IllegalArgumentException("Quantity must be positive to increase stock");
-        }
+    // Calculate total stock dynamically
+    public int getTotalStock() {
+        return batches.stream()
+                .mapToInt(MedicationBatch::getRemainingQuantity)
+                .sum();
     }
 
-    public void decreaseStock(int quantity) {
-        if (quantity > 0) {
-            if (this.stock >= quantity) {
-                this.stock -= quantity;
-            } else {
-                throw new InsufficientStockException("Not enough stock for medication: " + this.name);
-            }
-        } else {
-            throw new IllegalArgumentException("Quantity must be positive to decrease stock");
-        }
-    }
+    // No longer needed, handled by MedicationBatch
+    // public void increaseStock(int quantity) { ... }
+    // public void decreaseStock(int quantity) { ... }
 }

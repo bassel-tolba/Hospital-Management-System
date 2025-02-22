@@ -1,3 +1,4 @@
+// medication.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
@@ -6,6 +7,7 @@ import { useAuthStore } from "./auth.service";
 const MEDICATION_API_BASE_URL = `http://localhost:8080/api/medications`;
 
 export const useMedicationStore = create((set, get) => ({
+	// ... (other store properties and functions) ...
 	medications: [],
 	loading: false,
 	error: null,
@@ -97,7 +99,11 @@ export const useMedicationStore = create((set, get) => ({
 				},
 			});
 			set({ loading: false });
-			set({ medications: response.data });
+			const medicationsWithStock = response.data.map((med) => ({
+				...med,
+				stock: med.stock, // The backend already calculates this
+			}));
+			set({ medications: medicationsWithStock });
 			return response.data;
 		} catch (error) {
 			set({ error: error.message, loading: false });
@@ -132,63 +138,80 @@ export const useMedicationStore = create((set, get) => ({
 			throw error;
 		}
 	},
-	increaseStock: async (medicationId, quantity) => {
+	// Replace increaseStock and decreaseStock with addBatch
+	addBatch: async (medicationId, batchData) => {
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.patch(
-				`${MEDICATION_API_BASE_URL}/${medicationId}/increase-stock?quantity=${quantity}`,
-				{},
-				{
-					headers: {
-						Authorization: `Bearer ${user?.token}`,
-					},
-				}
-			);
+			const response = await axios.post(`${MEDICATION_API_BASE_URL}/${medicationId}/add-batch`, batchData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
 			set({ loading: false });
 			notification.success({
 				message: "Success",
-				description: "Medication stock increased successfully.",
+				description: "Medication batch added successfully.",
 			});
 			return response.data;
 		} catch (error) {
 			set({ error: error.message, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to increase medication stock: ${error?.response?.data?.message || error.message}`,
+				description: `Failed to add medication batch: ${error?.response?.data?.message || error.message}`,
 			});
 			throw error;
+		}
+	},
+	updateBatch: async (batchId, batchData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${MEDICATION_API_BASE_URL}/batches/${batchId}`, batchData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication batch updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update medication batch: ${error.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw to be handled by caller
 		}
 	},
 
-	decreaseStock: async (medicationId, quantity) => {
+	deleteBatch: async (batchId) => {
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.patch(
-				`${MEDICATION_API_BASE_URL}/${medicationId}/decrease-stock?quantity=${quantity}`,
-				{},
-				{
-					headers: {
-						Authorization: `Bearer ${user?.token}`,
-					},
-				}
-			);
+			await axios.delete(`${MEDICATION_API_BASE_URL}/batches/${batchId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
 			set({ loading: false });
 			notification.success({
 				message: "Success",
-				description: "Medication stock decreased successfully.",
+				description: "Medication batch deleted successfully.",
 			});
-			return response.data;
 		} catch (error) {
 			set({ error: error.message, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to decrease medication stock: ${error?.response?.data?.message || error.message}`,
+				description: `Failed to delete medication batch: ${error.response?.data?.message || error.message}`,
 			});
-			throw error;
+			throw error; // Re-throw for consistent error handling
 		}
 	},
+
 	searchMedications: async (searchParams) => {
 		set({ loading: true, error: null });
 		try {
@@ -208,7 +231,7 @@ export const useMedicationStore = create((set, get) => ({
 			set({
 				loading: false,
 				medications: response.data,
-				total: response.data.length,
+				total: response.data.length, // This might need adjustment, see below
 			});
 			return response.data;
 		} catch (error) {
@@ -218,6 +241,27 @@ export const useMedicationStore = create((set, get) => ({
 				description: `Failed to search medications: ${error?.response?.data?.message || error.message}`,
 			});
 			throw error;
+		}
+	},
+	// ADD THIS FUNCTION:
+	getBatchesForMedication: async (medicationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${MEDICATION_API_BASE_URL}/${medicationId}/batches`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data; // Return the array of batches
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get batches for medication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Important: Re-throw the error so the calling component can handle it
 		}
 	},
 }));

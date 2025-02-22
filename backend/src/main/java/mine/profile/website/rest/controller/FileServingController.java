@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpHeaders;
@@ -26,8 +25,8 @@ import mine.profile.website.util.FileHandler;
 @RequestMapping("/api/uploads")
 public class FileServingController {
 
-    @Value("${file.upload.directory}")
-    private String fileUploadDirectory;
+    // @Value("${file.upload.directory}")
+    private String fileUploadDirectory = "/api/uploads";
 
     private final FileHandler fileHandler;
 

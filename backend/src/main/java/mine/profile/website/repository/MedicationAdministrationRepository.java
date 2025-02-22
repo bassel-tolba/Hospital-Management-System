@@ -12,6 +12,14 @@ import mine.profile.website.models.MedicationAdministration;
 
 @Repository
 public interface MedicationAdministrationRepository extends JpaRepository<MedicationAdministration, Long> {
+
+    // Overriding findAll
+    @Override
+    @Query("SELECT ma FROM MedicationAdministration ma WHERE ma.patient.deleted = false")
+    List<MedicationAdministration> findAll();
+
+    @Override
+    @Query("SELECT ma FROM MedicationAdministration ma WHERE ma.patient.deleted = false")
     Page<MedicationAdministration> findAll(Pageable pageable);
 
     Page<MedicationAdministration> findByPatientId(Long patientId, Pageable pageable);

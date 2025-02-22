@@ -1,9 +1,13 @@
+// ProductController.java (Update the history endpoint)
 package mine.profile.website.rest.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -86,5 +90,23 @@ public class ProductController {
         } catch (InsufficientStockException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // Or another appropriate status
         }
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<Map<String, Object>> getProductHistory(
+            @RequestParam(value = "productId", required = false) Long productId,
+            @RequestParam(value = "start", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
+            @RequestParam(value = "end", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        Map<String, Object> productHistory = productService.getProductHistory(productId, start, end, page, size);
+        return new ResponseEntity<>(productHistory, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/history")
+    public ResponseEntity<Void> clearProductHistory() {
+        productService.clearProductHistory();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

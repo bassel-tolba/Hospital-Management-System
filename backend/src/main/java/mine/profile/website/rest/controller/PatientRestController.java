@@ -1,3 +1,4 @@
+// rest/controller/PatientRestController.java
 package mine.profile.website.rest.controller;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -76,7 +78,6 @@ public class PatientRestController {
             "    *    Do NOT make up address components. Do NOT include introductory phrases like 'The address is'.\n" +
             "    *   `phoneNumber`: Patient's phone number. Do NOT include extra text or labels.\n" +
             "    *   `email`: Patient's email address. Do NOT include extra text.\n" +
-            "    *   `medicalRecordNumber`: Patient's medical record number. Do NOT include extra text.\n" +
             "    *   `bloodType`: Patient's blood type. MUST be capitalized (e.g., `A+`, `AB-`, `O+`). If not clearly stated, use \"did not get\".\n"
             +
             "    *   `allergies`: List of patient's allergies.  ONLY include the allergy names, separated by commas.  Do NOT include any descriptive phrases, explanations, or filler words. Example: \"Penicillin, Nuts, Shellfish\"\n"
@@ -100,7 +101,6 @@ public class PatientRestController {
             "  \"address\": \"\",\n" +
             "  \"phoneNumber\": \"\",\n" +
             "  \"email\": \"\",\n" +
-            "  \"medicalRecordNumber\": \"\",\n" +
             "  \"bloodType\": \"\",\n" +
             "  \"allergies\": \"\",\n" +
             "  \"medicalHistory\": \"\"\n" +
@@ -178,8 +178,15 @@ public class PatientRestController {
     public ResponseEntity<Page<PatientDTO>> searchPatients(
             @RequestParam(required = false, name = "searchTerm") String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "severityLevel,asc") String sort) { // Add sort parameter
+
+        String[] sortParams = sort.split(",");
+        String sortBy = sortParams[0];
+        Sort.Direction direction = sortParams.length > 1 ? Sort.Direction.fromString(sortParams[1])
+                : Sort.Direction.ASC;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         Page<PatientDTO> patients;
         if (search == null || search.isEmpty()) {

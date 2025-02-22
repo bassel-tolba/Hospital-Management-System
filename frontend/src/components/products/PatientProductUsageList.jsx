@@ -424,9 +424,6 @@ const PatientProductUsageList = () => {
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
 					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
 						Delete
 					</Button>

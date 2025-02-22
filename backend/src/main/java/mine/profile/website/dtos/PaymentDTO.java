@@ -17,6 +17,7 @@ public class PaymentDTO {
     private double amount;
     private String paymentMethod;
     private Long billingId;
+    private String statistics; // Add statistics field
 
     public Payment toEntity(Billing billing) {
         Payment payment = new Payment();
@@ -25,6 +26,7 @@ public class PaymentDTO {
         payment.setAmount(this.amount);
         payment.setPaymentMethod(this.paymentMethod);
         payment.setBilling(billing);
+        payment.setStatistics(this.statistics); // Set statistics
         return payment;
 
     }
@@ -38,6 +40,7 @@ public class PaymentDTO {
         if (payment.getBilling() != null) {
             paymentDTO.setBillingId(payment.getBilling().getId());
         }
+        paymentDTO.setStatistics(payment.getStatistics()); // Get statistics
 
         return paymentDTO;
     }

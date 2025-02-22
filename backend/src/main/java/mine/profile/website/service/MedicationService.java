@@ -1,3 +1,4 @@
+// MedicationService.java
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
@@ -18,10 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import mine.profile.website.dtos.MedicationBatchDTO;
 import mine.profile.website.dtos.MedicationDTO;
 import mine.profile.website.dtos.history.MedicationHistoryDTO;
+import mine.profile.website.exception.InsufficientStockException;
 import mine.profile.website.models.Medication;
+import mine.profile.website.models.MedicationBatch;
 import mine.profile.website.models.history.MedicationHistory;
+import mine.profile.website.repository.MedicationBatchRepository;
 import mine.profile.website.repository.MedicationRepository;
 import mine.profile.website.repository.history.MedicationHistoryRepository;
 
@@ -30,13 +35,16 @@ public class MedicationService {
 
     private final MedicationRepository medicationRepository;
     private final MedicationHistoryRepository medicationHistoryRepository;
+    private final MedicationBatchRepository medicationBatchRepository; // Add this
     private final ObjectMapper objectMapper;
 
     public MedicationService(MedicationRepository medicationRepository,
             MedicationHistoryRepository medicationHistoryRepository,
+            MedicationBatchRepository medicationBatchRepository, // Add this
             ObjectMapper objectMapper) {
         this.medicationRepository = medicationRepository;
         this.medicationHistoryRepository = medicationHistoryRepository;
+        this.medicationBatchRepository = medicationBatchRepository; // Add this
         this.objectMapper = objectMapper;
 
     }
@@ -52,14 +60,22 @@ public class MedicationService {
     @Transactional
     public List<MedicationDTO> findAll() {
         return medicationRepository.findAll().stream()
-                .map(MedicationDTO::toDto)
+                .map(medication -> {
+                    MedicationDTO dto = MedicationDTO.toDto(medication);
+                    dto.setStock(medication.getTotalStock()); // Calculate and set stock
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public MedicationDTO findById(Long id) {
         return medicationRepository.findById(id)
-                .map(MedicationDTO::toDto)
+                .map(medication -> {
+                    MedicationDTO dto = MedicationDTO.toDto(medication);
+                    dto.setStock(medication.getTotalStock()); // Calculate and set stock
+                    return dto;
+                })
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Medication ID: " + id));
     }
 
@@ -73,7 +89,7 @@ public class MedicationService {
         medication.setAmountPerUnit(updatedMedication.getAmountPerUnit());
         medication.setDosage(updatedMedication.getDosage());
         medication.setImageURL(updatedMedication.getImageURL());
-        medication.setPrice(updatedMedication.getPrice());
+        medication.setPrice(updatedMedication.getPrice()); // Update selling price
         medication.setPricingUnit(updatedMedication.getPricingUnit());
         Medication savedMedication = medicationRepository.save(medication);
         createMedicationHistory(savedMedication, "UPDATE", oldMedicationDTO, dto);
@@ -93,43 +109,107 @@ public class MedicationService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Medication> medications = medicationRepository.searchMedications(searchTerm, pageable);
         return medications.getContent().stream()
-                .map(MedicationDTO::toDto)
+                .map(medication -> {
+                    MedicationDTO dto = MedicationDTO.toDto(medication);
+                    dto.setStock(medication.getTotalStock()); // Calculate and set stock
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public MedicationDTO increaseStock(Long id, int quantity, String reason) {
-        Medication medication = medicationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Medication ID: " + id));
-        MedicationDTO oldMedicationDTO = MedicationDTO.toDto(medication);
-        medication.increaseStock(quantity);
-        Medication savedMedication = medicationRepository.save(medication);
-        createMedicationHistory(savedMedication, "STOCK_INCREASE", oldMedicationDTO,
-                MedicationDTO.toDto(savedMedication), reason);
-        return MedicationDTO.toDto(savedMedication);
+    public MedicationBatchDTO addBatch(Long medicationId, MedicationBatchDTO batchDTO) {
+        Medication medication = medicationRepository.findById(medicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Medication ID: " + medicationId));
 
+        MedicationBatch batch = MedicationBatchDTO.toEntity(batchDTO);
+        batch.setMedication(medication);
+        batch.setPurchaseDate(LocalDateTime.now());
+        batch.setRemainingQuantity(batch.getQuantity()); // Initially, all quantity is remaining
+        MedicationBatch savedBatch = medicationBatchRepository.save(batch);
+        createMedicationHistory(medication, "STOCK_INCREASE", null, MedicationDTO.toDto(medication),
+                "Purchase: " + savedBatch.getQuantity() + " @ " + savedBatch.getPurchasePrice());
+
+        return MedicationBatchDTO.toDto(savedBatch);
     }
 
     @Transactional
-    public MedicationDTO increaseStock(Long id, int quantity) {
-        return increaseStock(id, quantity, null);
+    public void decreaseStock(Long medicationId, int quantity) {
+        decreaseStock(medicationId, quantity, null);
     }
 
     @Transactional
-    public MedicationDTO decreaseStock(Long id, int quantity, String reason) {
-        Medication medication = medicationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Medication ID: " + id));
-        MedicationDTO oldMedicationDTO = MedicationDTO.toDto(medication);
-        medication.decreaseStock(quantity);
-        Medication savedMedication = medicationRepository.save(medication);
-        createMedicationHistory(savedMedication, "STOCK_DECREASE", oldMedicationDTO,
-                MedicationDTO.toDto(savedMedication), reason);
-        return MedicationDTO.toDto(savedMedication);
+    public void decreaseStock(Long medicationId, int quantity, String reason) {
+        Medication medication = medicationRepository.findById(medicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Medication ID: " + medicationId));
+
+        // Get batches ordered by purchase date (FIFO)
+        List<MedicationBatch> batches = medicationBatchRepository
+                .findByMedicationIdOrderByPurchaseDateAsc(medicationId);
+
+        int remainingToDecrease = quantity;
+        for (MedicationBatch batch : batches) {
+            if (remainingToDecrease <= 0) {
+                break; // We've decreased enough
+            }
+
+            int decreaseFromThisBatch = Math.min(remainingToDecrease, batch.getRemainingQuantity());
+            batch.setRemainingQuantity(batch.getRemainingQuantity() - decreaseFromThisBatch);
+            remainingToDecrease -= decreaseFromThisBatch;
+            medicationBatchRepository.save(batch); // Save changes to the batch
+        }
+
+        if (remainingToDecrease > 0) {
+            throw new InsufficientStockException("Not enough stock for medication: " + medication.getName());
+        }
+        createMedicationHistory(medication, "STOCK_DECREASE", MedicationDTO.toDto(medication), null, reason);
     }
 
     @Transactional
-    public MedicationDTO decreaseStock(Long id, int quantity) {
-        return decreaseStock(id, quantity, null);
+    public MedicationBatchDTO updateBatch(Long batchId, MedicationBatchDTO batchDTO) {
+        MedicationBatch batch = medicationBatchRepository.findById(batchId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Batch ID: " + batchId));
+
+        // Check if quantity is being reduced below what's already been used
+        if (batchDTO.getQuantity() < (batch.getQuantity() - batch.getRemainingQuantity())) {
+            throw new IllegalArgumentException(
+                    "Cannot reduce quantity below the amount already administered from this batch.");
+        }
+
+        batch.setPurchasePrice(batchDTO.getPurchasePrice());
+        batch.setQuantity(batchDTO.getQuantity());
+        batch.setRemainingQuantity(batchDTO.getQuantity() - (batch.getQuantity() - batch.getRemainingQuantity())); // Update
+                                                                                                                   // remaining
+
+        MedicationBatch updatedBatch = medicationBatchRepository.save(batch);
+
+        // *** IMPORTANT: Update the associated Medication ***
+        Medication medication = updatedBatch.getMedication();
+        medicationRepository.save(medication); // This triggers recalculation and persistence of totalStock
+
+        createMedicationHistory(medication, "BATCH_UPDATE", null, MedicationDTO.toDto(medication),
+                "Batch Update: " + updatedBatch.getQuantity() + " @ " + updatedBatch.getPurchasePrice());
+
+        return MedicationBatchDTO.toDto(updatedBatch);
+    }
+
+    @Transactional
+    public void deleteBatch(Long batchId) {
+        MedicationBatch batch = medicationBatchRepository.findById(batchId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Batch ID: " + batchId));
+        // Check if any quantity has been used from this batch. Prevent deletion if so.
+        if (batch.getQuantity() > batch.getRemainingQuantity()) {
+            throw new IllegalStateException("Cannot delete a batch that has already been partially administered.");
+        }
+
+        createMedicationHistory(batch.getMedication(), "BATCH_DELETE", null, MedicationDTO.toDto(batch.getMedication()),
+                "Batch DELETE: " + batch.getQuantity() + " @ " + batch.getPurchasePrice());
+        medicationBatchRepository.delete(batch);
+
+        // *** IMPORTANT: Update the associated Medication ***
+        Medication medication = batch.getMedication();
+        medicationRepository.save(medication); // This triggers recalculation and persistence of totalStock
+
     }
 
     private void createMedicationHistory(Medication medication, String action, MedicationDTO oldData,
@@ -194,8 +274,31 @@ public class MedicationService {
     }
 
     @Transactional
-    public List<MedicationHistoryDTO> getAllMedicationHistory() {
-        return medicationHistoryRepository.findAll().stream().map(MedicationHistoryDTO::toDto)
+    public Map<String, Object> getMedicationHistory(Long medicationId, LocalDateTime start, LocalDateTime end,
+            int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<MedicationHistory> historyPage;
+
+        if (medicationId != null) {
+            historyPage = medicationHistoryRepository.findAllByMedicationIdAndTimestampBetween(medicationId, start,
+                    end, pageable);
+        } else {
+            historyPage = medicationHistoryRepository.findAllByTimestampBetween(start, end, pageable);
+        }
+
+        List<MedicationHistoryDTO> historyDTOs = historyPage.getContent().stream()
+                .map(MedicationHistoryDTO::toDto)
                 .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("history", historyDTOs);
+        result.put("totalPages", historyPage.getTotalPages());
+        result.put("totalElements", historyPage.getTotalElements());
+        return result;
+    }
+
+    @Transactional
+    public void clearMedicationHistory() {
+        medicationHistoryRepository.deleteAll();
     }
 }

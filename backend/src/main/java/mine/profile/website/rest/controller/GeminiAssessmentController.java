@@ -35,35 +35,71 @@ public class GeminiAssessmentController {
     private GeminiRestService geminiRestService;
 
     private String generateAssessmentPrompt(String templateName, String currentHtml, Long patientId) {
-        // Clear, concise, and well-structured prompt. Crucially, it emphasizes JSON
-        // output and placeholder handling.
-        return "You are a medical AI assistant. Your task is to extract information from provided audio and use it to populate a medical assessment template.  "
-                +
-                "The template is provided in HTML format.  You MUST ONLY extract information that is explicitly mentioned in the audio. Do NOT make assumptions or infer any information.\n\n"
+        // Enhanced prompt with instruction understanding, request handling, and user
+        // guidance.
+        return "You are a medical AI assistant. Your primary task is to populate a medical assessment template, provided in HTML, based on an audio recording. However, you must **distinguish between direct value extraction and instructions/requests.**\n\n"
                 +
                 "**Input:**\n" +
-                "*  Audio recording of a medical assessment.\n" +
-                "*  HTML template with placeholders. Placeholders are enclosed in square brackets, e.g., `[Patient Name]`.\n"
+                "*   Audio recording of a medical assessment.\n" +
+                "*   HTML template with placeholders. Placeholders are enclosed in square brackets, e.g., `[Patient Name]`.\n"
                 +
-                "*  Patient ID (for context, but NOT to be included in the output).\n" +
-                "*  Template Name (for context, but NOT to be included in the output).\n\n" +
+                "*   Patient ID (for context, but NOT to be included in the output).\n" +
+                "*   Template Name (for context, but NOT to be included in the output).\n\n" +
                 "**Output:**\n" +
-                "*  A SINGLE JSON object.  Do NOT include ANY text other than the JSON object.  No introductions, no explanations, no apologies.\n"
+                "*   A SINGLE JSON object. Do NOT include ANY text other than the JSON object. No introductions, explanations, or apologies.\n"
                 +
-                "*  The JSON keys MUST be the placeholder names *without* the square brackets.\n" +
-                "*  The JSON values MUST be the extracted information from the audio, formatted appropriately for medical documentation (e.g., correct units, abbreviations).\n"
+                "*   The JSON keys MUST be the placeholder names *without* the square brackets.\n" +
+                "*   The JSON values MUST be derived from the audio, as described below:\n\n" +
+
+                "**Value Derivation - IMPORTANT:**\n" +
+                "1.  **Direct Value Extraction:** If the audio clearly states the value for a placeholder (e.g., 'Patient's weight is 75 kilograms'), extract that value directly and format it appropriately for medical documentation (e.g., `{\"Weight\": \"75 kg\"}`).\n"
                 +
-                "*  If a placeholder's value is NOT mentioned in the audio, do NOT include it in the JSON.  Do NOT use default values. Do NOT guess.\n\n"
+                "2.  **Instruction/Request Handling:**  The audio may contain instructions or requests related to a placeholder.  **Pay close attention to the keywords \"request\" and \"خدمه\" (Arabic for 'service').**  These words indicate that you should *reason* about the preceding conversation and generate the value based on the context. You should NOT simply transcribe the words following the placeholder name.\n"
                 +
-                "**Example:**\n" +
-                "If the audio says '...the patient's temperature is 37.5 degrees Celsius...' and the HTML has a placeholder `[Temperature]`, then a *part* of your JSON output should be:\n"
+                "    *   **Example:** If the audio says, '...and for the [Diagnosis] field, request a differential diagnosis based on the symptoms mentioned,' you should analyze the previously mentioned symptoms and provide a reasoned differential diagnosis, NOT just the phrase 'request a differential diagnosis...'.\n"
                 +
-                "`{\"Temperature\": \"37.5°C\"}`\n\n" +
+                "    *   **Another Example:** '...[Allergies] خدمه  استنتاج الحساسيات المحتمله من الادويه المذكوره'  This means you should *infer* the potential allergies from the medications mentioned *earlier* in the conversation, not transcribe the instruction.\n"
+                +
+                "3. **If the value is NOT mentioned *and* NO instruction/request is given, do NOT include the placeholder in the JSON. Do NOT use default values. Do NOT guess.**\n\n"
+                +
+
+                "**Example (Direct Extraction):**\n" +
+                "Audio: '...the patient's temperature is 37.5 degrees Celsius...'  HTML: `[Temperature]`\n" +
+                "JSON: `{\"Temperature\": \"37.5°C\"}`\n\n" +
+
+                "**Example (Instruction/Request - English):**\n" +
+                "Audio: '...and for the [Treatment Plan], request a plan considering the patient is diabetic.' HTML: `[Treatment Plan]`\n"
+                +
+                "JSON (Illustrative - the actual output would be a reasoned plan): `{\"Treatment Plan\": \"Insulin therapy, dietary modifications, regular blood glucose monitoring...\"}`\n\n"
+                +
+
+                "**Example (Instruction/Request - Arabic):**\n" +
+                "Audio: '...[التحاليل المطلوبه] خدمه اقتراح التحاليل بناءً على الأعراض.' HTML: `[التحاليل المطلوبه]`\n"
+                +
+                "JSON (Illustrative): `{\"التحاليل المطلوبه\": \"CBC, CMP, HbA1c...\"}`\n\n" +
                 "**Important Considerations:**\n" +
-                "*  **Medical Terminology:**  You must understand medical terms and abbreviations.\n" +
-                "*  **Context:** Pay attention to the relationships between different parts of the assessment.\n" +
-                "*  **Formatting:** Use standard medical notation and units.\n" +
-                "* **Strict JSON:** Only valid JSON is accepted. No comments, no extra text.\n\n" +
+                "*   **Medical Terminology:** You must understand medical terms and abbreviations in both English and Arabic.\n"
+                +
+                "*   **Context:** Pay VERY close attention to the entire conversation.  Instructions and requests often refer to information provided earlier.\n"
+                +
+                "*   **Formatting:** Use standard medical notation and units.\n" +
+                "*   **Strict JSON:** Only valid JSON is accepted. No comments, no extra text.\n" +
+                "*  **Bilingual:** Be prepared to process both English and Arabic medical terms and instructions.\n\n" +
+                "**User Guidance (For Best Audio Input):**\n" +
+                "*   **Speak Clearly:** Enunciate words and phrases distinctly.\n" +
+                "*   **Consistent Terminology:** Use the exact placeholder names from the HTML template (without the brackets) when referring to fields.  For example, say 'Patient Name is...' or 'For the Treatment Plan, request...'.\n"
+                +
+                "*   **Logical Order:** Follow a logical order similar to the template structure. This helps with context.\n"
+                +
+                "*   **Explicit Instructions:** When you want the AI to *generate* a value, use the words \"request\" or \"خدمه\" *before* mentioning the placeholder name. Clearly state what you want the AI to do. For example, \"Request for [Diagnosis] a differential diagnosis.\",  or  \"[الحساسيه] خدمه استنتاج.\".\n"
+                +
+                "*   **Provide Context First:** For instructions, mention relevant information *before* giving the instruction.  For example, *instead* of saying  \"Request a treatment plan for [Treatment Plan].  The patient is diabetic.\", say \"The patient is diabetic. For [Treatment Plan], request a treatment plan.\"\n"
+                +
+                "*   **Avoid Ambiguity:** Be as specific as possible.  Instead of saying 'He has a fever', say 'The patient's [Temperature] is 39 degrees Celsius'.\n"
+                +
+                "*   **Pause Briefly:** Leave a short pause (about 0.5-1 second) between different pieces of information, especially between different fields.\n\n"
+                +
+
                 "Patient ID: " + patientId + "\n" +
                 "Template Name: " + templateName + "\n\n" +
                 "HTML Template:\n```html\n" + currentHtml + "\n```";

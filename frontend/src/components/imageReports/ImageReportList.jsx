@@ -105,7 +105,7 @@ const ImageReportList = () => {
 					if (fileUrl.startsWith(".")) {
 						fileUrl = fileUrl.substring(1);
 					}
-					const fileUrlWithBase = `http://localhost:8080${fileUrl}`;
+					const fileUrlWithBase = `${fileUrl}`;
 					return {
 						uid: `${index}-${fileUrlWithBase}`, // Generate a unique ID
 						name: fileUrlWithBase.split("/").pop(),

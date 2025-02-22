@@ -1,3 +1,4 @@
+// In your App.js file: (This is the main file)
 import React, { useState, useMemo, useCallback } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import Profile from "./components/auth/Profile";
@@ -39,7 +40,7 @@ import ImageReportList from "./components/imageReports/ImageReportList";
 import LabTestList from "./components/lab/LabTestList";
 import LabResultPage from "./components/lab/LabResultPage";
 import { appRoutes } from "./routes"; // Import appRoutes
-import Dashboard from "./components/dashboard/Dashboard";
+import Dashboard from "./components/dashboard/Dashboard"; //
 import PrivateRoute from "./components/PrivateRoute";
 import ImageReportTypeList from "./components/imageReports/ImageReportTypeList";
 import MedicationHistoryList from "./components/medications/MedicationHistoryList";
@@ -92,6 +93,7 @@ import {
 	KeyOutlined,
 } from "@ant-design/icons";
 import VoiceNavigation from "./VoiceNavigation"; // Import the new component
+import { Chart } from "@antv/g2"; // Import Chart from G2
 
 const { Header, Content, Footer, Sider } = Layout;
 const { defaultAlgorithm, darkAlgorithm } = antdTheme;
@@ -338,6 +340,74 @@ const colorTokens = {
 		dividerColor: "#b37feb",
 	},
 };
+
+// G2 Theme Definitions.  Make sure these align with your colorTokens.
+const g2Themes = {
+	light: {
+		type: "light", // Use the built-in light theme as a base
+		// You can override specific parts:
+		color: colorTokens.light.primaryColor, // Example: Use primary color for series
+		viewFill: colorTokens.light.backgroundColor,
+	},
+	dark: {
+		type: "classicDark", // Use built-in dark theme
+		color: colorTokens.dark.primaryColor,
+		viewFill: colorTokens.dark.backgroundColor,
+	},
+	green: {
+		type: "light",
+		color: colorTokens.green.primaryColor, // Adjust as needed
+		viewFill: colorTokens.green.backgroundColor,
+	},
+	green_dark: {
+		type: "classicDark",
+		color: colorTokens.green_dark.primaryColor,
+		viewFill: colorTokens.green_dark.backgroundColor,
+	},
+	red: {
+		type: "light",
+		color: colorTokens.red.primaryColor,
+		viewFill: colorTokens.red.backgroundColor,
+	},
+	red_dark: {
+		type: "classicDark",
+		color: colorTokens.red_dark.primaryColor,
+		viewFill: colorTokens.red_dark.backgroundColor,
+	},
+	pink: {
+		type: "light",
+		color: colorTokens.pink.primaryColor,
+		viewFill: colorTokens.pink.backgroundColor,
+	},
+	pink_dark: {
+		type: "classicDark",
+		color: colorTokens.pink_dark.primaryColor,
+		viewFill: colorTokens.pink_dark.backgroundColor,
+	},
+	blue: {
+		type: "light",
+		color: colorTokens.blue.primaryColor,
+		viewFill: colorTokens.blue.backgroundColor,
+	},
+	blue_dark: {
+		type: "classicDark",
+		color: colorTokens.blue_dark.primaryColor,
+		viewFill: colorTokens.blue_dark.backgroundColor,
+	},
+	purple: {
+		type: "light",
+		color: colorTokens.purple.primaryColor,
+		viewFill: colorTokens.purple.backgroundColor,
+	},
+	purple_dark: {
+		type: "classicDark",
+		color: colorTokens.purple_dark.primaryColor,
+		viewFill: colorTokens.purple_dark.backgroundColor,
+	},
+
+	// Add more themes as needed
+};
+export { g2Themes };
 
 const getMenuIcon = (path) => {
 	const iconStyle = { fontSize: "16px" };
@@ -606,14 +676,14 @@ const NavigationMenu = ({ onClose, isMobile, collapsed }) => {
 };
 
 // Placeholder for Dashboard Cards (Replace with actual components)
-const AppContent = ({ children }) => {
+const AppContent = ({ children, colorMode, setColorMode }) => {
+	// Receive setColorMode
 	const { user } = useAuthStore();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [desktopOpen, setDesktopOpen] = useState(false); // Initially Collapsed
 	const location = useLocation();
 	const screens = Grid.useBreakpoint();
 	const isSmallScreen = !screens.md;
-	const [colorMode, setColorMode] = useState("light");
 	const isDarkMode = colorMode.endsWith("dark");
 	const navigate = useNavigate();
 
@@ -625,17 +695,13 @@ const AppContent = ({ children }) => {
 		setDesktopOpen(!desktopOpen);
 	};
 
-	const handleColorModeChange = (value) => {
-		setColorMode(value);
-	};
-
 	const transformImageUrl = (url) => {
 		if (!url) return null;
 		let fileUrl = url;
 		if (fileUrl.startsWith(".")) {
 			fileUrl = fileUrl.substring(1);
 		}
-		return `http://localhost:8080${fileUrl}`;
+		return `${fileUrl}`;
 	};
 
 	const breadcrumbItems = useMemo(() => {
@@ -723,6 +789,10 @@ const AppContent = ({ children }) => {
 		},
 		[navigate]
 	);
+
+	const handleColorModeChange = (value) => {
+		setColorMode(value); // Update colorMode in App
+	};
 
 	return (
 		<ConfigProvider theme={antDesignTheme}>
@@ -845,12 +915,17 @@ const AppContent = ({ children }) => {
 };
 
 const App = () => {
+	const [colorMode, setColorMode] = useState("green_dark"); // Add state for colorMode
+	const isDarkMode = colorMode.endsWith("dark"); // Determine if it's dark mode
+
+	// IMPORTANT:  Pass the setColorMode function down to AppContent
+	//            so that it can be updated when the Select changes.
 	return (
 		<Router>
-			<AppContent>
+			<AppContent colorMode={colorMode} setColorMode={setColorMode}>
 				<Routes>
 					<Route path="/" element={<AllFeaturesPage />} />
-					<Route path="/dashboard" element={<Dashboard />} />
+					<Route path="/dashboard" element={<Dashboard colorMode={colorMode} />} />
 					{appRoutes.map((route, index) => (
 						<Route key={index} path={route.path} element={route.element} />
 					))}
