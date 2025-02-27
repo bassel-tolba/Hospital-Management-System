@@ -95,7 +95,7 @@ public class Patient {
     }
 
     // Helper method to get the *current* (active) admission
-    private Optional<Admission> getCurrentAdmission() {
+    public Optional<Admission> getCurrentAdmission() {
         if (admissions == null || admissions.isEmpty()) {
             return Optional.empty();
         }

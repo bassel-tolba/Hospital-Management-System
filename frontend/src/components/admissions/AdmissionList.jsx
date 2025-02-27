@@ -23,7 +23,7 @@ import { useBedStore } from "../../services/bed.service";
 import { useRoomStore } from "../../services/room.service";
 import { useUnitStore } from "../../services/unit.service";
 import { useAuthStore } from "../../services/auth.service";
-import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
 import moment from "moment";
 
 const { Title } = Typography;
@@ -138,7 +138,7 @@ const AdmissionList = () => {
 			form.setFieldsValue({
 				...admission,
 				admissionDate: admission.admissionDate ? moment(admission.admissionDate) : null,
-				dischargeDate: admission.dischargeDate ? moment(admission.dischargeDate) : null,
+				// dischargeDate: admission.dischargeDate ? moment(admission.dischargeDate) : null, // Removed dischargeDate from form
 				unitId: room?.unitId,
 				roomId: bed?.roomId,
 				bedId: bed?.id,
@@ -295,12 +295,12 @@ const AdmissionList = () => {
 		try {
 			const values = await form.validateFields();
 			const formattedAdmissionDate = values.admissionDate ? values.admissionDate.format("YYYY-MM-DDTHH:mm:ss") : null;
-			const formattedDischargeDate = values.dischargeDate ? values.dischargeDate.format("YYYY-MM-DDTHH:mm:ss") : null;
+			// const formattedDischargeDate = values.dischargeDate ? values.dischargeDate.format("YYYY-MM-DDTHH:mm:ss") : null; // Removed dischargeDate
 
 			const admissionData = {
 				...values,
 				admissionDate: formattedAdmissionDate,
-				dischargeDate: formattedDischargeDate,
+				// dischargeDate: formattedDischargeDate, // Removed dischargeDate
 				patientId: selectedPatientId,
 			};
 			if (selectedAdmission) {
@@ -331,7 +331,7 @@ const AdmissionList = () => {
 				});
 			}
 
-			await freeAllExpiredBeds();
+			await freeAllExpiredBeds(); //this shouldnt be here after end is clicked
 			fetchAdmissions();
 			setIsModalVisible(false);
 			form.resetFields();
@@ -349,6 +349,36 @@ const AdmissionList = () => {
 				description: `Failed to save admission: ${error.message}`,
 			});
 			console.log("error in handle form submit", error);
+		}
+	};
+	const handleEndAdmission = async (admission) => {
+		if (!canUpdateAdmission) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to update admissions.",
+			});
+			return;
+		}
+		try {
+			const dischargeDate = moment().format("YYYY-MM-DDTHH:mm:ss");
+			const updatedAdmissionData = {
+				...admission,
+				dischargeDate: dischargeDate,
+			};
+
+			await updateAdmission(admission.id, updatedAdmissionData);
+			notification.success({
+				message: "Success",
+				description: "Admission ended successfully",
+			});
+
+			await freeAllExpiredBeds();
+			fetchAdmissions();
+		} catch (error) {
+			notification.error({
+				message: "Error",
+				description: `Failed to end admission: ${error.message}`,
+			});
 		}
 	};
 
@@ -478,6 +508,11 @@ const AdmissionList = () => {
 								{canUpdateAdmission && (
 									<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
 										Edit
+									</Button>
+								)}
+								{canUpdateAdmission && ( // Added End button
+									<Button type="default" icon={<StopOutlined />} onClick={() => handleEndAdmission(record)}>
+										End
 									</Button>
 								)}
 
@@ -634,7 +669,7 @@ const AdmissionList = () => {
 					</Row>
 
 					<Row gutter={16}>
-						<Col xs={24} sm={12} md={12} lg={12}>
+						<Col xs={24} sm={24} md={24} lg={24}>
 							<Form.Item
 								label="Admission Date"
 								name="admissionDate"
@@ -642,11 +677,7 @@ const AdmissionList = () => {
 								<DatePicker style={{ width: "100%" }} showTime disabled={!canCreateAdmission && !canUpdateAdmission} />
 							</Form.Item>
 						</Col>
-						<Col xs={24} sm={12} md={12} lg={12}>
-							<Form.Item label="Discharge Date" name="dischargeDate">
-								<DatePicker style={{ width: "100%" }} showTime disabled={!canCreateAdmission && !canUpdateAdmission} />
-							</Form.Item>
-						</Col>
+						{/* Removed Discharge Date Form Item */}
 					</Row>
 				</Form>
 			</Modal>

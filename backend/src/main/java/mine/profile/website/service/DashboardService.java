@@ -1,3 +1,4 @@
+// backend/src/main/java/mine/profile/website/service/DashboardService.java
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
@@ -5,15 +6,22 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import mine.profile.website.dtos.dashboard.admissions.ChartDataDTO;
+import mine.profile.website.dtos.dashboard.bed.BedAvailabilityDTO;
+import mine.profile.website.dtos.dashboard.bed.BedOccupancyDTO;
+import mine.profile.website.dtos.dashboard.bed.CriticalCapacityAlertDTO;
+import mine.profile.website.dtos.dashboard.patientstatus.PatientStatusOverviewDTO;
 import mine.profile.website.dtos.dashboard.payments.PaymentStatisticsDTO;
 import mine.profile.website.dtos.dashboard.payments.PaymentTrendDTO;
 import mine.profile.website.service.dashboard.AdmissionDashboardService;
+import mine.profile.website.service.dashboard.BedAvailabilityService;
+import mine.profile.website.service.dashboard.PatientStatusDashboardService;
 import mine.profile.website.service.dashboard.PaymentDashboardService;
 
 @Service
@@ -22,8 +30,9 @@ public class DashboardService {
 
     private final AdmissionDashboardService admissionDashboardService;
     private final PaymentDashboardService paymentDashboardService;
+    private final BedAvailabilityService bedAvailabilityService;
+    private final PatientStatusDashboardService patientStatusDashboardService;
 
-    // ... (getAdmissionCounts and getAdmissionTrendData - no changes) ...
     public Long getAdmissionCounts(boolean includeOpen, boolean includeFuture, boolean includePast,
             LocalDateTime startDate, LocalDateTime endDate) {
         return admissionDashboardService.getAdmissionsBetweenDates(startDate, endDate, includeOpen, includeFuture,
@@ -118,36 +127,51 @@ public class DashboardService {
                 next = endDate;
             }
 
-            // **CRITICAL FIX: Create a *final* copy for use in the lambda**
             final LocalDateTime currentForLambda = current;
-            final DateTimeFormatter formatterForLambda = formatter; // And formatter also
+            final DateTimeFormatter formatterForLambda = formatter;
 
             List<PaymentTrendDTO> intervalData = paymentDashboardService.getPaymentTrend(current, next, unit,
                     formatter);
             List<PaymentTrendDTO> groupedIntervalData = new ArrayList<>();
 
-            // Group by category and sum amounts/counts (both Double)
             intervalData.stream()
                     .collect(Collectors.groupingBy(PaymentTrendDTO::getCategory))
                     .forEach((category, payments) -> {
-                        // Use the *final* copy inside the lambda
                         String formattedDate = currentForLambda.format(formatterForLambda);
                         double totalAmount = payments.stream().mapToDouble(PaymentTrendDTO::getAmount).sum();
                         double totalCount = payments.stream().mapToDouble(PaymentTrendDTO::getCount).sum();
                         groupedIntervalData.add(new PaymentTrendDTO(formattedDate, category, totalAmount, totalCount));
                     });
 
-            // Handle empty intervals
             if (groupedIntervalData.isEmpty()) {
-                // Also use the *final* copy here
                 groupedIntervalData
                         .add(new PaymentTrendDTO(currentForLambda.format(formatterForLambda), "N/A", 0.0, 0.0));
             }
 
             allTrendData.add(groupedIntervalData);
-            current = next; // This is fine; we're modifying 'current' in the *outer* loop
+            current = next;
         }
 
         return allTrendData;
+    }
+
+    public BedAvailabilityDTO getBedAvailability() {
+        return bedAvailabilityService.getBedAvailability();
+    }
+
+    public List<BedOccupancyDTO> getOccupancyByUnit() {
+        return bedAvailabilityService.getOccupancyByUnit();
+    }
+
+    public List<CriticalCapacityAlertDTO> getCriticalCapacityAlerts() {
+        return bedAvailabilityService.getCriticalCapacityAlerts();
+    }
+
+    public Map<String, Map<String, Long>> getBedCountsByRoomTypeAndUnit() {
+        return bedAvailabilityService.getBedCountsByRoomTypeAndUnit();
+    }
+
+    public PatientStatusOverviewDTO getPatientStatusOverview() {
+        return patientStatusDashboardService.getPatientStatusOverview();
     }
 }

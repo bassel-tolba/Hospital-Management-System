@@ -129,4 +129,8 @@ public interface PatientRepository
 
     @Query("SELECT p FROM Patient p JOIN p.admissions a JOIN a.bed b JOIN b.room r WHERE r.id = :roomId AND p.deleted = false")
     List<Patient> findPatientsByRoomIdWithFalse(@Param("roomId") Long roomId);
+
+    // Patient Status Overview Queries
+    @Query("SELECT p.severityLevel, COUNT(p) FROM Patient p WHERE p.deleted = false GROUP BY p.severityLevel")
+    List<Object[]> countPatientsBySeverityLevel();
 }

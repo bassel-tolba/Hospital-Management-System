@@ -26,4 +26,5 @@ public interface BillingRepository extends JpaRepository<Billing, Long> {
 
     @Query("SELECT SUM(b.totalAmount) - COALESCE((SELECT SUM(pm.amount) FROM Payment pm WHERE pm.billing = b), 0) FROM Billing b")
     Double getPendingBills();
+
 }

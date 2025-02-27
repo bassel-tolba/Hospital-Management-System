@@ -156,4 +156,100 @@ export const useDashboardStore = create((set, get) => ({
 			throw error;
 		}
 	},
+
+	// Bed Availability
+	fetchBedAvailability: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/availability`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // BedAvailabilityDTO
+		} catch (error) {
+			handleRequestError(error, "bed availability");
+		}
+	},
+
+	// Bed Occupancy by Unit
+	fetchOccupancyByUnit: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/occupancy`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // List<BedOccupancyDTO>
+		} catch (error) {
+			handleRequestError(error, "bed occupancy");
+		}
+	},
+
+	// Critical Capacity Alerts
+	fetchCriticalCapacityAlerts: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/alerts/critical-capacity`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // List<CriticalCapacityAlertDTO>
+		} catch (error) {
+			handleRequestError(error, "critical capacity alerts");
+		}
+	},
+
+	// Bed Counts by Room Type and Unit
+	fetchBedCountsByRoomTypeAndUnit: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/availability/by-room-type`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // Map<String, Map<String, Long>>
+		} catch (error) {
+			handleRequestError(error, "bed counts by room type and unit");
+		}
+	},
+	// Patient Status Overview
+	fetchPatientStatusOverview: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/patients/status`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // PatientStatusOverviewDTO
+		} catch (error) {
+			handleRequestError(error, "patient status overview");
+		}
+	},
 }));
+
+const handleRequestError = (error, endpoint) => {
+	const useDashboardStore = get(); // Correctly get the store
+	useDashboardStore.setLoading(false);
+	useDashboardStore.setError(error.message);
+
+	if (error.response && error.response.status === 401) {
+		localStorage.removeItem("user");
+		window.location.href = "/login";
+	} else {
+		notification.error({
+			message: "Error",
+			description: `Failed to fetch ${endpoint}: ${error.response?.data?.message || error.message}`,
+		});
+	}
+	throw error; // Re-throw to allow component-level handling
+};

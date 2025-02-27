@@ -1,4 +1,3 @@
-// In your Dashboard.js file
 import React, { useState, useEffect, useRef } from "react";
 import { Card, DatePicker, Row, Col, Spin, Typography, Switch } from "antd";
 import { useDashboardStore } from "../../services/dashboardStore.service";
@@ -124,7 +123,8 @@ const DashboardContent = ({ loading, error, chartData, granularity, colorMode })
 	);
 };
 
-const AdmissionsDashboard = ({ colorMode }) => {
+const AdmissionsDashboard = ({ colorMode, isOpen }) => {
+	//add isOpen
 	// Receive colorMode here
 	// isDarkMode prop added
 	const [dates, setDates] = useState({
@@ -167,11 +167,14 @@ const AdmissionsDashboard = ({ colorMode }) => {
 		}
 	};
 
+	// src/components/Dashboard/AdmissionsDashboard.js (continued from previous response)
+
 	useEffect(() => {
-		if (dates.startDate && dates.endDate) {
+		if (dates.startDate && dates.endDate && isOpen) {
+			// Add isOpen here
 			fetchData();
 		}
-	}, [dates, filters]);
+	}, [dates, filters, isOpen]); // Add isOpen to dependencies
 
 	const handleDateChange = (selectedDates, dateStrings) => {
 		if (selectedDates && selectedDates.length === 2) {
