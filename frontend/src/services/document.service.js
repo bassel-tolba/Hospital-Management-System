@@ -3,10 +3,10 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const DOCUMENT_API_BASE_URL = `http://localhost:8080/api/documents`;
-const DOCUMENT_TYPE_API_BASE_URL = `http://localhost:8080/api/documenttypes`;
-const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
-const USER_API_BASE_URL = `http://localhost:8080/api/users`;
+const DOCUMENT_API_BASE_URL = `/api/documents`;
+const DOCUMENT_TYPE_API_BASE_URL = `/api/documenttypes`;
+const PATIENT_API_BASE_URL = `/api/patients`;
+const USER_API_BASE_URL = `/api/users`;
 
 export const useDocumentStore = create((set, get) => ({
 	documents: [],

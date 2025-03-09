@@ -43,15 +43,16 @@ const VitalSignList = () => {
 	const { createVitalSign, updateVitalSign, deleteVitalSign, loading, setVitalSigns, vitalSigns } = useVitalSignStore();
 
 	const user = useAuthStore((state) => state.user);
-	const API_BASE_URL = `http://localhost:8080/api/vital-signs`;
+	const API_BASE_URL = `/api/vital-signs`;
 
 	useEffect(() => {
 		fetchVitalSignsData();
 	}, [page, size, searchParams]);
 
 	const fetchVitalSignsData = async () => {
-		// ... (rest of fetchVitalSignsData remains the same) ...
+		console.log("fetchVitalSignsData called.  Page:", page, "Size:", size, "SearchParams:", searchParams);
 		if (!searchParams?.patientId) {
+			console.log("No patientId in searchParams.  Clearing vital signs.");
 			setVitalSigns([]);
 			return;
 		}
@@ -65,6 +66,7 @@ const VitalSignList = () => {
 					size,
 				},
 			});
+			console.log("fetchVitalSignsData response:", response.data);
 			setVitalSigns(response.data.content);
 			setTotal(response.data.totalElements);
 		} catch (error) {
@@ -77,7 +79,7 @@ const VitalSignList = () => {
 	};
 
 	const showModal = (vitalSign) => {
-		// ... (rest of showModal remains the same) ...
+		console.log("showModal called with vitalSign:", vitalSign);
 		setSelectedVitalSign(vitalSign);
 		if (vitalSign) {
 			form.setFieldsValue({
@@ -92,20 +94,26 @@ const VitalSignList = () => {
 				oxygenSaturation: vitalSign.oxygenSaturation || null,
 				painLevel: vitalSign.painLevel || null,
 				height: vitalSign.height || null,
-				heightUnit: vitalSign.heightUnit || "cm",
+				heightUnit: vitalSign.heightUnit || "cm", // Default value
 				weight: vitalSign.weight || null,
-				weightUnit: vitalSign.weightUnit || "kg",
+				weightUnit: vitalSign.weightUnit || "kg", // Default value
 				glucose: vitalSign.glucose || null,
-				glucoseUnit: vitalSign.glucoseUnit || "mg/dL",
+				glucoseUnit: vitalSign.glucoseUnit || "mg/dL", // Default value
 				posture: vitalSign.posture || null,
 				capillaryRefillTime: vitalSign.capillaryRefillTime || null,
 				notes: vitalSign.notes || null,
 				method: vitalSign.method || null,
 			});
+
 			setSelectedPatientId(vitalSign.patientId);
 		} else {
 			form.resetFields();
 			setSelectedPatientId(null);
+			form.setFieldsValue({
+				heightUnit: "cm", // Default value
+				weightUnit: "kg", // Default value
+				glucoseUnit: "mg/dL", // Default value
+			});
 		}
 		setIsModalVisible(true);
 		setPatientSearchTerm("");
@@ -113,7 +121,7 @@ const VitalSignList = () => {
 	};
 
 	const handleCancel = () => {
-		// ... (rest of handleCancel remains the same) ...
+		console.log("handleCancel called");
 		setIsModalVisible(false);
 		setSelectedVitalSign(null);
 		form.resetFields();
@@ -123,7 +131,7 @@ const VitalSignList = () => {
 	};
 
 	const handlePatientSearch = async (value) => {
-		// ... (rest of handlePatientSearch remains the same) ...
+		console.log("handlePatientSearch called with value:", value);
 		setPatientSearchTerm(value);
 		if (value) {
 			try {
@@ -132,6 +140,7 @@ const VitalSignList = () => {
 					page: 0,
 					size: 10,
 				});
+				console.log("Patient search results:", searchResults);
 				setPatientOptions(
 					searchResults?.content?.map((patient) => ({
 						label: `${patient.firstName} ${patient.lastName}`,
@@ -148,13 +157,16 @@ const VitalSignList = () => {
 	};
 
 	const handlePatientSelect = (patientId) => {
+		console.log("handlePatientSelect called with patientId:", patientId);
 		setSelectedPatientId(patientId);
 	};
 
 	const handleFormSubmit = async () => {
-		// ... (rest of handleFormSubmit remains the same) ...
+		console.log("handleFormSubmit called");
 		try {
 			const values = await form.validateFields();
+			console.log("Form values after validation:", values);
+
 			const formattedTimestamp = values.timestamp ? values.timestamp.format("YYYY-MM-DDTHH:mm:ss") : null;
 
 			// Function to handle the conversion of empty InputNumber values
@@ -176,17 +188,25 @@ const VitalSignList = () => {
 				height: convertEmptyToNull(values.height),
 				weight: convertEmptyToNull(values.weight),
 				glucose: convertEmptyToNull(values.glucose),
+				//No need to convert the unit, because we convert the input to null if it's empty.
 				posture: values.posture || null,
 				capillaryRefillTime: convertEmptyToNull(values.capillaryRefillTime),
 				notes: values.notes || null,
 				method: values.method || null,
 			};
 
-			const filteredVitalSignData = Object.fromEntries(Object.entries(vitalSignData).filter(([_, v]) => v != null));
+			// Corrected filtering logic
+			const filteredVitalSignData = Object.fromEntries(
+				Object.entries(vitalSignData).filter(([_, v]) => v !== null && v !== undefined && v !== "")
+			);
+
+			console.log("Filtered Vital Sign Data:", filteredVitalSignData);
 
 			if (selectedVitalSign) {
+				console.log("Updating vital sign with ID:", selectedVitalSign.id);
 				await updateVitalSign(selectedVitalSign.id, filteredVitalSignData);
 			} else {
+				console.log("Creating new vital sign");
 				await createVitalSign(filteredVitalSignData);
 			}
 
@@ -198,6 +218,7 @@ const VitalSignList = () => {
 			setPatientOptions([]);
 			setSelectedPatientId(null);
 		} catch (error) {
+			console.error("Failed to save vital sign:", error);
 			notification.error({
 				message: "Error",
 				description: `Failed to save vital sign: ${error.message}`,
@@ -206,7 +227,7 @@ const VitalSignList = () => {
 	};
 
 	const handleDelete = async (vitalSignId) => {
-		// ... (rest of handleDelete remains the same) ...
+		console.log("handleDelete called with vitalSignId:", vitalSignId);
 		try {
 			await deleteVitalSign(vitalSignId);
 			fetchVitalSignsData();
@@ -220,16 +241,19 @@ const VitalSignList = () => {
 	};
 
 	const handleSearchPatientFilter = (patientId) => {
+		console.log("handleSearchPatientFilter called with patientId:", patientId);
 		setSearchParams({ ...searchParams, patientId: patientId });
 		setPage(1);
 	};
 
 	const handlePaginationChange = (pageNumber, pageSize) => {
+		console.log("handlePaginationChange called. Page:", pageNumber, "Size:", pageSize);
 		setPage(pageNumber);
 		setSize(pageSize);
 	};
 
 	const handleDataExtracted = (data) => {
+		console.log("handleDataExtracted called with data:", data);
 		// Determine if this is a create or update operation
 		const isCreate = !selectedVitalSign;
 
@@ -260,6 +284,7 @@ const VitalSignList = () => {
 		});
 
 		// Update form with the processed data
+		console.log("Setting form fields with data:", formData);
 		form.setFieldsValue(formData);
 	};
 
@@ -479,18 +504,22 @@ const VitalSignList = () => {
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Height" name="height">
-								<InputNumber style={{ width: "70%" }} />
-								<Select name="heightUnit" style={{ width: "30%" }} defaultValue={"cm"}>
+							<Form.Item label="Height" style={{ width: "70%" }} name="height">
+								<InputNumber />
+							</Form.Item>
+							<Form.Item style={{ display: "inline-block", width: "30%" }} name="heightUnit" initialValue="cm">
+								<Select>
 									<Select.Option value="cm">cm</Select.Option>
 									<Select.Option value="in">in</Select.Option>
 								</Select>
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Weight" name="weight">
-								<InputNumber style={{ width: "70%" }} />
-								<Select name="weightUnit" style={{ width: "30%" }} defaultValue={"kg"}>
+							<Form.Item label="Weight" style={{ width: "70%" }} name="weight">
+								<InputNumber />
+							</Form.Item>
+							<Form.Item style={{ display: "inline-block", width: "30%" }} name="weightUnit" initialValue="kg">
+								<Select>
 									<Select.Option value="kg">kg</Select.Option>
 									<Select.Option value="lb">lb</Select.Option>
 								</Select>
@@ -500,9 +529,11 @@ const VitalSignList = () => {
 
 					<Row gutter={16}>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Glucose" name="glucose">
-								<InputNumber style={{ width: "70%" }} />
-								<Select name="glucoseUnit" style={{ width: "30%" }} defaultValue={"mg/dL"}>
+							<Form.Item label="Glucose" style={{ width: "70%" }} name="glucose">
+								<InputNumber />
+							</Form.Item>
+							<Form.Item style={{ display: "inline-block", width: "30%" }} name="glucoseUnit" initialValue="mg/dL">
+								<Select>
 									<Select.Option value="mg/dL">mg/dL</Select.Option>
 									<Select.Option value="mmol/L">mmol/L</Select.Option>
 								</Select>

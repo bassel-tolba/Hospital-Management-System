@@ -2,6 +2,8 @@ package mine.profile.website.rest.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,6 +43,14 @@ public class ProcedureLogController {
     public ResponseEntity<List<ProcedureLogDTO>> getAllProcedureLogs() {
         List<ProcedureLogDTO> procedureLogs = procedureLogService.findAll();
         return ResponseEntity.ok(procedureLogs);
+    }
+
+    // Updated endpoint for searching by patientId with pagination
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<Page<ProcedureLogDTO>> getProcedureLogsByPatientId(
+            @PathVariable Long patientId, Pageable pageable) { // Add Pageable parameter
+        Page<ProcedureLogDTO> procedureLogsPage = procedureLogService.findByPatientId(patientId, pageable);
+        return ResponseEntity.ok(procedureLogsPage);
     }
 
     @DeleteMapping("/{id}")

@@ -1,4 +1,4 @@
-// rest/controller/PatientRestController.java
+// rest/controller/PatientRestController.java (Modified)
 package mine.profile.website.rest.controller;
 
 import java.io.IOException;
@@ -329,6 +329,34 @@ public class PatientRestController {
 
         } catch (JsonSyntaxException | IOException e) {
             throw new RuntimeException("Error processing Gemini response: " + e.getMessage(), e);
+        }
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<Page<PatientDTO>> filterPatients(
+            @RequestParam(required = false) Long unitId,
+            @RequestParam(required = false) Long roomId,
+            @RequestParam(required = false) Long bedId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) { // Default sort, can be overridden
+
+        String[] sortParams = sort.split(",");
+        String sortBy = sortParams[0];
+        Sort.Direction direction = sortParams.length > 1 ? Sort.Direction.fromString(sortParams[1])
+                : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        if (unitId != null) {
+            return ResponseEntity.ok(patientService.getPatientsByUnit(unitId, pageable));
+        } else if (roomId != null) {
+            return ResponseEntity.ok(patientService.getPatientsByRoom(roomId, pageable));
+        } else if (bedId != null) {
+            return ResponseEntity.ok(patientService.getPatientsByBed(bedId, pageable));
+        } else {
+            // If no filter is specified, return all *active* patients.
+            return ResponseEntity.ok(patientService.getPatients(pageable)); // Or a custom method to get only active
+                                                                            // patients if needed
         }
     }
 }

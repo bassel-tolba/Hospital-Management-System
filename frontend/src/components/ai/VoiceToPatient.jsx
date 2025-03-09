@@ -1,6 +1,6 @@
 // components/ai/VoiceToPatient.js
 import React, { useState, useEffect, useRef } from "react";
-import { notification, Button, Upload, Progress, Space } from "antd";
+import { notification, Button, Upload, Progress, Space, Tooltip } from "antd";
 import { UploadOutlined, AudioOutlined } from "@ant-design/icons";
 import { useAuthStore } from "../../services/auth.service"; // Adjust path as needed
 import moment from "moment";
@@ -104,6 +104,7 @@ const RecordingButton = ({ isRecording, onStartRecording, onStopRecording, disab
 		transform: isRecording ? `scale(${1 + volume * 0.2})` : "scale(1)",
 		transition: "all 0.1s ease-out",
 		boxShadow: isRecording ? `0 0 ${20 + volume * 30}px ${buttonColor}` : "none",
+		color: "red",
 	};
 
 	return (
@@ -245,7 +246,7 @@ const VoiceToPatient = ({ onFormFill, disabled }) => {
 			const user = useAuthStore.getState().user;
 			const formData = new FormData();
 			formData.append("audio", audioBlob, "patient-audio.webm");
-			const response = await fetch(`http://localhost:8080/api/patients/transcribe`, {
+			const response = await fetch(`/api/patients/transcribe`, {
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
@@ -355,11 +356,11 @@ const VoiceToPatient = ({ onFormFill, disabled }) => {
 			)}
 			<Space>
 				<RecordingButton isRecording={isRecording} onStartRecording={startRecording} onStopRecording={stopRecording} disabled={disabled} />
-				<Upload accept="audio/*" showUploadList={false} beforeUpload={handleAudioUpload} disabled={disabled}>
-					<Button icon={<UploadOutlined />} disabled={disabled}>
-						Upload Audio
-					</Button>
-				</Upload>
+				<Tooltip title="Upload Audio">
+					<Upload accept="audio/*" showUploadList={false} beforeUpload={handleAudioUpload} disabled={disabled}>
+						<Button icon={<UploadOutlined />} disabled={disabled} />
+					</Upload>
+				</Tooltip>
 			</Space>
 		</>
 	);

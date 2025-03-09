@@ -1,28 +1,23 @@
-// frontend/src/services/auth.service.js
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = `http://localhost:8080/api/auth`;
-const API_VOICE_URL = `http://localhost:8080/api/analyze-voice`; // Add new URL for voice analysis
+const API_URL = `/api/auth`;
+const API_VOICE_URL = `/api/analyze-voice`;
 
-// Zustand store setup
 export const useAuthStore = create((set, get) => ({
 	user: JSON.parse(localStorage.getItem("user")) || null,
-	status: "idle",
+	status: "idle", //  'idle', 'loading', 'success', 'failed'
 	error: null,
 
-	// Check for permissions (authorities)
 	hasAuthority: (permission) => {
 		const user = get().user;
-		// Added null and undefined checks, and access authorities correctly
 		if (!user || !user.authorities) {
 			return false;
 		}
-		return user.authorities.some((auth) => auth === permission);
+		return user.authorities.some((auth) => auth === permission); //check entire value
 	},
 
 	setUser: (user) => {
-		console.log("Setting user:", user);
 		set({ user });
 	},
 	setStatus: (status) => {
@@ -36,6 +31,7 @@ export const useAuthStore = create((set, get) => ({
 	},
 
 	analyzeAudio: async (audioBase64) => {
+		// ... (your analyzeAudio function remains the same) ...
 		try {
 			const response = await axios.post(
 				API_VOICE_URL,
@@ -54,6 +50,7 @@ export const useAuthStore = create((set, get) => ({
 			return "undetermined";
 		}
 	},
+
 	login: async (username, password) => {
 		set({ status: "loading", error: null });
 		try {
@@ -61,26 +58,30 @@ export const useAuthStore = create((set, get) => ({
 				username,
 				password,
 			});
+
 			if (response.data.token) {
-				console.log("Login success, user data:", response.data);
 				localStorage.setItem("user", JSON.stringify(response.data));
-				set({ user: response.data, status: "idle" });
+				set({ user: response.data, status: "success" }); // Set status to "success"
 				return response.data;
+			} else {
+				// Handle the case where the login was successful, but no token was returned.
+				set({ status: "success", user: response.data, error: null }); // Still success, but potentially incomplete data.
+				console.warn("Login successful, but no token received.", response.data);
+				return response.data; // Or perhaps throw new Error("No token received");
 			}
-			// If there's no token, but response is OK handle it (just in case)
-			console.log("Login success, no token provided, user data:", response.data);
-			set({ status: "idle" });
-			return response.data;
 		} catch (error) {
-			console.log("Login error:", error);
-			set({ error: error.message, status: "failed" });
-			throw error; // Re-throw the error to be handled by the calling component
+			const errorMessage = error.response?.data?.message || error.message || "Login failed";
+			set({ error: errorMessage, status: "failed" });
+			// Don't re-throw; handled by setting status and error
+			throw new Error(errorMessage); // so it can catch the error in login
 		}
 	},
+
 	logout: () => {
 		localStorage.removeItem("user");
-		set({ user: null });
+		set({ user: null, status: "idle" }); // Reset status on logout
 	},
+
 	register: async (username, password, roleId, firstName, lastName, specialty, unitIds, profilePicture) => {
 		set({ status: "loading", error: null });
 		try {
@@ -113,7 +114,7 @@ export const useAuthStore = create((set, get) => ({
 				},
 			});
 			console.log("Registration success, user data:", response.data);
-			set({ status: "idle" });
+			set({ status: "success" }); // Set status to 'success'
 			return response.data;
 		} catch (error) {
 			console.log("Registration error:", error);

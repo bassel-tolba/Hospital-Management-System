@@ -16,6 +16,7 @@ import {
 	Col,
 	Tooltip,
 	InputNumber,
+	List, // Import List from Ant Design
 } from "antd";
 import { useAdmissionStore } from "../../services/admission.service";
 import { usePatientStore } from "../../services/patient.service";
@@ -23,8 +24,11 @@ import { useBedStore } from "../../services/bed.service";
 import { useRoomStore } from "../../services/room.service";
 import { useUnitStore } from "../../services/unit.service";
 import { useAuthStore } from "../../services/auth.service";
-import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
+import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined, StopOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import admissionDocsContent from "../../docs/admission";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -34,6 +38,7 @@ const AdmissionList = () => {
 		admissions,
 		admissionTypes,
 		loading,
+		error,
 		total,
 		searchAdmissions,
 		deleteAdmission,
@@ -50,7 +55,7 @@ const AdmissionList = () => {
 	const { beds, searchBeds, freeAllExpiredBeds } = useBedStore();
 	const { rooms, fetchAllRooms } = useRoomStore();
 	const { units, fetchAllUnits } = useUnitStore();
-	const { user, hasAuthority } = useAuthStore(); // Use hasAuthority
+	const { user, hasAuthority } = useAuthStore();
 
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [selectedAdmission, setSelectedAdmission] = useState(null);
@@ -73,6 +78,8 @@ const AdmissionList = () => {
 	const canReadAdmission = hasAuthority("READ_ADMISSION");
 	const canUpdateAdmission = hasAuthority("UPDATE_ADMISSION");
 	const canDeleteAdmission = hasAuthority("DELETE_ADMISSION");
+
+	const [showDocs, setShowDocs] = useState(false);
 
 	useEffect(() => {
 		fetchAllAdmissionTypes();
@@ -138,7 +145,6 @@ const AdmissionList = () => {
 			form.setFieldsValue({
 				...admission,
 				admissionDate: admission.admissionDate ? moment(admission.admissionDate) : null,
-				// dischargeDate: admission.dischargeDate ? moment(admission.dischargeDate) : null, // Removed dischargeDate from form
 				unitId: room?.unitId,
 				roomId: bed?.roomId,
 				bedId: bed?.id,
@@ -159,7 +165,6 @@ const AdmissionList = () => {
 	};
 
 	const showTypeModal = (admissionType) => {
-		// Assuming you have permissions for managing admission types, add checks here if needed
 		setSelectedAdmissionType(admissionType);
 		if (admissionType) {
 			typeForm.setFieldsValue(admissionType);
@@ -246,48 +251,28 @@ const AdmissionList = () => {
 	};
 
 	const handleTypeFormSubmit = async () => {
-		// Add permission checks here if you have specific permissions for managing admission types
 		try {
 			const values = await typeForm.validateFields();
 			if (selectedAdmissionType) {
 				await updateAdmissionType(selectedAdmissionType.id, values);
-				notification.success({
-					message: "Success",
-					description: "Admission type updated successfully",
-				});
 			} else {
 				await createAdmissionType(values);
-				notification.success({
-					message: "Success",
-					description: "Admission type created successfully",
-				});
 			}
 			setIsTypeModalVisible(false);
 			typeForm.resetFields();
 			setSelectedAdmissionType(null);
-			fetchAllAdmissionTypes(); // Refresh the list of admission types
+			fetchAllAdmissionTypes(); // Refresh
 		} catch (error) {
-			notification.error({
-				message: "Error",
-				description: `Failed to save admission type: ${error.message}`,
-			});
+			console.error("Failed to save admission type:", error);
 		}
 	};
 
 	const handleTypeDelete = async (admissionTypeId) => {
-		// Add permission checks here if you have specific permissions for managing admission types
 		try {
 			await deleteAdmissionType(admissionTypeId);
-			notification.success({
-				message: "Success",
-				description: "Admission type deleted successfully",
-			});
 			fetchAllAdmissionTypes(); // Refresh
 		} catch (error) {
-			notification.error({
-				message: "Error",
-				description: `Failed to delete admission type: ${error.message}`,
-			});
+			console.error("Failed to delete admission type:", error);
 		}
 	};
 
@@ -295,43 +280,19 @@ const AdmissionList = () => {
 		try {
 			const values = await form.validateFields();
 			const formattedAdmissionDate = values.admissionDate ? values.admissionDate.format("YYYY-MM-DDTHH:mm:ss") : null;
-			// const formattedDischargeDate = values.dischargeDate ? values.dischargeDate.format("YYYY-MM-DDTHH:mm:ss") : null; // Removed dischargeDate
 
 			const admissionData = {
 				...values,
 				admissionDate: formattedAdmissionDate,
-				// dischargeDate: formattedDischargeDate, // Removed dischargeDate
 				patientId: selectedPatientId,
 			};
 			if (selectedAdmission) {
-				if (!canUpdateAdmission) {
-					notification.error({
-						message: "Permission Denied",
-						description: "You do not have permission to update admissions.",
-					});
-					return;
-				}
 				await updateAdmission(selectedAdmission.id, admissionData);
-				notification.success({
-					message: "Success",
-					description: "Admission updated successfully",
-				});
 			} else {
-				if (!canCreateAdmission) {
-					notification.error({
-						message: "Permission Denied",
-						description: "You do not have permission to create admissions.",
-					});
-					return;
-				}
 				await createAdmission(admissionData);
-				notification.success({
-					message: "Success",
-					description: "Admission created successfully",
-				});
 			}
 
-			await freeAllExpiredBeds(); //this shouldnt be here after end is clicked
+			await freeAllExpiredBeds();
 			fetchAdmissions();
 			setIsModalVisible(false);
 			form.resetFields();
@@ -344,21 +305,10 @@ const AdmissionList = () => {
 			setFilteredBeds([]);
 			setSelectedPatientId(null);
 		} catch (error) {
-			notification.error({
-				message: "Error",
-				description: `Failed to save admission: ${error.message}`,
-			});
-			console.log("error in handle form submit", error);
+			console.error("Failed to save admission:", error);
 		}
 	};
 	const handleEndAdmission = async (admission) => {
-		if (!canUpdateAdmission) {
-			notification.error({
-				message: "Permission Denied",
-				description: "You do not have permission to update admissions.",
-			});
-			return;
-		}
 		try {
 			const dischargeDate = moment().format("YYYY-MM-DDTHH:mm:ss");
 			const updatedAdmissionData = {
@@ -383,26 +333,11 @@ const AdmissionList = () => {
 	};
 
 	const handleDelete = async (admissionId) => {
-		if (!canDeleteAdmission) {
-			notification.error({
-				message: "Permission Denied",
-				description: "You do not have permission to delete admissions.",
-			});
-			return;
-		}
 		try {
 			await deleteAdmission(admissionId);
-			notification.success({
-				message: "Success",
-				description: "Admission deleted successfully",
-			});
 			fetchAdmissions();
 		} catch (error) {
 			console.error("Error deleting admission:", error);
-			notification.error({
-				message: "Error",
-				description: `Failed to delete admission: ${error.message}`,
-			});
 		}
 	};
 
@@ -438,58 +373,30 @@ const AdmissionList = () => {
 		setSize(pagination.pageSize);
 	};
 
+	const toggleDocs = () => {
+		setShowDocs(!showDocs);
+	};
+
 	const columns = [
 		{
 			title: "Admission Date",
 			dataIndex: "admissionDate",
 			key: "admissionDate",
-			render: (text) => {
-				if (!text) return null;
-				const fullTime = moment(text).format("YYYY-MM-DD HH:mm:ss");
-				return canReadAdmission ? (
-					<Tooltip title={fullTime}>
-						<span>{moment(text).fromNow()}</span>
-					</Tooltip>
-				) : (
-					<span>***</span>
-				);
-			},
+			render: (text) => moment(text).format("YYYY-MM-DD HH:mm:ss"),
 		},
 		{
 			title: "Discharge Date",
 			dataIndex: "dischargeDate",
 			key: "dischargeDate",
-			render: (text) => {
-				if (!text) return "Open";
-				const fullTime = moment(text).format("YYYY-MM-DD HH:mm:ss");
-
-				return canReadAdmission ? (
-					<Tooltip title={fullTime}>
-						<span>{moment(text).fromNow()}</span>
-					</Tooltip>
-				) : (
-					<span>***</span>
-				);
-			},
+			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm:ss") : "Open"),
 		},
-		{
-			title: "Patient",
-			dataIndex: "patientName",
-			key: "patientName",
-			render: (text) => (canReadAdmission ? text : "***"),
-		},
-		{
-			title: "Admission Type",
-			dataIndex: "admissionTypeName",
-			key: "admissionTypeName",
-			render: (text) => (canReadAdmission ? text : "***"),
-		},
+		{ title: "Patient", dataIndex: "patientName", key: "patientName" },
+		{ title: "Admission Type", dataIndex: "admissionTypeName", key: "admissionTypeName" },
 		{
 			title: "Bed",
 			dataIndex: "bedId",
 			key: "bedId",
 			render: (bedId) => {
-				if (!canReadAdmission) return "***";
 				const bed = beds?.find((bed) => bed.id === bedId);
 				return bed ? bed.bedNumber : "N/A";
 			},
@@ -497,41 +404,41 @@ const AdmissionList = () => {
 		{
 			title: "Actions",
 			key: "actions",
-			render: (text, record) => {
-				const isPastAdmission = record.dischargeDate && moment(record.dischargeDate).isBefore(moment());
-				return (
-					<Space size="middle">
-						{isPastAdmission ? (
-							<Tag color="green">Completed</Tag>
-						) : (
-							<>
-								{canUpdateAdmission && (
-									<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-										Edit
-									</Button>
-								)}
-								{canUpdateAdmission && ( // Added End button
-									<Button type="default" icon={<StopOutlined />} onClick={() => handleEndAdmission(record)}>
-										End
-									</Button>
-								)}
-
-								{canDeleteAdmission && (
-									<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-										Delete
-									</Button>
-								)}
-							</>
-						)}
-					</Space>
-				);
-			},
+			render: (text, record) => (
+				<Space size="middle">
+					<Button type="primary" onClick={() => showModal(record)}>
+						Edit
+					</Button>
+					<Button type="danger" onClick={() => handleDelete(record.id)}>
+						Delete
+					</Button>
+					<Button type="default" onClick={() => handleEndAdmission(record)}>
+						End
+					</Button>
+				</Space>
+			),
 		},
 	];
 
 	return (
-		<div style={{ padding: 20 }} className="main-container">
-			<Title level={2}>Admission List</Title>
+		<div style={{ padding: 20 }}>
+			<Title level={2}>
+				Admission List
+				<Button type="link" icon={<QuestionCircleOutlined />} onClick={toggleDocs} />
+			</Title>
+
+			<Modal
+				title="Admission Page Documentation"
+				open={showDocs}
+				onCancel={toggleDocs}
+				footer={[
+					<Button key="close" onClick={toggleDocs}>
+						Close
+					</Button>,
+				]}
+				width="80%">
+				<ReactMarkdown remarkPlugins={[remarkGfm]}>{admissionDocsContent}</ReactMarkdown>
+			</Modal>
 			<Space style={{ marginBottom: 16 }} direction="vertical" size="middle">
 				<AutoComplete
 					style={{ width: "100%" }}
@@ -540,53 +447,43 @@ const AdmissionList = () => {
 					placeholder="Search for a patient"
 					filterOption={false}
 					onSelect={handleSearchPatientFilter}
-					disabled={!canReadAdmission}
 				/>
 				<Space>
-					<Button
-						type="default"
-						icon={<PlusOutlined />}
-						onClick={() => showModal(null)}
-						disabled={!canCreateAdmission || !searchParams?.patientId}>
+					<Button type="primary" onClick={() => showModal(null)}>
 						Add New Admission
 					</Button>
-
-					<Button type="default" icon={<PlusOutlined />} onClick={() => showTypeModal(null)}>
+					{/* Button to manage admission types */}
+					<Button type="default" onClick={() => showTypeModal(null)}>
 						Manage Admission Types
 					</Button>
 				</Space>
 			</Space>
-			<div style={{ overflowX: "auto" }}>
-				<Table
-					columns={columns}
-					dataSource={admissions}
-					loading={loading}
-					rowKey="id"
-					pagination={{
-						current: page + 1,
-						pageSize: size,
-						total: total,
-						onChange: handleTableChange,
-					}}
-				/>
-			</div>
+
+			<Table
+				columns={columns}
+				dataSource={admissions}
+				loading={loading}
+				rowKey="id"
+				pagination={{
+					current: page + 1,
+					pageSize: size,
+					total: total,
+					onChange: (page, pageSize) => {
+						setPage(page - 1);
+						setSize(pageSize);
+					},
+				}}
+			/>
+
+			{/* Modal for Adding/Editing Admissions */}
 			<Modal
 				title={selectedAdmission ? "Edit Admission" : "Add Admission"}
 				open={isModalVisible}
 				onCancel={handleCancel}
-				width={"90%"}
-				footer={[
-					<Button key="cancel" onClick={handleCancel}>
-						Cancel
-					</Button>,
-
-					(selectedAdmission ? canUpdateAdmission : canCreateAdmission) && (
-						<Button key="submit" type="default" onClick={handleFormSubmit}>
-							{selectedAdmission ? "Update" : "Save"}
-						</Button>
-					),
-				]}>
+				onOk={handleFormSubmit}
+				width={"90%"}>
 				<Form form={form} layout="vertical">
+					{/* Row for Patient and Admission Type */}
 					<Row gutter={16}>
 						<Col xs={24} sm={12} md={12} lg={12}>
 							<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
@@ -596,13 +493,9 @@ const AdmissionList = () => {
 									placeholder="Search for a patient"
 									filterOption={false}
 									onSelect={(patientId) => {
-										setSelectedPatientId(patientId);
-										form.setFieldsValue({
-											...form.getFieldsValue(),
-											patientId: patientId,
-										});
+										setSelectedPatientId(patientId); // Keep track of selected patient
+										form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId }); // Update form
 									}}
-									disabled={!canCreateAdmission && !canUpdateAdmission}
 								/>
 							</Form.Item>
 						</Col>
@@ -611,7 +504,7 @@ const AdmissionList = () => {
 								label="Admission Type"
 								name="admissionTypeId"
 								rules={[{ required: true, message: "Please select an admission type" }]}>
-								<Select placeholder="Select an Admission Type" disabled={!canCreateAdmission && !canUpdateAdmission}>
+								<Select placeholder="Select an Admission Type">
 									{admissionTypes?.map((type) => (
 										<Option key={type.id} value={type.id}>
 											{type.name}
@@ -621,14 +514,11 @@ const AdmissionList = () => {
 							</Form.Item>
 						</Col>
 					</Row>
+					{/* Row for Unit */}
 					<Row gutter={16}>
-						<Col xs={24} sm={12} md={12} lg={12}>
+						<Col span={24}>
 							<Form.Item label="Unit" name="unitId" rules={[{ required: true, message: "Please select a unit" }]}>
-								<Select
-									placeholder="Select a Unit"
-									onChange={handleUnitChangeModal}
-									value={selectedUnit}
-									disabled={!canCreateAdmission && !canUpdateAdmission}>
+								<Select placeholder="Select a Unit" onChange={handleUnitChangeModal} value={selectedUnit}>
 									{units?.map((unit) => (
 										<Option key={unit.id} value={unit.id}>
 											{unit.name}
@@ -638,14 +528,14 @@ const AdmissionList = () => {
 							</Form.Item>
 						</Col>
 					</Row>
-
+					{/* Row for Room and Bed */}
 					<Row gutter={16}>
 						<Col xs={24} sm={12} md={12} lg={12}>
 							<Form.Item label="Room" name="roomId" rules={[{ required: true, message: "Please select a room" }]}>
 								<Select
 									placeholder="Select a Room"
 									onChange={handleRoomChangeModal}
-									disabled={!selectedUnit || (!canCreateAdmission && !canUpdateAdmission)}
+									disabled={!selectedUnit} // Disable if no unit is selected
 									value={selectedRoom}>
 									{filteredRooms?.map((room) => (
 										<Option key={room.id} value={room.id}>
@@ -657,7 +547,7 @@ const AdmissionList = () => {
 						</Col>
 						<Col xs={24} sm={12} md={12} lg={12}>
 							<Form.Item label="Bed" name="bedId" rules={[{ required: true, message: "Please select a bed" }]}>
-								<Select placeholder="Select a Bed" disabled={!selectedRoom || (!canCreateAdmission && !canUpdateAdmission)}>
+								<Select placeholder="Select a Bed" disabled={!selectedRoom}>
 									{filteredBeds?.map((bed) => (
 										<Option key={bed.id} value={bed.id} disabled={bed.occupied}>
 											{bed.bedNumber} {bed.occupied ? "(Occupied)" : ""}
@@ -667,33 +557,29 @@ const AdmissionList = () => {
 							</Form.Item>
 						</Col>
 					</Row>
-
+					{/* Row for Admission Date */}
 					<Row gutter={16}>
-						<Col xs={24} sm={24} md={24} lg={24}>
+						<Col span={24}>
 							<Form.Item
 								label="Admission Date"
 								name="admissionDate"
 								rules={[{ required: true, message: "Please select an admission date" }]}>
-								<DatePicker style={{ width: "100%" }} showTime disabled={!canCreateAdmission && !canUpdateAdmission} />
+								<DatePicker showTime style={{ width: "100%" }} />
 							</Form.Item>
 						</Col>
-						{/* Removed Discharge Date Form Item */}
 					</Row>
+					{/* Removed Discharge Date */}
 				</Form>
 			</Modal>
+
+			{/* Modal for Managing Admission Types */}
 			<Modal
 				title={selectedAdmissionType ? "Edit Admission Type" : "Add Admission Type"}
 				open={isTypeModalVisible}
 				onCancel={handleTypeCancel}
-				footer={[
-					<Button key="cancel" onClick={handleTypeCancel}>
-						Cancel
-					</Button>,
-
-					<Button key="submit" type="default" onClick={handleTypeFormSubmit}>
-						{selectedAdmissionType ? "Update" : "Save"}
-					</Button>,
-				]}>
+				onOk={handleTypeFormSubmit}
+				okButtonProps={{ loading: loading }} // Show loading state
+			>
 				<Form form={typeForm} layout="vertical">
 					<Form.Item label="Name" name="name" rules={[{ required: true, message: "Please enter the admission type name" }]}>
 						<Input />
@@ -702,12 +588,31 @@ const AdmissionList = () => {
 						<InputNumber style={{ width: "100%" }} />
 					</Form.Item>
 				</Form>
-				{selectedAdmissionType && ( // Conditionally render delete button
-					<Space>
-						<Button type="danger" onClick={() => handleTypeDelete(selectedAdmissionType.id)}>
-							Delete
-						</Button>
-					</Space>
+
+				{/* List of Admission Types */}
+				<List
+					itemLayout="horizontal"
+					dataSource={admissionTypes}
+					renderItem={(item) => (
+						<List.Item
+							actions={[
+								<Button type="link" onClick={() => showTypeModal(item)}>
+									Edit
+								</Button>,
+								<Button type="link" danger onClick={() => handleTypeDelete(item.id)}>
+									Delete
+								</Button>,
+							]}>
+							<List.Item.Meta title={item.name} description={`Price: ${item.price}`} />
+						</List.Item>
+					)}
+				/>
+
+				{/* Conditional Delete Button (Keep this for confirmation) */}
+				{selectedAdmissionType && (
+					<Button type="danger" onClick={() => handleTypeDelete(selectedAdmissionType.id)}>
+						Delete
+					</Button>
 				)}
 			</Modal>
 		</div>

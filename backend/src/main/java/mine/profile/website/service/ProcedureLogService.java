@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -47,20 +49,21 @@ public class ProcedureLogService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid User ID: " + dto.getUserId()));
         Procedure procedure = procedureRepository.findById(dto.getProcedureId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Procedure ID: " + dto.getProcedureId()));
+        Patient patient = patientRepository.findById(dto.getPatientId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Patient ID: " + dto.getPatientId()));
 
         Billing billing = null;
-        if (dto.getBillingId() == null) {
-
+        if (dto.getBillingId() != null) {
+            billing = billingRepository.findById(dto.getBillingId())
+                    .orElse(null);
         } else {
-            Patient patient = patientRepository.findById(dto.getBillingId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid Patient ID: " + dto.getBillingId()));
             List<Billing> bills = billingRepository.findByPatientIdOrderByBillDateDesc(patient.getId());
             if (!bills.isEmpty()) {
-                billing = bills.get(0); // Get the most recent bill
+                billing = bills.get(0);
             }
         }
 
-        ProcedureLog log = ProcedureLogDTO.toEntity(dto, user, procedure, billing);
+        ProcedureLog log = ProcedureLogDTO.toEntity(dto, user, procedure, billing, patient);
         log.setStartTime(LocalDateTime.now());
 
         ProcedureLog savedLog = procedureLogRepository.save(log);
@@ -70,6 +73,13 @@ public class ProcedureLogService {
     @Transactional
     public List<ProcedureLog> findByBillingId(Long billingId) {
         return procedureLogRepository.findByBillingId(billingId);
+    }
+
+    // Updated to return Page<ProcedureLogDTO> and accept Pageable
+    @Transactional
+    public Page<ProcedureLogDTO> findByPatientId(Long patientId, Pageable pageable) {
+        Page<ProcedureLog> procedureLogPage = procedureLogRepository.findByPatientId(patientId, pageable);
+        return procedureLogPage.map(ProcedureLogDTO::toDto); // Convert Page<ProcedureLog> to Page<ProcedureLogDTO>
     }
 
     @Transactional

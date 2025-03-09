@@ -26,6 +26,7 @@ public class ProcedureLog {
     private LocalDateTime endTime;
 
     private String notes;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
@@ -35,16 +36,21 @@ public class ProcedureLog {
     private Procedure procedure;
 
     @ManyToOne
-    @JoinColumn(name = "billing_id")
+    @JoinColumn(name = "billing_id") // Keep the billing association
     private Billing billing;
 
+    @ManyToOne
+    @JoinColumn(name = "patient_id") // Add patient association
+    private Patient patient;
+
     public ProcedureLog(LocalDateTime startTime, LocalDateTime endTime, String notes, User user, Procedure procedure,
-            Billing billing) {
+            Billing billing, Patient patient) { // Add patient to constructor
         this.startTime = startTime;
         this.endTime = endTime;
         this.notes = notes;
         this.user = user;
         this.procedure = procedure;
         this.billing = billing;
+        this.patient = patient;
     }
 }

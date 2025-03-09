@@ -1,10 +1,10 @@
-// src/components/Dashboard/PaymentsDashboard.js
 import React, { useState, useEffect, useRef } from "react";
-import { Card, DatePicker, Row, Col, Spin, Typography, Select, Button } from "antd"; // Import Button
+import { Card, DatePicker, Row, Col, Spin, Typography, Select, Button } from "antd";
 import { useDashboardStore } from "../../services/dashboardStore.service";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Chart } from "@antv/g2";
+import { Pie } from "@antv/g2plot";
 import "./Dashboard.css";
 import { g2Themes } from "../../App";
 
@@ -55,15 +55,18 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 	const chartContainerRef = useRef(null);
 	const pieChartContainerRef = useRef(null);
 	const [chart, setChart] = useState(null);
+	const [pieChart, setPieChart] = useState(null);
+	const isMounted = useRef(true);
 
 	useEffect(() => {
+		isMounted.current = true;
+
 		const preprocessData = (nestedData, startDate, endDate, selectedCategories, showCombined) => {
 			if (!nestedData || nestedData.length === 0) return [];
 
 			const flattened = nestedData.flat();
 			let allCategories = [...new Set(flattened.map((item) => item.category))];
 
-			// Filter or combine categories based on selectedCategories and showCombined
 			if (!showCombined && selectedCategories && selectedCategories.length > 0) {
 				allCategories = allCategories.filter((category) => selectedCategories.includes(category));
 			}
@@ -80,7 +83,6 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 			const completeData = [];
 			dateRange.forEach((date) => {
 				if (showCombined) {
-					// Combine all categories into one
 					let totalAmount = 0;
 					let totalCount = 0;
 					allCategories.forEach((category) => {
@@ -92,12 +94,11 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 					});
 					completeData.push({
 						date: date,
-						category: "All Payments", // Combined category
+						category: "All Payments",
 						amount: totalAmount,
 						count: totalCount,
 					});
 				} else {
-					// Separate categories
 					allCategories.forEach((category) => {
 						const existingDataPoint = flattened.find((item) => item.date === date && item.category === category);
 						if (existingDataPoint) {
@@ -120,7 +121,6 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 
 		const processedData = preprocessData(paymentData, dates.startDate, dates.endDate, selectedCategories, showCombined);
 
-		// --- Line Chart Logic ---
 		if (processedData.length > 0 && chartContainerRef.current) {
 			if (chart) {
 				chart.destroy();
@@ -152,9 +152,7 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 			setChart(newChart);
 		}
 
-		// --- Pie Chart Logic ---
-		if (processedData.length > 0 && pieChartContainerRef.current) {
-			// Calculate total amounts, handling combined categories
+		if (processedData.length > 0 && pieChartContainerRef.current && isMounted.current) {
 			const categoryTotals = {};
 			if (showCombined) {
 				categoryTotals["All Payments"] = processedData.reduce((acc, item) => acc + item.amount, 0);
@@ -166,35 +164,68 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 				});
 			}
 
-			const pieChartData = Object.entries(categoryTotals).map(([genre, sold]) => ({
-				genre,
-				sold,
+			const pieChartData = Object.entries(categoryTotals).map(([type, value]) => ({
+				type,
+				value,
 			}));
 
-			const newPieChart = new Chart({
-				container: pieChartContainerRef.current,
-				autoFit: true,
-				height: 400,
+			let totalSales = pieChartData.reduce((sum, item) => sum + item.value, 0);
+
+			// Correctly destroy the previous chart, if it exists.
+			if (pieChart && pieChart.canvas && !pieChart.canvas.destroyed) {
+				pieChart.destroy();
+			}
+
+			const newPieChart = new Pie(pieChartContainerRef.current, {
+				appendPadding: 10,
+				data: pieChartData,
+				angleField: "value",
+				colorField: "type",
+				radius: 1,
+				innerRadius: 0.5,
+				label: {
+					type: "inner",
+					offset: "-50%",
+					content: ({ percent }) => `${(percent * 100).toFixed(0)}%`,
+					style: {
+						textAlign: "center",
+						fontSize: 16,
+					},
+				},
+				interactions: [
+					{
+						type: "element-selected",
+					},
+					{
+						type: "element-active",
+					},
+				],
+				statistic: {
+					title: false,
+					content: {
+						style: {
+							whiteSpace: "pre-wrap",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							fontSize: 18,
+						},
+						content: `${totalSales.toLocaleString()}\nsales`,
+					},
+				},
+				theme: g2Themes[colorMode],
 			});
 
-			newPieChart.coordinate({ type: "theta" });
-
-			newPieChart
-				.interval()
-				.data(pieChartData)
-				.transform({ type: "stackY" })
-				.encode("color", "genre")
-				.encode("y", "sold")
-				.tooltip((data) => (data?.genre ? { name: data.genre, value: data.sold } : null))
-				.animate("enter", { type: "waveIn", duration: 1000 });
-
-			newPieChart.theme(g2Themes[colorMode]);
 			newPieChart.render();
+			setPieChart(newPieChart);
 		}
 
 		return () => {
+			isMounted.current = false;
 			if (chart) {
 				chart.destroy();
+			}
+			if (pieChart && pieChart.canvas && !pieChart.canvas.destroyed) {
+				pieChart.destroy();
 			}
 		};
 	}, [paymentData, colorMode, dates, selectedCategories, showCombined]);
@@ -237,7 +268,6 @@ const PaymentsDashboardContent = ({ loading, error, paymentData, colorMode, date
 };
 
 const PaymentsDashboard = ({ colorMode, isOpen }) => {
-	//add isOpen
 	const [dates, setDates] = useState({
 		startDate: dayjs().startOf("month").format("YYYY-MM-DDTHH:mm:ss"),
 		endDate: dayjs().format("YYYY-MM-DDTHH:mm:ss"),
@@ -248,7 +278,7 @@ const PaymentsDashboard = ({ colorMode, isOpen }) => {
 	const [error, setError] = useState(null);
 	const [allCategories, setAllCategories] = useState([]);
 	const [selectedCategories, setSelectedCategories] = useState([]);
-	const [showCombined, setShowCombined] = useState(false); // Control combined/separate view
+	const [showCombined, setShowCombined] = useState(false);
 
 	const fetchData = async () => {
 		setLoading(true);
@@ -263,10 +293,8 @@ const PaymentsDashboard = ({ colorMode, isOpen }) => {
 			const flattened = data.flat();
 			const categories = [...new Set(flattened.map((item) => item.category))];
 			setAllCategories(categories);
-
-			// Reset selected categories when fetching new data
 			setSelectedCategories([]);
-			setShowCombined(false); // Reset to separate view
+			setShowCombined(false);
 		} catch (err) {
 			setError("Error fetching payment data.");
 		} finally {
@@ -276,10 +304,9 @@ const PaymentsDashboard = ({ colorMode, isOpen }) => {
 
 	useEffect(() => {
 		if (dates.startDate && dates.endDate && isOpen) {
-			//add is Open to useEffect
 			fetchData();
 		}
-	}, [dates, isOpen]); // add isOpen to useEffect dependencies
+	}, [dates, isOpen, fetchPaymentTrend]);
 
 	const handleDateChange = (selectedDates) => {
 		if (selectedDates && selectedDates.length === 2) {
@@ -295,7 +322,7 @@ const PaymentsDashboard = ({ colorMode, isOpen }) => {
 
 	const handleCategoryChange = (selected) => {
 		setSelectedCategories(selected);
-		setShowCombined(false); // Reset to separate view when categories change
+		setShowCombined(false);
 	};
 
 	const handleSelectAll = () => {
@@ -306,7 +333,6 @@ const PaymentsDashboard = ({ colorMode, isOpen }) => {
 	const handleToggleCombined = () => {
 		setShowCombined((prev) => !prev);
 		if (!showCombined) {
-			// When switching to combined view, clear selected categories
 			setSelectedCategories([]);
 		}
 	};

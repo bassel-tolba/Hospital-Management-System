@@ -4,14 +4,13 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const PATIENT_API_BASE_URL = `/api/patients`;
 
 export const usePatientStore = create((set, get) => ({
 	patients: [],
 	loading: false,
 	error: null,
 	total: 0,
-	// Remove sortBy
 
 	setPatients: (patients) => set({ patients }),
 	setLoading: (loading) => set({ loading }),
@@ -20,6 +19,7 @@ export const usePatientStore = create((set, get) => ({
 	clearError: () => set({ error: null }),
 
 	createPatient: async (patientData, profilePicture) => {
+		// ... (Existing createPatient code - No changes needed here)
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -57,6 +57,7 @@ export const usePatientStore = create((set, get) => ({
 	},
 
 	getPatientById: async (patientId) => {
+		// ... (Existing getPatientById code - No changes needed here)
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -79,6 +80,7 @@ export const usePatientStore = create((set, get) => ({
 	},
 
 	getAllPatients: async () => {
+		// ... (Existing getAllPatients code - No changes needed here)
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -100,6 +102,7 @@ export const usePatientStore = create((set, get) => ({
 	},
 
 	updatePatient: async (patientId, patientData, profilePicture, removedProfilePictureUrl) => {
+		// ... (Existing updatePatient code - No changes needed here)
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -144,6 +147,7 @@ export const usePatientStore = create((set, get) => ({
 	},
 
 	deletePatient: async (patientId) => {
+		// ... (Existing deletePatient code - No changes needed here)
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -171,21 +175,22 @@ export const usePatientStore = create((set, get) => ({
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
+			let url;
 
-			// Construct URL with all search parameters
-			const url = `${PATIENT_API_BASE_URL}/search?${new URLSearchParams(searchParams).toString()}`;
+			// Check if any filter parameters are present
+			if (searchParams.unitId || searchParams.roomId || searchParams.bedId) {
+				// Use the /filter endpoint
+				url = `${PATIENT_API_BASE_URL}/filter?${new URLSearchParams(searchParams).toString()}`;
+			} else {
+				// Use the /search endpoint for text search
+				url = `${PATIENT_API_BASE_URL}/search?${new URLSearchParams(searchParams).toString()}`;
+			}
 
 			const response = await axios.get(url, {
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
 				},
 			});
-
-			if (response.status === 401) {
-				// Handle logout
-				console.log("User needs to log out");
-				return;
-			}
 
 			set({
 				loading: false,
@@ -197,9 +202,9 @@ export const usePatientStore = create((set, get) => ({
 			set({ error: error.message, loading: false });
 			notification.error({
 				message: "Error",
-				description: `Failed to search patient: ${error?.response?.data?.message || error.message}`,
+				description: `Failed to search patients: ${error.message}`,
 			});
-			throw error;
+			throw error; // Re-throw the error so the component can handle it
 		}
 	},
 	searchPatientByFullName: async (name) => {
@@ -222,5 +227,4 @@ export const usePatientStore = create((set, get) => ({
 			throw error;
 		}
 	},
-	// Remove sortBySeverity and clearSorting
 }));

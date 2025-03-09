@@ -35,7 +35,7 @@ const LabResultPage = () => {
 	const { labTests, fetchLabTests } = useLabStore();
 
 	const { user, hasAuthority } = useAuthStore(); // Get user and hasAuthority
-	const API_BASE_URL = `http://localhost:8080/api/lab-results`;
+	const API_BASE_URL = `/api/lab-results`;
 
 	// Permission Checks
 	const canCreateLabResult = hasAuthority("CREATE_LAB_RESULT");

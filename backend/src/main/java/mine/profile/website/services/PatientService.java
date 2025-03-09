@@ -1,4 +1,4 @@
-// services/PatientService.java
+// services/PatientService.java (Modified)
 package mine.profile.website.services;
 
 import java.io.IOException;
@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -181,5 +182,45 @@ public class PatientService {
         return patientRepository.searchByFullName(name).stream()
                 .map(PatientDTO::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PatientDTO> getPatientsByUnit(Long unitId, Pageable pageable) {
+        List<Patient> patients = patientRepository.findPatientsByUnitIdWithFalse(unitId);
+        return filterByCurrentAdmissionAndConvertToDTO(patients, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PatientDTO> getPatientsByRoom(Long roomId, Pageable pageable) {
+        List<Patient> patients = patientRepository.findPatientsByRoomIdWithFalse(roomId);
+        return filterByCurrentAdmissionAndConvertToDTO(patients, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PatientDTO> getPatientsByBed(Long bedId, Pageable pageable) {
+        List<Patient> patients = patientRepository.findAll().stream()
+                .filter(patient -> patient.getCurrentAdmission().isPresent() &&
+                        patient.getCurrentAdmission().get().getBed() != null &&
+                        patient.getCurrentAdmission().get().getBed().getId().equals(bedId))
+                .collect(Collectors.toList());
+        return convertToDTOPage(patients, pageable);
+    }
+
+    // Helper method to filter by current admission and convert to DTO Page
+    private Page<PatientDTO> filterByCurrentAdmissionAndConvertToDTO(List<Patient> patients, Pageable pageable) {
+        List<Patient> filteredPatients = patients.stream()
+                .filter(patient -> patient.getCurrentAdmission().isPresent())
+                .collect(Collectors.toList());
+        return convertToDTOPage(filteredPatients, pageable);
+    }
+
+    // Helper method to convert a List<Patient> to Page<PatientDTO>
+    private Page<PatientDTO> convertToDTOPage(List<Patient> patients, Pageable pageable) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), patients.size());
+        List<PatientDTO> patientDTOs = patients.subList(start, end).stream()
+                .map(PatientDTO::toDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(patientDTOs, pageable, patients.size());
     }
 }

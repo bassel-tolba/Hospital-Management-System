@@ -3,8 +3,8 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const ASSESSMENT_API_BASE_URL = `http://localhost:8080/api/assessments`;
-const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const ASSESSMENT_API_BASE_URL = `/api/assessments`;
+const PATIENT_API_BASE_URL = `/api/patients`;
 
 export const useAssessmentStore = create((set, get) => ({
 	assessments: [],

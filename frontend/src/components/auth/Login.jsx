@@ -1,78 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Typography, Alert, Space, Card } from "antd";
 import { useAuthStore } from "../../services/auth.service";
-import styled, { keyframes } from "styled-components";
-import { LockOutlined, UserOutlined, LoginOutlined } from "@ant-design/icons";
+import { LockOutlined, UserOutlined, LoginOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
 const { Title } = Typography;
-
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const StyledCard = styled(Card)`
-	border-radius: 10px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	transition: box-shadow 0.3s ease;
-	width: 100%;
-	max-width: 400px; /* Adjust card size for small screens*/
-	margin-bottom: 1rem;
-	animation: ${fadeIn} 0.5s ease-out; /* Apply fade-in animation */
-
-	&:hover {
-		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-	}
-`;
-
-const StyledForm = styled(Form)`
-	margin-top: 10px;
-`;
-
-const AnimatedTitle = styled(Title)`
-	animation: ${fadeIn} 0.5s ease-out;
-	text-align: center;
-	margin-bottom: 1rem;
-`;
-
-const AnimatedButton = styled(Button)`
-	animation: ${fadeIn} 0.5s ease-out;
-`;
-
-const AnimatedAlert = styled(Alert)`
-	animation: ${fadeIn} 0.5s ease-out;
-`;
 
 const Login = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const { status, error, login, clearError } = useAuthStore();
 
+	useEffect(() => {
+		return () => {
+			//any cleanup
+		};
+	}, []);
+
 	const handleSubmit = async () => {
 		try {
 			await login(username, password);
-			clearError();
+			// No need to call clearError here; it's handled in the store
 		} catch (error) {
-			console.log(error);
-			// error handle by zustand
+			// Error handling is now primarily in the auth service
+			console.error("Login component error:", error); // More specific error logging
 		}
 	};
 
 	return (
 		<div style={{ padding: 20, display: "flex", justifyContent: "center" }}>
-			<StyledCard>
+			<Card
+				className="login-card"
+				style={{
+					borderRadius: "10px",
+					boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+					width: "100%",
+					maxWidth: "400px",
+				}}>
 				<Space direction="vertical" size="large" style={{ width: "100%" }}>
-					<AnimatedTitle level={2}> Login </AnimatedTitle>
-					{status === "loading" && <AnimatedAlert message="Loading..." type="info" />}
-					{error && <AnimatedAlert message={`Login Failed: ${error}`} type="error" />}
-					<StyledForm onFinish={handleSubmit}>
-						<Form.Item rules={[{ required: true, message: "Please enter your username!" }]}>
+					<Title level={2} style={{ textAlign: "center" }}>
+						<Space>
+							<LoginOutlined />
+							Login
+						</Space>
+					</Title>
+					{status === "loading" && <Alert message="Loading..." type="info" showIcon />}
+					{status === "success" && <Alert message="Login Successful!" type="success" showIcon={<CheckCircleOutlined />} />}{" "}
+					{/* Success Alert */}
+					{status === "failed" && error && <Alert message={`Login Failed: ${error}`} type="error" showIcon />}{" "}
+					{/* Improved error display */}
+					<Form onFinish={handleSubmit}>
+						<Form.Item
+							name="username" // Add name attributes for antd form to work correct
+							rules={[{ required: true, message: "Please enter your username!" }]}>
 							<Input
 								prefix={<UserOutlined />}
 								type="text"
@@ -81,7 +60,8 @@ const Login = () => {
 								placeholder="Username"
 							/>
 						</Form.Item>
-						<Form.Item rules={[{ required: true, message: "Please enter your password!" }]}>
+
+						<Form.Item name="password" rules={[{ required: true, message: "Please enter your password!" }]}>
 							<Input
 								prefix={<LockOutlined />}
 								type="password"
@@ -90,14 +70,15 @@ const Login = () => {
 								onChange={(e) => setPassword(e.target.value)}
 							/>
 						</Form.Item>
-						<Form.Item style={{ textAlign: "center" }}>
-							<AnimatedButton type="default" htmlType="submit" disabled={status === "loading"}>
+
+						<Form.Item style={{ display: "flex", justifyContent: "center" }}>
+							<Button type="primary" htmlType="submit" disabled={status === "loading"} style={{ width: "200px" }}>
 								<LoginOutlined /> Login
-							</AnimatedButton>
+							</Button>
 						</Form.Item>
-					</StyledForm>
+					</Form>
 				</Space>
-			</StyledCard>
+			</Card>
 		</div>
 	);
 };

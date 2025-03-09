@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PRESCRIPTION_API_BASE_URL = `http://localhost:8080/api/prescriptions`;
+const PRESCRIPTION_API_BASE_URL = `/api/prescriptions`;
 
 export const usePrescriptionStore = create((set, get) => ({
 	prescriptions: [],

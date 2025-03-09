@@ -23,7 +23,7 @@ const AssessmentList = ({ darkMode }) => {
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [searchParams, setSearchParams] = useState({});
 	const { user, hasAuthority } = useAuthStore();
-	const API_BASE_URL = `http://localhost:8080/api/assessments`;
+	const API_BASE_URL = `/api/assessments`;
 	const { patients, searchPatients } = usePatientStore();
 
 	const canCreateAssessment = hasAuthority("CREATE_ASSESSMENT");

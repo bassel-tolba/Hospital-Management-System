@@ -7,11 +7,11 @@ import { usePatientStore } from "../../services/patient.service";
 import { SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { format, formatDistance, isToday, isYesterday, differenceInDays, differenceInMonths } from "date-fns";
 import axios from "axios";
-import { notification } from "antd"; // Import notification
+import { notification } from "antd";
 
 const { Title } = Typography;
 const { Option } = Select;
-const PROCEDURE_LOG_API_BASE_URL = `http://localhost:8080/api/procedure-logs`;
+const PROCEDURE_LOG_API_BASE_URL = `/api/procedure-logs`;
 const formatRelativeTime = (localDateTime) => {
 	if (!localDateTime) return "N/A";
 
@@ -48,7 +48,7 @@ const formatExactTime = (localDateTime) => {
 
 const ProcedureLogList = () => {
 	const { users, getAllUsers } = useUserStore();
-	const { user, hasAuthority } = useAuthStore(); // Get hasAuthority
+	const { user, hasAuthority } = useAuthStore();
 	const { procedures, getAllProcedures } = useProcedureStore();
 	const { searchPatients } = usePatientStore();
 
@@ -65,11 +65,12 @@ const ProcedureLogList = () => {
 	const [selectedProcedure, setSelectedProcedure] = useState(null);
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [selectedPatient, setSelectedPatient] = useState(null);
+	// Add search state
+	const [searchPatientId, setSearchPatientId] = useState(null);
 
-	// Define permission checks
-	const canReadProcedureLog = hasAuthority("READ_PROCEDURE_LOG"); // Assuming you have a READ permission
+	const canReadProcedureLog = hasAuthority("READ_PROCEDURE_LOG");
 	const canCreateProcedureLog = hasAuthority("CREATE_PROCEDURE_LOG");
-	const canUpdateProcedureLog = hasAuthority("UPDATE_PROCEDURE_LOG"); // Assuming you might want an UPDATE permission
+	const canUpdateProcedureLog = hasAuthority("UPDATE_PROCEDURE_LOG");
 	const canDeleteProcedureLog = hasAuthority("DELETE_PROCEDURE_LOG");
 
 	const fetchAllUsersWithMap = useCallback(async () => {
@@ -80,46 +81,54 @@ const ProcedureLogList = () => {
 	}, [getAllUsers]);
 	const [fetchedUsers, setFetchedUsers] = useState({});
 
-	const fetchProcedureLogs = useCallback(async () => {
-		setLoading(true);
-		if (!canReadProcedureLog) {
-			notification.error({
-				message: "Permission Denied",
-				description: "You do not have permission to view procedure logs.",
-			});
-			setLoading(false);
-			return; // Stop execution if no permission
-		}
-		try {
-			const user = useAuthStore.getState().user;
-			const response = await axios.get(PROCEDURE_LOG_API_BASE_URL, {
-				headers: {
-					Authorization: `Bearer ${user?.token}`,
-				},
-			});
-			setProcedureLogs(response.data);
-			setTotal(response.data.length); // Update total from response
-		} catch (error) {
-			console.error("Error fetching procedure logs:", error);
-			notification.error({
-				// Show a notification for the error
-				message: "Error",
-				description: "Failed to fetch procedure logs.",
-			});
-		} finally {
-			setLoading(false);
-		}
-	}, [canReadProcedureLog]);
+	const fetchProcedureLogs = useCallback(
+		async (page = currentPage, size = pageSize, patientId = searchPatientId) => {
+			setLoading(true);
+			if (!canReadProcedureLog) {
+				notification.error({
+					message: "Permission Denied",
+					description: "You do not have permission to view procedure logs.",
+				});
+				setLoading(false);
+				return;
+			}
+			try {
+				const user = useAuthStore.getState().user;
+				let url = `${PROCEDURE_LOG_API_BASE_URL}?page=${page - 1}&size=${size}`; //page in spring data jpa is 0 indexed
+
+				if (patientId) {
+					url = `${PROCEDURE_LOG_API_BASE_URL}/patient/${patientId}?page=${page - 1}&size=${size}`;
+				}
+
+				const response = await axios.get(url, {
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				});
+				// Use response.data.content for the array of logs
+				setProcedureLogs(response.data.content);
+				// Use response.data.totalElements for the total count
+				setTotal(response.data.totalElements);
+			} catch (error) {
+				console.error("Error fetching procedure logs:", error);
+				notification.error({
+					message: "Error",
+					description: "Failed to fetch procedure logs.",
+				});
+			} finally {
+				setLoading(false);
+			}
+		},
+		[canReadProcedureLog, currentPage, pageSize, searchPatientId]
+	); // Include searchPatientId in dependencies
 
 	useEffect(() => {
 		const fetchData = async () => {
 			setLoading(true);
 			await getAllUsers();
 			const procedureResponse = await getAllProcedures();
-			// Correctly extract the data from the content array.
 			setProcedureOptions(procedureResponse?.content || []);
-
-			await fetchProcedureLogs();
+			await fetchProcedureLogs(); // Initial fetch without patient ID
 			const fetchedUsers = await fetchAllUsersWithMap();
 			setFetchedUsers(fetchedUsers);
 			setLoading(false);
@@ -130,11 +139,11 @@ const ProcedureLogList = () => {
 	const handlePageChange = (page, pageSize) => {
 		setCurrentPage(page);
 		setPageSize(pageSize);
+		fetchProcedureLogs(page, pageSize, searchPatientId); // Pass page and size to fetchProcedureLogs
 	};
 
 	const showModal = (log) => {
 		if (!canCreateProcedureLog && !log) {
-			// Check permission before showing the modal for adding
 			notification.error({
 				message: "Permission Denied",
 				description: "You do not have permission to add procedure logs.",
@@ -155,16 +164,26 @@ const ProcedureLogList = () => {
 		setSelectedPatient(null);
 
 		if (log) {
-			form.setFieldsValue(log);
+			//Crucial to avoid errors when editing
+			const initialValues = {
+				...log,
+				userId: fetchedUsers[log.userId] ? fetchedUsers[log.userId].id : null,
+				procedureId: log.procedureId,
+				patientId: log.patientId, // Set the patientId for the form
+			};
+			form.setFieldsValue(initialValues);
+
 			const user = fetchedUsers[log.userId];
 			if (user) {
-				form.setFieldsValue({ userId: user.id });
 				setSelectedUser(user);
 			}
 			if (log.procedureId) {
-				form.setFieldsValue({ procedureId: log.procedureId });
-				const procedure = procedureOptions?.find((p) => p.id === log.procedureId); // Use procedureOptions here
+				const procedure = procedureOptions?.find((p) => p.id === log.procedureId);
 				setSelectedProcedure(procedure);
+			}
+			// Set selectedPatient for display/edit.  Crucial!
+			if (log.patientId) {
+				handlePatientSearchForModal(log.patientId); // Fetch and set patient details
 			}
 		} else {
 			form.resetFields();
@@ -185,6 +204,7 @@ const ProcedureLogList = () => {
 		form.resetFields();
 		setPatientOptions([]);
 	};
+
 	const handleProcedureSearch = async (value) => {
 		if (value) {
 			try {
@@ -204,11 +224,31 @@ const ProcedureLogList = () => {
 			setPatientOptions([]);
 		}
 	};
+	// New function to pre-populate patient details in the modal
+	const handlePatientSearchForModal = async (patientId) => {
+		try {
+			const searchResults = await searchPatients({ searchTerm: "", id: patientId, page: 0, size: 1 }); // Search by ID
+			if (searchResults?.content && searchResults.content.length > 0) {
+				const patient = searchResults.content[0];
+				setPatientOptions([
+					{
+						label: `${patient.firstName} ${patient.lastName}`,
+						value: patient.id,
+						patient,
+					},
+				]);
+				setSelectedPatient(patient); //Very important to set selected patient
+				form.setFieldsValue({ patientId: patient.id }); // Correct field name
+			}
+		} catch (error) {
+			console.error("Failed to search patient for modal:", error);
+		}
+	};
 
 	const handleProcedureSelect = (value, option) => {
 		const selectedPatient = option?.patient;
 		setSelectedPatient(selectedPatient);
-		form.setFieldsValue({ billingId: value });
+		form.setFieldsValue({ patientId: value });
 	};
 
 	const handleFormSubmit = async () => {
@@ -238,12 +278,13 @@ const ProcedureLogList = () => {
 			if (selectedProcedure) {
 				payload.procedureId = selectedProcedure.id;
 			}
-			// Add the patientId here. Make sure it's set from the patient selection
 			if (selectedPatient) {
 				payload.patientId = selectedPatient.id;
-				payload.billingId = selectedPatient.id;
+				// REMOVE THIS LINE:  payload.billingId = selectedPatient.id;
 			}
+
 			const user = useAuthStore.getState().user;
+
 			if (selectedLog) {
 				await axios.put(`${PROCEDURE_LOG_API_BASE_URL}/${selectedLog.id}`, payload, {
 					headers: {
@@ -258,7 +299,8 @@ const ProcedureLogList = () => {
 				});
 			}
 
-			fetchProcedureLogs();
+			//  Fetch with current page, size, and patient ID (if any)
+			fetchProcedureLogs(currentPage, pageSize, searchPatientId);
 			setIsModalVisible(false);
 			setSelectedLog(null);
 			form.resetFields();
@@ -274,7 +316,6 @@ const ProcedureLogList = () => {
 			});
 		}
 	};
-
 	const handleDelete = async (logId) => {
 		if (!canDeleteProcedureLog) {
 			notification.error({
@@ -290,7 +331,7 @@ const ProcedureLogList = () => {
 					Authorization: `Bearer ${user?.token}`,
 				},
 			});
-			fetchProcedureLogs();
+			fetchProcedureLogs(currentPage, pageSize, searchPatientId); // Refresh with current settings
 		} catch (error) {
 			console.error("Error deleting log:", error);
 			notification.error({
@@ -305,8 +346,20 @@ const ProcedureLogList = () => {
 		return user ? `${user.firstName} ${user.lastName}` : "N/A";
 	};
 	const getProcedureName = (procedureId) => {
-		const procedure = procedureOptions?.find((p) => p.id === procedureId); // Use procedureOptions here
+		const procedure = procedureOptions?.find((p) => p.id === procedureId);
 		return procedure ? procedure.name : "N/A";
+	};
+
+	const handleSearch = (patientId) => {
+		setSearchPatientId(patientId); // Set the patient ID for searching
+		setCurrentPage(1); // Reset to the first page when searching
+		fetchProcedureLogs(1, pageSize, patientId); // Fetch logs with the patient ID
+	};
+
+	const clearSearch = () => {
+		setSearchPatientId(null); // Clear the patient ID
+		setCurrentPage(1);
+		fetchProcedureLogs(1, pageSize, null);
 	};
 
 	const columns = [
@@ -321,6 +374,16 @@ const ProcedureLogList = () => {
 			dataIndex: "procedureId",
 			key: "procedure",
 			render: (procedureId) => (canReadProcedureLog ? getProcedureName(procedureId) : "***"),
+		},
+		{
+			title: "Patient", // New column for Patient
+			dataIndex: "patientId",
+			key: "patient",
+			render: (patientId) => {
+				if (!canReadProcedureLog) return "***";
+				const patient = patientOptions.find((p) => p.value === patientId)?.patient;
+				return patient ? `${patient.firstName} ${patient.lastName}` : "N/A";
+			},
 		},
 
 		{
@@ -362,17 +425,27 @@ const ProcedureLogList = () => {
 			),
 		},
 	];
-
 	return (
 		<div style={{ padding: 20 }}>
 			<Title level={2}>Procedure Logs</Title>
+
+			{/* Search Bar */}
 			<Space style={{ marginBottom: 16 }}>
+				<AutoComplete
+					options={patientOptions}
+					onSearch={handleProcedureSearch}
+					onSelect={(value) => handleSearch(value)} //  Call handleSearch on select
+					placeholder="Search for a patient"
+					style={{ width: 200 }}
+				/>
+				<Button onClick={clearSearch}>Clear Search</Button> {/* Clear Search Button */}
 				{canCreateProcedureLog && (
 					<Button type="default" onClick={() => showModal(null)}>
 						Add New Log
 					</Button>
 				)}
 			</Space>
+
 			<Table columns={columns} dataSource={procedureLogs} loading={loading} rowKey="id" pagination={false} />
 			<Pagination current={currentPage} pageSize={pageSize} total={total} onChange={handlePageChange} style={{ marginTop: 20 }} />
 
@@ -393,12 +466,13 @@ const ProcedureLogList = () => {
 					</Button>,
 				]}>
 				<Form form={form} layout="vertical">
+					{/* Corrected name to patientId */}
 					<Form.Item
 						label="Patient"
-						name="billingId"
+						name="patientId"
 						rules={[
 							{
-								required: false,
+								required: true, //  Make patient required
 								message: "Please select a patient",
 							},
 						]}>
@@ -408,7 +482,7 @@ const ProcedureLogList = () => {
 							onSelect={handleProcedureSelect}
 							placeholder="Search for a patient"
 							disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)} // Disable based on permissions
-							filterOption={false}
+							filterOption={false} //  Disable built-in filtering
 						/>
 					</Form.Item>
 					{user ? (
@@ -432,15 +506,11 @@ const ProcedureLogList = () => {
 						<Select
 							placeholder="Select a procedure"
 							disabled={(!canCreateProcedureLog && !selectedLog) || (!canUpdateProcedureLog && selectedLog)}>
-							{procedureOptions?.map(
-								(
-									procedure // Use procedureOptions here
-								) => (
-									<Option key={procedure.id} value={procedure.id}>
-										{`${procedure.name}`}
-									</Option>
-								)
-							)}
+							{procedureOptions?.map((procedure) => (
+								<Option key={procedure.id} value={procedure.id}>
+									{`${procedure.name}`}
+								</Option>
+							))}
 						</Select>
 					</Form.Item>
 					<Form.Item label="Notes" name="notes">

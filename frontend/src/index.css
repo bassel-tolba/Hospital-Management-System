@@ -1,21 +1,1460 @@
-.main-container {
-	transition: all 0.9s ease;
+/* Ant Design Enhanced Styles - Maintaining Original Colors */
 
-	max-width: 1200px; /* Limit maximum width for large screens */
-	margin: 0 auto; /* Center the container */
-	padding: 20px; /* Add some padding */
+/* Layout Components with improved spacing and subtle shadows */
+
+.ant-layout {
+	transition: all 0.3s ease;
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
 }
-@media screen and (max-width: 768px) {
-	.main-container {
-		padding: 10px; /* Add some padding */
+
+.ant-layout-header {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+	backdrop-filter: blur(4px);
+}
+
+.ant-layout-sider {
+	transition: width 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+	box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.08);
+}
+
+.ant-layout-content {
+	padding: 24px;
+	min-height: calc(100vh - 64px - 70px);
+}
+
+.ant-layout-footer {
+	text-align: center;
+	padding: 24px 50px;
+	font-weight: 500;
+}
+
+.ant-layout-has-sider {
+	display: flex;
+	min-height: 100vh;
+}
+
+.ant-layout-sider-children {
+	height: 100%;
+	padding-top: 0.5rem;
+}
+
+/* Menu with hover effects and smooth transitions */
+.ant-menu {
+	font-weight: 500;
+}
+.ant-drawer-content {
+	width: 70% !important;
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%) !important;
+}
+.ant-menu-item {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%) !important;
+}
+
+.ant-menu-root {
+	border-right: none;
+}
+
+.ant-menu-item {
+	margin: 4px 0;
+	border-radius: 0;
+	transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+	position: relative;
+}
+
+.ant-menu-item:hover {
+	transform: translateX(4px);
+}
+
+.ant-menu-item:hover::after {
+	opacity: 0.2;
+}
+
+.ant-menu-item::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 1px;
+	background: currentColor;
+	opacity: 0;
+	transition: opacity 0.3s;
+}
+
+.ant-menu-submenu {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
+	border-radius: 4px;
+}
+
+.ant-menu-submenu-title {
+	transition: all 0.2s;
+}
+
+.ant-menu-item-selected {
+	font-weight: bold;
+	letter-spacing: 0.5px;
+	transform: scale(1.02);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+}
+
+.ant-menu-submenu-open {
+	background-color: rgba(0, 0, 0, 0.02);
+}
+
+.ant-menu-inline {
+	border-right: none;
+}
+
+.ant-menu-light,
+.ant-menu-dark {
+	transition: background 0.3s ease;
+}
+
+.ant-menu-item-icon {
+	transition: transform 0.3s ease;
+}
+
+.ant-menu-item:hover .ant-menu-item-icon {
+	transform: scale(1.2);
+}
+
+.ant-menu-title-content {
+	transition: margin-left 0.3s ease;
+}
+
+.ant-menu-sub {
+	background: transparent !important;
+}
+
+/* Alert with improved aesthetics */
+.ant-alert {
+	border-radius: 2px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+	transition: all 0.3s ease;
+	border: none;
+	position: relative;
+	overflow: hidden;
+}
+
+.ant-alert::before {
+	content: "";
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	right: 4px;
+	bottom: 4px;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	pointer-events: none;
+}
+
+.ant-alert-success::before,
+.ant-alert-info::before,
+.ant-alert-warning::before,
+.ant-alert-error::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 4px;
+}
+
+.ant-alert-message {
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.ant-alert-description {
+	font-size: 0.9rem;
+}
+
+.ant-alert-no-icon {
+	padding-left: 15px;
+}
+
+.ant-alert-content {
+	padding: 2px 0;
+}
+
+/* Anchor with ink animation */
+.ant-anchor-wrapper {
+	padding: 10px;
+	border-radius: 8px;
+}
+
+.ant-anchor {
+	padding: 4px 0;
+}
+
+.ant-anchor-link {
+	padding: 10px 0 10px 16px;
+	transition: all 0.2s;
+}
+
+.ant-anchor-link:hover {
+	transform: translateX(4px);
+}
+
+.ant-anchor-link-title {
+	font-weight: 500;
+	transition: all 0.3s;
+}
+
+.ant-anchor-link-title:hover {
+	text-decoration: none;
+	letter-spacing: 0.3px;
+}
+
+.ant-anchor-ink {
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* Select with refined styling */
+.ant-select {
+	transition: all 0.3s;
+}
+
+.ant-select:hover .ant-select-selector {
+	box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.ant-select-auto-complete {
+	width: 100%;
+}
+.ant-select-outlined {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
+}
+
+.ant-select-selector {
+	border-radius: 2px !important;
+	transition: all 0.3s !important;
+	border-width: 1.5px !important;
+}
+
+.ant-select-selection-search {
+	margin-inline-start: 0 !important;
+}
+
+.ant-select-selection-search-input {
+	height: 100% !important;
+}
+
+.ant-select-selection-item {
+	font-weight: 500;
+}
+
+.ant-select-dropdown {
+	border-radius: 6px;
+
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+	backdrop-filter: blur(4px);
+	padding: 8px 0;
+}
+
+.ant-select-item {
+	transition: all 0.2s;
+	border-radius: 4px;
+	margin: 0 4px;
+	padding: 8px 12px;
+}
+
+.ant-select-item:hover {
+	transform: translateX(4px);
+}
+
+.ant-select-outlined,
+.ant-select-borderless {
+	transition: all 0.3s;
+}
+
+/* Avatar with hover effect */
+.ant-avatar {
+	position: relative;
+	overflow: hidden;
+	transition: all 0.3s ease;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ant-avatar:hover {
+	transform: scale(1.05);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ant-avatar::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: radial-gradient(circle, rgba(255, 255, 255, 0) 70%, rgba(0, 0, 0, 0.1) 100%);
+}
+
+.ant-avatar-circle,
+.ant-avatar-square {
+	transition: all 0.3s;
+}
+
+.ant-avatar-lg,
+.ant-avatar-sm {
+	transition: all 0.3s;
+}
+
+.ant-avatar-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: transform 0.3s;
+}
+
+.ant-avatar:hover .ant-avatar-icon {
+	transform: scale(1.2);
+}
+
+.ant-avatar-string {
+	line-height: 1.2;
+}
+
+/* Back to Top with smooth animation */
+.ant-back-top {
+	transition: all 0.5s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.ant-back-top-content {
+	width: 46px;
+	height: 46px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s;
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.ant-back-top-content:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.ant-back-top-icon {
+	font-size: 18px;
+	transition: transform 0.3s;
+}
+
+.ant-back-top-content:hover .ant-back-top-icon {
+	transform: translateY(-2px);
+}
+
+/* Badge with pulse effect */
+.ant-badge {
+	position: relative;
+}
+
+.ant-badge-count {
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+	font-weight: 600;
+}
+
+.ant-badge-dot {
+	transform: translateX(50%);
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+	animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		transform: translateX(50%) scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: translateX(50%) scale(1.2);
+		opacity: 0.7;
+	}
+	100% {
+		transform: translateX(50%) scale(1);
+		opacity: 1;
 	}
 }
+
+.ant-scroll-number {
+	overflow: hidden;
+	transition: all 0.3s;
+}
+
+/* Breadcrumb with hover effects */
+.ant-breadcrumb {
+	font-size: 14px;
+	padding: 8px 0;
+}
+
+.ant-breadcrumb-link {
+	transition: all 0.2s;
+	padding: 4px 8px;
+	border-radius: 4px;
+}
+
+.ant-breadcrumb-link:hover {
+	background-color: rgba(0, 0, 0, 0.03);
+	transform: translateY(-1px);
+}
+
+.ant-breadcrumb-separator {
+	margin: 0 4px;
+}
+
+.ant-breadcrumb-separator::before {
+	content: "•";
+	opacity: 0.5;
+}
+
+/* Button with tactile feedback */
+.ant-btn {
+	position: relative;
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+	border-radius: 2px;
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
+	font-weight: 500;
+	overflow: hidden;
+	font-family: "Playfair Display", serif;
+	letter-spacing: 0.03em;
+}
+
+.ant-btn::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0;
+	height: 0;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	background-color: rgba(255, 255, 255, 0.2);
+	opacity: 0;
+	transition: width 0.5s, height 0.5s, opacity 0.5s;
+}
+
+.ant-btn:active::after {
+	width: 200%;
+	height: 200%;
+	opacity: 1;
+	transition: 0s;
+}
+
+.ant-btn:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ant-btn:active {
+	transform: translateY(1px);
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.ant-btn-primary,
+.ant-btn-default,
+.ant-btn-dashed,
+.ant-btn-text,
+.ant-btn-link {
+	font-weight: 500;
+}
+
+.ant-btn-color-primary,
+.ant-btn-color-default {
+	transition: all 0.3s;
+}
+
+.ant-btn-variant-solid,
+.ant-btn-variant-outlined,
+.ant-btn-variant-dashed,
+.ant-btn-variant-text,
+.ant-btn-variant-link {
+	position: relative;
+	z-index: 1;
+}
+
+.ant-btn-lg,
+.ant-btn-sm {
+	transition: all 0.3s;
+}
+
+.ant-btn-icon-only {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ant-btn span {
+	transition: all 0.2s;
+}
+
+/* Card with hover effects */
+.ant-card {
+	border-radius: 2px;
+	transition: all 0.3s ease;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	position: relative;
+}
+
+.ant-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.09);
+}
+
+.ant-card::before {
+	content: "";
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	right: 4px;
+	bottom: 4px;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	pointer-events: none;
+}
+
+.ant-card-bordered {
+	border-radius: 8px;
+	border-width: 1px;
+}
+
+.ant-card-head {
+	border-bottom-width: 1px;
+	padding: 0 24px;
+	min-height: 56px;
+}
+
+.ant-card-head-title {
+	font-weight: 600;
+	font-size: 16px;
+	padding: 16px 0;
+	font-family: "Playfair Display", serif;
+	letter-spacing: 0.03em;
+}
+
+.ant-card-head-title::before,
+.ant-card-head-title::after {
+	content: "•";
+	margin: 0 8px;
+	opacity: 0.5;
+}
+
+.ant-card-extra {
+	padding: 16px 0;
+}
+
+.ant-card-body {
+	padding: 24px;
+}
+
+/* Table with improved row styling */
+.ant-table-wrapper {
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+.ant-table-placeholder {
+	background-color: transparent !important;
+}
+
+.ant-table {
+	background-color: transparent !important;
+
+	border-radius: 2px;
+	overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+	background-color: transparent !important;
+
+	font-weight: 600;
+	padding: 16px;
+	font-family: "Playfair Display", serif;
+	text-transform: none;
+	font-style: italic;
+	letter-spacing: 0.05em;
+	font-size: 0.8rem;
+}
+
+.ant-table-tbody > tr {
+	transition: all 0.2s;
+}
+
+.ant-table-tbody > tr:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+	z-index: 1;
+	position: relative;
+}
+
+.ant-table-row {
+	transition: all 0.3s;
+}
+
+.ant-table-cell {
+	padding: 16px !important;
+}
+.ant-table-cell-row-hover {
+	background-color: rgba(0, 0, 0, 0.02) !important;
+}
+.ant-table-row-selected {
+	font-weight: 500;
+}
+
+.ant-table-column-sort {
+	background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.ant-table-container {
+	border-radius: 8px;
+	overflow: hidden;
+}
+.ant-table-content {
+	background-color: transparent !important;
+}
+/* Form elements with refined styling */
+.ant-form {
+	transition: all 0.3s;
+}
+
+.ant-form-item {
+	margin-bottom: 24px;
+}
+
+.ant-form-item-label {
+	padding-bottom: 8px;
+}
+
+.ant-form-item-label > label {
+	font-weight: 500;
+	font-size: 0.9rem;
+	height: auto;
+	font-family: "Playfair Display", serif;
+	letter-spacing: 0.03em;
+}
+
+.ant-form-item-label > label::before {
+	content: "❧";
+	margin-right: 8px;
+	font-size: 0.8em;
+	opacity: 0.5;
+}
+
+.ant-form-item-control {
+	position: relative;
+}
+
+.ant-form-item-control-input {
+	min-height: auto;
+}
+
+.ant-form-item-control-input-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.ant-form-item-has-success .ant-input,
+.ant-form-item-has-error .ant-input {
+	transition: all 0.3s;
+}
+
+.ant-form-horizontal,
+.ant-form-vertical,
+.ant-form-inline {
+	width: 100%;
+}
+
+.ant-row {
+	display: flex;
+	flex-flow: row wrap;
+}
+
+.ant-col {
+	position: relative;
+}
+
+/* Input with focus effects */
+.ant-input {
+	font-size: 14px;
+	line-height: 1.5;
+	border-radius: 2px;
+	transition: all 0.3s;
+	border-width: 1.5px;
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
+}
+
+.ant-input:focus {
+	box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.08);
+	transform: translateY(-1px);
+}
+
+.ant-input-lg,
+.ant-input-sm {
+	transition: all 0.3s;
+}
+
+.ant-input-disabled {
+	opacity: 0.6;
+}
+
+.ant-input-affix-wrapper {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
+	border-radius: 5px;
+	transition: all 0.3s;
+	border-width: 1.5px;
+}
+.ant-picker {
+	border-radius: 5px;
+	transition: all 0.3s;
+	border-width: 1.5px;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+	box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.08);
+	transform: translateY(-1px);
+}
+
+.ant-input-prefix,
+.ant-input-suffix {
+	transition: all 0.3s;
+}
+
+.ant-input-textarea {
+	transition: all 0.3s;
+}
+
+.ant-input-textarea textarea {
+	padding: 10px 12px;
+	border-radius: 6px;
+	transition: all 0.3s;
+	resize: vertical;
+}
+
+/* Tabs with animated indicator */
+.ant-tabs {
+	overflow: hidden;
+}
+
+.ant-tabs-nav {
+	margin-bottom: 0;
+	transition: all 0.3s;
+	position: relative;
+}
+
+.ant-tabs-nav::before {
+	position: absolute;
+	content: "";
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+}
+
+.ant-tabs-tab {
+	padding: 12px 20px;
+	transition: all 0.3s;
+	margin: 0 !important;
+	opacity: 0.7;
+	position: relative;
+}
+
+.ant-tabs-tab:hover {
+	transform: translateY(-2px);
+	opacity: 0.9;
+}
+
+.ant-tabs-tab:hover::after {
+	left: 0;
+	right: 0;
+	opacity: 0.2;
+}
+
+.ant-tabs-tab::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	right: 50%;
+	bottom: 0;
+	height: 1px;
+	background: currentColor;
+	transition: all 0.3s;
+	opacity: 0;
+}
+
+.ant-tabs-tab-active {
+	font-weight: 500;
+	opacity: 1;
+}
+
+.ant-tabs-tab-btn {
+	font-weight: inherit;
+	transition: all 0.3s;
+}
+
+.ant-tabs-content {
+	padding: 16px 0;
+	transition: all 0.3s;
+}
+
+.ant-tabs-tabpane {
+	transition: opacity 0.3s;
+	padding: 24px 0;
+}
+
+.ant-tabs-tabpane-active {
+	animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.ant-tabs-ink-bar {
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+	height: 3px !important;
+	border-radius: 3px 3px 0 0;
+}
+
+.ant-tabs-top,
+.ant-tabs-bottom {
+	position: relative;
+}
+
+.ant-tabs-nav-wrap {
+	overflow: hidden;
+}
+
+.ant-tabs-nav-list {
+	transition: transform 0.3s;
+}
+
+.ant-tabs-content-holder {
+	overflow: hidden;
+}
+
+/* Switch with smooth animation */
+.ant-switch {
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+	min-width: 44px;
+	height: 22px;
+	border-radius: 11px;
+}
+
+.ant-switch:focus {
+	box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.ant-switch-checked {
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.ant-switch-handle {
+	width: 18px;
+	height: 18px;
+	top: 2px;
+	left: 2px;
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.ant-switch-checked .ant-switch-handle {
+	left: calc(100% - 20px);
+}
+
+.ant-switch-inner {
+	margin: 0 7px 0 25px;
+	transition: margin 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.ant-switch-checked .ant-switch-inner {
+	margin: 0 25px 0 7px;
+}
+
+/* Modal with smooth entrance/exit */
+.ant-modal {
+	top: 100px;
+	padding-bottom: 0;
+}
+
+.ant-modal-content {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%) !important;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+	border-radius: 2px;
+	overflow: hidden;
+	animation: modalEnter 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes modalEnter {
+	from {
+		opacity: 0;
+		transform: scale(0.9) translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.ant-modal-header,
+.ant-modal-body,
+.ant-modal-footer {
+	background-color: transparent !important;
+	padding: 24px;
+}
+
+.ant-modal-header {
+	border-radius: 12px 12px 0 0;
+	padding-bottom: 12px;
+	border-bottom: 2px double rgba(0, 0, 0, 0.06);
+}
+
+.ant-modal-body {
+	padding-top: 12px;
+	padding-bottom: 12px;
+}
+
+.ant-modal-footer {
+	padding-top: 12px;
+	border-radius: 0 0 12px 12px;
+}
+
+.ant-modal-open {
+	overflow: hidden;
+}
+
+/* Pagination with hover effects */
+.ant-pagination {
+	display: flex;
+	align-items: center;
+}
+
+.ant-pagination-item {
+	border-radius: 0;
+	font-weight: 500;
+	transition: all 0.2s;
+	margin-right: 8px;
+	position: relative;
+}
+
+.ant-pagination-item:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ant-pagination-item::before {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	right: 2px;
+	bottom: 2px;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	pointer-events: none;
+}
+
+.ant-pagination-item-active {
+	font-weight: 600;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ant-pagination-prev,
+.ant-pagination-next {
+	margin-right: 8px;
+}
+
+.ant-pagination-prev button,
+.ant-pagination-next button {
+	border-radius: 6px;
+	transition: all 0.2s;
+}
+
+.ant-pagination-prev:hover button,
+.ant-pagination-next:hover button {
+	transform: translateY(-2px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ant-pagination-disabled {
+	opacity: 0.5;
+}
+
+.ant-pagination-disabled:hover button {
+	transform: none;
+	box-shadow: none;
+}
+
+.ant-pagination-item-link {
+	border-radius: 6px;
+}
+
+.ant-table-pagination {
+	margin: 16px 0;
+}
+
+/* Steps component with animation */
+.ant-steps {
+	display: flex;
+	width: 100%;
+	padding: 24px 0;
+}
+
+.ant-steps-item {
+	position: relative;
+	flex: 1;
+	overflow: hidden;
+	transition: all 0.3s;
+}
+
+.ant-steps-item-finish,
+.ant-steps-item-process,
+.ant-steps-item-wait,
+.ant-steps-item-error {
+	transition: all 0.3s;
+}
+
+.ant-steps-item-icon {
+	width: 32px;
+	height: 32px;
+	line-height: 32px;
+	text-align: center;
+	font-size: 16px;
+	font-weight: 500;
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	transform: scale(1.1);
+}
+
+.ant-steps-item-title {
+	font-size: 16px;
+	font-weight: 500;
+	transition: all 0.3s;
+}
+
+.ant-steps-item-process .ant-steps-item-title {
+	font-weight: 600;
+}
+
+.ant-steps-item-description {
+	font-size: 14px;
+	margin-top: 4px;
+	transition: all 0.3s;
+}
+
+.ant-steps-item-tail {
+	position: absolute;
+	top: 16px;
+	left: 0;
+	width: 100%;
+	height: 1px;
+	padding: 0 10px;
+	transition: all 0.3s;
+	border-left-style: double;
+}
+
+.ant-steps-item-container {
+	display: flex;
+	align-items: flex-start;
+}
+
+.ant-steps-item-content {
+	margin-top: -3px;
+	transition: all 0.3s;
+}
+
+/* Progress with improved animations */
+.ant-progress {
+	display: inline-block;
+	width: 100%;
+}
+
+.ant-progress-line {
+	position: relative;
+	width: 100%;
+	margin-right: 8px;
+	margin-bottom: 8px;
+}
+
+.ant-progress-circle {
+	position: relative;
+}
+
+.ant-progress-outer {
+	display: flex;
+	align-items: center;
+}
+
+.ant-progress-inner {
+	position: relative;
+	background-color: rgba(0, 0, 0, 0.06);
+	border-radius: 100px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+
+.ant-progress-bg {
+	position: relative;
+	border-radius: 100px;
+	transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+	background-size: 30px 30px;
+	animation: progressStripes 2s linear infinite;
+}
+
+@keyframes progressStripes {
+	from {
+		background-position: 0 0;
+	}
+	to {
+		background-position: 30px 0;
+	}
+}
+
+.ant-progress-text {
+	display: inline-block;
+	margin-left: 8px;
+	font-size: 14px;
+	vertical-align: middle;
+	white-space: nowrap;
+	transition: all 0.3s;
+}
+
+.ant-progress-status-normal,
+.ant-progress-status-success,
+.ant-progress-status-exception,
+.ant-progress-status-active {
+	position: relative;
+}
+
+/* Advanced Animation for Ant Design Components */
+@keyframes floatUp {
+	0% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-5px);
+	}
+	100% {
+		transform: translateY(0);
+	}
+}
+
+@keyframes popIn {
+	0% {
+		transform: scale(0.8);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes shine {
+	0% {
+		background-position: -100px;
+	}
+	40%,
+	100% {
+		background-position: 140px;
+	}
+}
+
+/* Sparkle effect for interactive elements */
+.ant-btn:hover::before,
+.ant-select:hover::before,
+.ant-input:focus::before {
+	animation: sparkle 1.5s infinite;
+}
+
+@keyframes sparkle {
+	0% {
+		background-position: 0% 0%;
+		opacity: 0;
+	}
+	25% {
+		opacity: 1;
+	}
+	50% {
+		background-position: 100% 100%;
+		opacity: 0;
+	}
+	100% {
+		background-position: 0% 0%;
+		opacity: 0;
+	}
+}
+
+/* Box Shadow hover transitions for cards and interactive elements */
+.ant-card:hover,
+.ant-btn:hover,
+.ant-tag:hover,
+.ant-avatar:hover {
+	transition: all 0.3s cubic-bezier(0.34, 2.56, 0.64, 1);
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-	.ant-modal {
-		top: 10px !important; /* Adjust modal position for small screens */
+	.ant-layout-sider {
+		max-width: 200px !important;
+		min-width: 200px !important;
+		width: 200px !important;
 	}
-	.ant-input,
-	.ant-btn {
-		font-size: 14px; /* Reduce font size for smaller screens */
+
+	.ant-layout-sider-collapsed {
+		max-width: 80px !important;
+		min-width: 80px !important;
+		width: 80px !important;
 	}
+
+	.ant-table-wrapper {
+		overflow-x: auto;
+	}
+
+	.ant-form-item-label {
+		text-align: left;
+	}
+}
+
+/* Micro-interactions for better UX */
+.ant-btn:active,
+.ant-switch:active,
+.ant-checkbox:active,
+.ant-radio:active {
+	transform: scale(0.95);
+}
+
+/* Glass morphism effects */
+.ant-card,
+.ant-modal-content,
+.ant-dropdown-menu,
+.ant-tooltip-inner,
+.ant-select-dropdown {
+	backdrop-filter: blur(4px);
+	background: rgba(255, 255, 255, 0.096);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Tooltip with glass effect */
+.ant-tooltip {
+	backdrop-filter: blur(3px);
+}
+
+.ant-tooltip-inner {
+	padding: 8px 12px;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ant-drawer-content-wrapper {
+	transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.ant-table-cell-fix-right {
+	background-color: transparent !important;
+}
+.ant-drawer-content {
+	backdrop-filter: blur(4px);
+}
+
+/* Message with floating animation */
+.ant-message-notice {
+	padding: 8px;
+	margin-bottom: 16px;
+}
+
+.ant-message-notice-content {
+	padding: 12px 16px;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	backdrop-filter: blur(8px);
+	animation: messageFloat 0.4s ease-out;
+}
+
+@keyframes messageFloat {
+	from {
+		opacity: 0;
+		transform: translateY(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Notification with slide effect */
+.ant-notification-notice {
+	padding: 12px;
+	margin-bottom: 16px;
+	border-radius: 8px;
+	backdrop-filter: blur(8px);
+	animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateX(100%);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Calendar with hover effects */
+.ant-picker-calendar {
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.ant-picker-cell {
+	transition: all 0.3s;
+}
+
+.ant-picker-cell:hover .ant-picker-calendar-date {
+	background: rgba(0, 0, 0, 0.04);
+	transform: scale(1.1);
+}
+
+.ant-picker-cell-selected .ant-picker-calendar-date {
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Tree with dynamic animations */
+.ant-tree-treenode {
+	transition: all 0.3s;
+	padding: 4px 0;
+}
+
+.ant-tree-treenode:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.ant-tree-node-content-wrapper {
+	transition: all 0.3s;
+	border-radius: 4px;
+	margin: 0 4px;
+}
+
+.ant-tree-node-content-wrapper:hover {
+	transform: translateX(4px);
+}
+
+/* Timeline with smooth transitions */
+.ant-timeline-item {
+	padding-bottom: 24px;
+}
+
+.ant-timeline-item-head {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	transition: all 0.3s;
+	transform: rotate(45deg);
+}
+
+.ant-timeline-item:hover .ant-timeline-item-head {
+	transform: scale(1.2);
+	box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
+}
+
+.ant-timeline-item-content {
+	transition: all 0.3s;
+}
+
+.ant-timeline-item:hover .ant-timeline-item-content {
+	transform: translateX(8px);
+}
+
+/* Transfer with improved interactions */
+.ant-transfer-list {
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-transfer-list-content-item {
+	transition: all 0.3s;
+	margin: 4px;
+	border-radius: 4px;
+}
+
+.ant-transfer-list-content-item:hover {
+	transform: translateX(4px);
+}
+
+/* Loading indicator improvements */
+.ant-spin-dot {
+	transform-origin: center;
+	animation: spinScale 1s infinite;
+	opacity: 0.8;
+}
+
+.ant-spin-dot-item {
+	border-radius: 0;
+}
+
+.ant-notification-notice-wrapper {
+	border-radius: 0;
+}
+
+@keyframes spinScale {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.2);
+	}
+}
+
+/* Enhanced focus states */
+*:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+	transition: box-shadow 0.3s ease;
+}
+
+/* Smooth scrollbar styling */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.02);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.15);
+	border-radius: 4px;
+	transition: all 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 0, 0, 0.25);
+}
+.ant-select-in-form-item {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%) !important;
+}
+.ant-select-selector {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%) !important;
+}
+.ant-input-number-input-wrap {
+	background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%) !important;
+	border-radius: 0px;
+}
+.ant-input-number {
+	border-radius: 0px;
 }

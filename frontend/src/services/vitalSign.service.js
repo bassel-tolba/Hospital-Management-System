@@ -1,9 +1,10 @@
+// vitalSign.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const VITAL_SIGNS_API_BASE_URL = `http://localhost:8080/api/vital-signs`;
+const VITAL_SIGNS_API_BASE_URL = `/api/vital-signs`;
 
 export const useVitalSignStore = create((set, get) => ({
 	vitalSigns: [],
@@ -22,12 +23,14 @@ export const useVitalSignStore = create((set, get) => ({
 				params: { page, size },
 				headers: { Authorization: `Bearer ${user?.token}` },
 			});
+			console.log("fetchVitalSigns response:", response.data);
 			set({
 				vitalSigns: response.data.content,
 				totalElements: response.data.totalElements,
 				loading: false,
 			});
 		} catch (error) {
+			console.error("Error fetching vital signs:", error);
 			set({ error: error.message, loading: false });
 			notification.error({
 				message: "Error",
@@ -40,14 +43,16 @@ export const useVitalSignStore = create((set, get) => ({
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			await axios.post(VITAL_SIGNS_API_BASE_URL, vitalSignData, {
+			const response = await axios.post(VITAL_SIGNS_API_BASE_URL, vitalSignData, {
 				headers: { Authorization: `Bearer ${user?.token}` },
 			});
+			console.log("createVitalSign response:", response.data);
 			notification.success({
 				message: "Success",
 				description: `Vital sign Created Successfully`,
 			});
 		} catch (error) {
+			console.error("Error creating vital sign:", error);
 			set({ loading: false });
 			if (error.response && error.response.data && error.response.data.errors) {
 				// Extract error messages from the server's response
@@ -72,14 +77,16 @@ export const useVitalSignStore = create((set, get) => ({
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			await axios.put(`${VITAL_SIGNS_API_BASE_URL}/${id}`, vitalSignData, {
+			const response = await axios.put(`${VITAL_SIGNS_API_BASE_URL}/${id}`, vitalSignData, {
 				headers: { Authorization: `Bearer ${user?.token}` },
 			});
+			console.log("updateVitalSign response:", response.data);
 			notification.success({
 				message: "Success",
 				description: `Vital sign updated Successfully`,
 			});
 		} catch (error) {
+			console.error("Error updating vital sign:", error);
 			set({ loading: false });
 			if (error.response && error.response.data && error.response.data.errors) {
 				// Extract error messages from the server's response
@@ -104,14 +111,16 @@ export const useVitalSignStore = create((set, get) => ({
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			await axios.delete(`${VITAL_SIGNS_API_BASE_URL}/${id}`, {
+			const response = await axios.delete(`${VITAL_SIGNS_API_BASE_URL}/${id}`, {
 				headers: { Authorization: `Bearer ${user?.token}` },
 			});
+			console.log("deleteVitalSign response:", response.data);
 			notification.success({
 				message: "Success",
 				description: `Vital sign Deleted Successfully`,
 			});
 		} catch (error) {
+			console.error("Error deleting vital sign:", error);
 			set({ error: error.message, loading: false });
 			notification.error({
 				message: "Error",

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mine.profile.website.models.Billing;
+import mine.profile.website.models.Patient;
 import mine.profile.website.models.Procedure;
 import mine.profile.website.models.ProcedureLog;
 import mine.profile.website.models.User;
@@ -20,9 +21,11 @@ public class ProcedureLogDTO {
     private String notes;
     private Long userId;
     private Long procedureId;
-    private Long billingId;
+    private Long billingId; // Keep billingId
+    private Long patientId; // Add patientId
 
-    public static ProcedureLog toEntity(ProcedureLogDTO dto, User user, Procedure procedure, Billing billing) {
+    public static ProcedureLog toEntity(ProcedureLogDTO dto, User user, Procedure procedure, Billing billing,
+            Patient patient) {
         ProcedureLog procedureLog = new ProcedureLog();
         procedureLog.setId(dto.getId());
         procedureLog.setStartTime(dto.getStartTime());
@@ -31,6 +34,7 @@ public class ProcedureLogDTO {
         procedureLog.setUser(user);
         procedureLog.setProcedure(procedure);
         procedureLog.setBilling(billing);
+        procedureLog.setPatient(patient); // Set the patient
         return procedureLog;
     }
 
@@ -45,6 +49,7 @@ public class ProcedureLogDTO {
         if (entity.getBilling() != null) {
             dto.setBillingId(entity.getBilling().getId());
         }
+        dto.setPatientId(entity.getPatient().getId()); // Set the patientId in the DTO
         return dto;
     }
 }

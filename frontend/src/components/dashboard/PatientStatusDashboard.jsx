@@ -7,6 +7,14 @@ import "./Dashboard.css";
 
 const { Title } = Typography;
 
+const getSeverityColor = (percent) => {
+	if (percent >= 100) return "#ff0000";
+	if (percent >= 80) return "#ff4d4d";
+	if (percent >= 60) return "#ff9933";
+	if (percent >= 40) return "#ffcc00";
+	return "#87d068";
+};
+
 const PatientStatusDashboard = ({ isOpen }) => {
 	//Add isOpen prop
 	const { fetchPatientStatusOverview } = useDashboardStore();
@@ -53,17 +61,23 @@ const PatientStatusDashboard = ({ isOpen }) => {
 			dataIndex: "severityLevel",
 			key: "severityLevel",
 			sorter: (a, b) => a.severityLevel - b.severityLevel,
-			render: (level) => (
-				<Progress
-					type="circle"
-					percent={level * 20} // Assuming severity is 1-5, so multiply by 20 for percentage
-					width={50}
-					strokeColor={{
-						"0%": "#108ee9",
-						"100%": "#87d068",
-					}}
-				/>
-			),
+			render: (level) => {
+				const percent = level * 20;
+				const color = getSeverityColor(percent);
+				return (
+					<div className={`severity-circle ${percent >= 100 ? "danger-pulse" : ""}`} style={{ padding: "3px" }}>
+						<Progress
+							type="circle"
+							percent={percent}
+							width={50}
+							strokeColor={{
+								"0%": getSeverityColor(percent - 20),
+								"100%": color,
+							}}
+						/>
+					</div>
+				);
+			},
 		},
 		{
 			title: "Number of Patients",

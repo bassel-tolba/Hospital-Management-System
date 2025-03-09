@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import
 
-const ROLE_API_BASE_URL = `http://localhost:8080/api/roles`;
+const ROLE_API_BASE_URL = `/api/roles`;
 
 export const useRoleStore = create((set, get) => ({
 	// Added get

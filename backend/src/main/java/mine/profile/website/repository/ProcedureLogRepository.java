@@ -12,6 +12,9 @@ import mine.profile.website.models.ProcedureLog;
 public interface ProcedureLogRepository extends JpaRepository<ProcedureLog, Long> {
     List<ProcedureLog> findByBillingId(Long billingId);
 
+    // Changed to return Page<ProcedureLog> and accept Pageable
+    Page<ProcedureLog> findByPatientId(Long patientId, Pageable pageable);
+
     Page<ProcedureLog> findByUserId(Long userId, Pageable pageable);
 
     // Dashboard Queries

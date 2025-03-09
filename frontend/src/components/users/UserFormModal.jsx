@@ -6,16 +6,18 @@ import { useUnitStore } from "../../services/unit.service";
 import { useRoomStore } from "../../services/room.service";
 import { useRoleStore } from "../../services/role.service";
 import { useAuthStore } from "../../services/auth.service";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined, ClearOutlined } from "@ant-design/icons"; // Import ClearOutlined
+import { useUserStore } from "../../services/user.service"; // Import useUserStore
 
 const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedUser, currentUser }) => {
+	// ... (All your existing state and useEffect hooks) ...
 	const { patients, searchPatients, clearError } = usePatientStore();
 	const { units, fetchAllUnits } = useUnitStore();
 	const { rooms, fetchAllRooms } = useRoomStore();
 	const { roles, fetchAllRoles } = useRoleStore();
 	const [patientSearchTerm, setPatientSearchTerm] = useState("");
 	const [filteredRooms, setFilteredRooms] = useState([]);
-	const [selectedUnits, setSelectedUnits] = useState([]); // Store selectedUnits as an array
+	const [selectedUnits, setSelectedUnits] = useState([]);
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [selectedPatients, setSelectedPatients] = useState([]);
 	const [changePassword, setChangePassword] = useState(false);
@@ -27,18 +29,19 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 	const [fileType, setFileType] = useState(null);
 
 	const { hasAuthority } = useAuthStore();
+	const { updateUserPatients, updateUserRooms, updateUserUnits } = useUserStore(); // Get update functions
 
 	useEffect(() => {
-		if (selectedUser) {
-			setSelectedUnits(selectedUser.unitIds || []); // Initialize with an array
-		} else {
-			setSelectedUnits([]);
-		}
-		setExistingProfilePicture(null);
-		setChangePassword(false);
-		setNewPassword("");
+		console.log("UserFormModal useEffect (Overall) - Start");
+		console.log("  selectedUser:", selectedUser);
 
 		if (selectedUser) {
+			setSelectedUnits(selectedUser.unitIds || []);
+			setSelectedPatients(selectedUser.patientIds || []);
+			console.log("  Initial selectedUnits:", selectedUser.unitIds || []);
+			console.log("  Initial selectedRooms:", selectedUser.roomIds || []);
+			console.log("  Initial selectedPatients:", selectedUser.patientIds || []);
+
 			form.setFieldsValue({
 				...selectedUser,
 				roleId: selectedUser.roleId,
@@ -46,20 +49,22 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 				roomIds: selectedUser.roomIds || [],
 				patientIds: selectedUser.patientIds || [],
 			});
-			if (selectedUser.profilePictureURL) {
-				setExistingProfilePicture({
-					url: transformImageUrl(selectedUser.profilePictureURL),
-					originalUrl: selectedUser.profilePictureURL,
-				});
-			}
+			console.log("  Form values after initial setFieldsValue:", form.getFieldsValue());
 		} else {
-			setProfilePicture(null);
-			setExistingProfilePicture(null);
+			setSelectedUnits([]);
+			setSelectedPatients([]);
 			form.resetFields();
+			console.log("  Form values after resetFields:", form.getFieldsValue());
 		}
+
+		setExistingProfilePicture(null);
+		setChangePassword(false);
+		setNewPassword("");
+		console.log("UserFormModal useEffect (Overall) - End");
 	}, [selectedUser, form, isVisible]);
 
 	useEffect(() => {
+		console.log("UserFormModal useEffect (isVisible) - isVisible:", isVisible);
 		if (isVisible) {
 			fetchAllRooms();
 			fetchAllUnits();
@@ -73,14 +78,17 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 	}, [isVisible, fetchAllRooms, fetchAllRoles, selectedUser, fetchAllUnits]);
 
 	useEffect(() => {
+		console.log("UserFormModal useEffect (selectedUnits, rooms) - selectedUnits:", selectedUnits, "rooms:", rooms);
 		if (rooms?.content) {
-			setFilteredRooms(rooms.content.filter((room) => selectedUnits.includes(room.unitId))); // Filter by selectedUnits
+			setFilteredRooms(rooms.content.filter((room) => selectedUnits.includes(room.unitId)));
 		}
 	}, [selectedUnits, rooms]);
 
 	const fetchPatients = async (value) => {
+		console.log("fetchPatients called with value:", value);
 		try {
 			const searchResults = await searchPatients({ searchTerm: value, page: 0, size: 10 });
+			console.log("fetchPatients searchResults:", searchResults);
 			setPatientOptions(
 				searchResults?.content?.map((patient) => ({
 					label: `${patient.firstName} ${patient.lastName}`,
@@ -95,30 +103,68 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 	};
 
 	const handlePatientSearch = (value) => {
+		console.log("handlePatientSearch called with value:", value);
 		setPatientSearchTerm(value);
 		fetchPatients(value);
 	};
-
 	const handleUnitChange = (values) => {
-		// values is now an array
-		setSelectedUnits(values); // Update selectedUnits state
-		form.setFieldsValue({ unitIds: values, roomIds: [] }); // Update the form, and clear rooms
+		console.log("handleUnitChange called with values:", values);
+		console.log("  selectedUnits (before):", selectedUnits);
+
+		setSelectedUnits(values);
+
+		if (values.length === 0) {
+			console.log("  Clearing unitIds and roomIds in form");
+			form.setFieldsValue({ unitIds: undefined, roomIds: undefined });
+		} else {
+			console.log("  Setting unitIds and clearing roomIds in form");
+			form.setFieldsValue({ unitIds: values, roomIds: [] });
+		}
+
+		console.log("  selectedUnits (after):", values); // Log the *new* values
+		console.log("  Form values after handleUnitChange:", form.getFieldsValue());
 	};
 
-	const handleRoomChange = (value) => {
-		form.setFieldsValue({ roomIds: value });
+	const handleRoomChange = (values) => {
+		console.log("handleRoomChange called with values:", values);
+		console.log("  selectedRooms (before - not directly tracked, but derived from form):", form.getFieldValue("roomIds"));
+
+		// setSelectedRooms(values); // No need for a separate selectedRooms state
+
+		if (values.length === 0) {
+			console.log("  Clearing roomIds in form");
+			form.setFieldsValue({ roomIds: undefined });
+		} else {
+			console.log("  Setting roomIds in form");
+			form.setFieldsValue({ roomIds: values });
+		}
+
+		console.log("  selectedRooms (after - derived from form):", form.getFieldValue("roomIds")); // Log after setting
+		console.log("  Form values after handleRoomChange:", form.getFieldsValue());
 	};
 
 	const handlePatientSelect = (patientId) => {
+		console.log("handlePatientSelect called with patientId:", patientId);
 		if (!selectedPatients.includes(patientId)) {
-			setSelectedPatients([...selectedPatients, patientId]);
+			const newSelectedPatients = [...selectedPatients, patientId];
+			setSelectedPatients(newSelectedPatients);
+			console.log("selectedPatients after adding:", newSelectedPatients);
+			// Update the form value immediately:
+			form.setFieldsValue({ patientIds: newSelectedPatients });
+			console.log("Form values after handlePatientSelect:", form.getFieldsValue());
 		}
 		setPatientSearchTerm("");
 		setPatientOptions([]);
 	};
 
 	const handlePatientRemove = (patientId) => {
-		setSelectedPatients(selectedPatients.filter((id) => id !== patientId));
+		console.log("handlePatientRemove called with patientId:", patientId);
+		const newSelectedPatients = selectedPatients.filter((id) => id !== patientId);
+		setSelectedPatients(newSelectedPatients);
+		console.log("selectedPatients after removing:", newSelectedPatients);
+		// Update the form value immediately:
+		form.setFieldsValue({ patientIds: newSelectedPatients });
+		console.log("Form values after handlePatientRemove:", form.getFieldsValue());
 	};
 
 	const toggleChangePassword = () => {
@@ -140,7 +186,9 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 	};
 
 	const handleWrappedSubmit = async () => {
+		console.log("handleWrappedSubmit called");
 		let values = await form.validateFields();
+		console.log("  Form values in handleWrappedSubmit (before updates):", values);
 
 		if (changePassword) {
 			values.password = newPassword;
@@ -148,7 +196,8 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 			delete values.password;
 		}
 		values.profilePicture = profilePicture;
-
+		console.log("  Form values in handleWrappedSubmit (after updates):", values);
+		console.log("  selectedPatients in handleWrappedSubmit:", selectedPatients);
 		onSubmit(values);
 	};
 	const handleImageChange = ({ fileList }) => {
@@ -181,6 +230,25 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 		setFileType(null);
 	};
 
+	// NEW FUNCTION: Explicitly clear associations
+	const handleClearAssociations = async () => {
+		if (!selectedUser) return; // Only works for existing users
+
+		try {
+			await updateUserUnits(selectedUser.id, []);
+			await updateUserRooms(selectedUser.id, []);
+			await updateUserPatients(selectedUser.id, []);
+			// Update the form and local state to reflect the cleared associations
+			form.setFieldsValue({ unitIds: undefined, roomIds: undefined, patientIds: undefined });
+			setSelectedUnits([]);
+			setSelectedPatients([]);
+			//fetchUsers(); // DO NOT fetch here.  Let UserList handle the refresh.
+		} catch (error) {
+			console.error("Error clearing associations:", error);
+			// Handle error (show notification, etc.)
+		}
+	};
+
 	return (
 		<Modal
 			title={selectedUser ? "Edit User" : "Add User"}
@@ -190,6 +258,26 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 				<Button key="cancel" onClick={onCancel}>
 					Cancel
 				</Button>,
+				selectedUser && ( // Show only for editing users
+					<Button
+						key="clear"
+						type="default"
+						icon={<ClearOutlined />}
+						onClick={handleClearAssociations}
+						disabled={!hasAuthority("UPDATE_USER")}
+						style={{ color: "red", borderColor: "red" }}
+						className="clear-associations-button"
+						onMouseEnter={(e) => {
+							e.target.style.color = "darkred";
+							e.target.style.borderColor = "darkred";
+						}}
+						onMouseLeave={(e) => {
+							e.target.style.color = "red";
+							e.target.style.borderColor = "red";
+						}}>
+						Clear Associations
+					</Button>
+				),
 				<Button key="submit" type="primary" onClick={handleWrappedSubmit} loading={loading}>
 					{selectedUser ? "Update" : "Save"}
 				</Button>,
@@ -198,18 +286,17 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 				<Form.Item label="Username" name="username" rules={[{ required: true, message: "Please input username" }]}>
 					<Input disabled={!!selectedUser} />
 				</Form.Item>
-
 				{!selectedUser && (
 					<Form.Item label="Password" name="password" rules={[{ required: true, message: "Please input password" }]}>
 						<Input.Password />
 					</Form.Item>
 				)}
-
 				{selectedUser && (
 					<>
 						<Button type="link" onClick={toggleChangePassword}>
 							{changePassword ? "Cancel Change Password" : "Change Password"}
 						</Button>
+						,
 						{changePassword && (
 							<Form.Item label="New Password" name="password">
 								<Input.Password autoComplete="new-password" value={newPassword} onChange={handleNewPasswordChange} />
@@ -217,7 +304,6 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 						)}
 					</>
 				)}
-
 				<Form.Item label="First Name" name="firstName" rules={[{ required: true, message: "Please input first name" }]}>
 					<Input readOnly={!hasAuthority("UPDATE_USER")} />
 				</Form.Item>
@@ -236,7 +322,6 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 						))}
 					</Select>
 				</Form.Item>
-
 				{/* Unit Selection */}
 				<Form.Item label="Units" name="unitIds">
 					<Select
@@ -252,7 +337,6 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 						))}
 					</Select>
 				</Form.Item>
-
 				{/* Room Selection (Filtered by selected unit) */}
 				<Form.Item label="Rooms" name="roomIds">
 					<Select
@@ -268,7 +352,6 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 						))}
 					</Select>
 				</Form.Item>
-
 				{/* Patient Selection (using AutoComplete) */}
 				<Form.Item label="Patients" name="patientIds">
 					<AutoComplete
@@ -335,7 +418,6 @@ const UserFormModal = ({ isVisible, onCancel, onSubmit, form, loading, selectedU
 						</div>
 					</Form.Item>
 				)}
-
 				{/* Profile Picture Upload */}
 				<Form.Item label="Profile Picture">
 					<Upload

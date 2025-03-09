@@ -1,10 +1,11 @@
+// admission.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const ADMISSION_API_BASE_URL = `http://localhost:8080/api/admissions`;
-const ADMISSION_TYPE_API_BASE_URL = `http://localhost:8080/api/admissionTypes`;
+const ADMISSION_API_BASE_URL = `/api/admissions`;
+const ADMISSION_TYPE_API_BASE_URL = `/api/admissionTypes`;
 
 export const useAdmissionStore = create((set, get) => ({
 	admissions: [],
@@ -60,7 +61,7 @@ export const useAdmissionStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to create admission type: ${error?.response?.data?.message || error.message}`,
 			});
-			throw error;
+			throw error; // Re-throw the error so the calling component can handle it if needed.
 		}
 	},
 
@@ -78,8 +79,8 @@ export const useAdmissionStore = create((set, get) => ({
 				message: "Success",
 				description: "Admission type updated successfully.",
 			});
-			get().fetchAllAdmissionTypes();
-			return response.data;
+			get().fetchAllAdmissionTypes(); // Refresh the list
+			return response.data; // Return the updated data
 		} catch (error) {
 			set({ error: error.message, loading: false });
 			notification.error({
@@ -104,7 +105,7 @@ export const useAdmissionStore = create((set, get) => ({
 				message: "Success",
 				description: "Admission type deleted successfully.",
 			});
-			get().fetchAllAdmissionTypes();
+			get().fetchAllAdmissionTypes(); // Refresh the list
 		} catch (error) {
 			set({ error: error.message, loading: false });
 			notification.error({
@@ -136,7 +137,7 @@ export const useAdmissionStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to create admission: ${error?.response?.data?.message || error.message}`,
 			});
-			throw error;
+			throw error; // Re-throw for component-level handling
 		}
 	},
 
@@ -225,7 +226,7 @@ export const useAdmissionStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to update admission: ${error?.response?.data?.message || error.message}`,
 			});
-			throw error;
+			throw error; // Re-throw for component-level handling
 		}
 	},
 
@@ -249,7 +250,7 @@ export const useAdmissionStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to delete admission: ${error?.response?.data?.message || error.message}`,
 			});
-			throw error;
+			throw error; // Re-throw for component-level handling
 		}
 	},
 	searchAdmissions: async (searchParams) => {

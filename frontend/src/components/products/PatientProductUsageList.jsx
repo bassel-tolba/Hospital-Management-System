@@ -236,13 +236,13 @@ const PatientProductUsageList = () => {
 		if (usage) {
 			form.setFieldsValue({
 				...usage,
-				startTime: usage.startTime ? dayjs(usage.startTime).utc().local().format("YYYY-MM-DDTHH:mm") : null,
-				endTime: usage.endTime ? dayjs(usage.endTime).utc().local().format("YYYY-MM-DDTHH:mm") : null,
+				startTime: usage.startTime ? dayjs(usage.startTime).format("YYYY-MM-DDTHH:mm") : null,
+				endTime: usage.endTime ? dayjs(usage.endTime).format("YYYY-MM-DDTHH:mm") : null,
 				quantity: usage.quantity || null,
 			});
 			setQuantity(usage.quantity || null);
-			setStartTime(usage.startTime ? dayjs(usage.startTime).utc().local().format("YYYY-MM-DDTHH:mm") : null);
-			setEndTime(usage.endTime ? dayjs(usage.endTime).utc().local().format("YYYY-MM-DDTHH:mm") : null);
+			setStartTime(usage.startTime ? dayjs(usage.startTime).format("YYYY-MM-DDTHH:mm") : null);
+			setEndTime(usage.endTime ? dayjs(usage.endTime).format("YYYY-MM-DDTHH:mm") : null);
 			const patient = patients?.find((p) => p.id === usage.patientId);
 			if (patient) {
 				form.setFieldsValue({ patientId: patient.id });
@@ -291,8 +291,8 @@ const PatientProductUsageList = () => {
 			const values = await form.validateFields();
 			const formattedValues = {
 				...values,
-				startTime: values.startTime ? dayjs(values.startTime).utc().toISOString() : null,
-				endTime: values.endTime ? dayjs(values.endTime).utc().toISOString() : null,
+				startTime: values.startTime ? dayjs(values.startTime).toISOString() : null,
+				endTime: values.endTime ? dayjs(values.endTime).toISOString() : null,
 			};
 			if (selectedPatient) {
 				formattedValues.patientId = selectedPatient.id;
@@ -369,7 +369,7 @@ const PatientProductUsageList = () => {
 		if (!time) {
 			return "N/A";
 		}
-		const localTime = dayjs(time).local();
+		const localTime = dayjs(time);
 		const relativeTime = localTime.fromNow();
 		return (
 			<Tooltip title={localTime.format("YYYY-MM-DD HH:mm:ss")}>

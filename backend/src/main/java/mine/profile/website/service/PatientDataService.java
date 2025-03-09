@@ -171,7 +171,7 @@ public class PatientDataService {
     public Page<VitalSignDTO> getVitalSignsByPatientId(Long patientId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<VitalSign> vitalSigns = vitalSignRepository.findByPatientId(patientId, pageable);
-        return vitalSigns.map(entityMapper::toDto);
+        return vitalSigns.map(VitalSignDTO::toDto);
     }
 
     @Transactional(readOnly = true)

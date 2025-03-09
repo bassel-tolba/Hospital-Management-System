@@ -1,11 +1,12 @@
 // VoiceNavigation.js
 import React, { useState, useRef, useEffect } from "react";
-import { Button, notification } from "antd";
-import { AudioOutlined } from "@ant-design/icons";
+import { Button, notification, Tooltip, Grid } from "antd";
+import { AudioOutlined, AudioMutedOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useAuthStore } from "./services/auth.service";
 
 const VoiceNavigation = ({ onNavigate }) => {
 	const [isRecording, setIsRecording] = useState(false);
+	const [isProcessing, setIsProcessing] = useState(false);
 	const mediaRecorder = useRef(null);
 	const recordedChunks = useRef([]);
 	const [volume, setVolume] = useState(0); // Add volume state
@@ -13,8 +14,40 @@ const VoiceNavigation = ({ onNavigate }) => {
 	const analyser = useRef(null);
 	const dataArray = useRef(null);
 	const animationFrameId = useRef(null);
+	const silenceTimer = useRef(null);
+	const lastVolumesRef = useRef([]);
+	const { xs } = Grid.useBreakpoint();
 
 	const { user } = useAuthStore();
+
+	// Silence detection configuration
+	const SILENCE_THRESHOLD = 0.1;
+	const SILENCE_DURATION = 1000; // 2 seconds
+	const VOLUME_MEMORY = 10; // Number of volume samples to keep
+
+	const updateSilenceDetection = (currentVolume) => {
+		lastVolumesRef.current.push(currentVolume);
+		if (lastVolumesRef.current.length > VOLUME_MEMORY) {
+			lastVolumesRef.current.shift();
+		}
+
+		const averageVolume = lastVolumesRef.current.reduce((a, b) => a + b, 0) / lastVolumesRef.current.length;
+
+		if (averageVolume < SILENCE_THRESHOLD) {
+			if (!silenceTimer.current) {
+				silenceTimer.current = setTimeout(() => {
+					if (isRecording && !isProcessing) {
+						stopRecording();
+					}
+				}, SILENCE_DURATION);
+			}
+		} else {
+			if (silenceTimer.current) {
+				clearTimeout(silenceTimer.current);
+				silenceTimer.current = null;
+			}
+		}
+	};
 
 	useEffect(() => {
 		let stream = null;
@@ -51,6 +84,7 @@ const VoiceNavigation = ({ onNavigate }) => {
 					const peakFactor = peakCount / dataArray.current.length;
 					const normalizedVolume = (average / 255) * (1 + peakFactor);
 
+					updateSilenceDetection(normalizedVolume);
 					setVolume(Math.min(normalizedVolume, 1));
 					animationFrameId.current = requestAnimationFrame(updateVolume);
 				};
@@ -104,6 +138,7 @@ const VoiceNavigation = ({ onNavigate }) => {
 	};
 
 	const startRecording = async () => {
+		lastVolumesRef.current = [];
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			mediaRecorder.current = new MediaRecorder(stream);
@@ -133,7 +168,12 @@ const VoiceNavigation = ({ onNavigate }) => {
 	};
 
 	const stopRecording = () => {
+		if (silenceTimer.current) {
+			clearTimeout(silenceTimer.current);
+			silenceTimer.current = null;
+		}
 		if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
+			setIsProcessing(true);
 			mediaRecorder.current.stop();
 		}
 	};
@@ -143,7 +183,7 @@ const VoiceNavigation = ({ onNavigate }) => {
 			const formData = new FormData();
 			formData.append("audio", audioBlob, "navigation-audio.webm");
 
-			const response = await fetch(`http://localhost:8080/api/gemini/navigate`, {
+			const response = await fetch(`/api/gemini/navigate`, {
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
@@ -182,30 +222,69 @@ const VoiceNavigation = ({ onNavigate }) => {
 				message: "Navigation Error",
 				description: `Failed to process navigation: ${error.message}`,
 			});
+		} finally {
+			setIsProcessing(false);
 		}
 	};
 
-	const buttonColor = isRecording ? getVolumeColor(volume) : "none";
-	const buttonStyle = {
-		backgroundColor: buttonColor,
-		borderColor: buttonColor,
-		transform: isRecording ? `scale(${1 + volume * 0.2})` : "scale(1)", // Add size pulsing
-		transition: "all 0.1s ease-out", // Faster transition for more responsive feel
-		boxShadow: isRecording
-			? `0 0 ${20 + volume * 30}px ${buttonColor}` // Dynamic glow effect
-			: "none",
+	const getButtonStyle = () => {
+		const baseStyle = {
+			transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+		};
+
+		if (isProcessing) {
+			return {
+				...baseStyle,
+				animation: "pulse 2s infinite",
+				backgroundColor: "#1890ff",
+				borderColor: "#1890ff",
+				transform: "scale(1.05)",
+			};
+		}
+
+		if (isRecording) {
+			const buttonColor = getVolumeColor(volume);
+			return {
+				...baseStyle,
+				backgroundColor: buttonColor,
+				borderColor: buttonColor,
+				transform: `scale(${1 + volume * 0.2})`,
+				boxShadow: `0 0 ${20 + volume * 30}px ${buttonColor}`,
+			};
+		}
+
+		return baseStyle;
 	};
 
 	return (
-		<Button
-			type={isRecording ? "primary" : "default"}
-			// danger={isRecording} // Remove danger, as we handle color dynamically
-			icon={<AudioOutlined />}
-			onClick={isRecording ? stopRecording : startRecording}
-			style={buttonStyle} // Apply dynamic styles
-		>
-			{isRecording ? "Recording..." : "Voice Navigate"}
-		</Button>
+		<Tooltip title={`${isRecording ? "Stop" : "Start"} voice navigation`}>
+			<Button
+				ghost
+				icon={isProcessing ? <LoadingOutlined /> : isRecording ? <AudioOutlined /> : <AudioMutedOutlined />}
+				onClick={isRecording ? stopRecording : startRecording}
+				type={isRecording || isProcessing ? "primary" : "default"}
+				style={getButtonStyle()}
+				disabled={isProcessing}>
+				{/* Only show text on larger screens */}
+				{!xs && (isProcessing ? "Processing..." : isRecording ? "Recording..." : "Voice Navigate")}
+			</Button>
+			<style jsx>{`
+				@keyframes pulse {
+					0% {
+						transform: scale(1);
+						box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.7);
+					}
+					70% {
+						transform: scale(1.05);
+						box-shadow: 0 0 0 10px rgba(24, 144, 255, 0);
+					}
+					100% {
+						transform: scale(1);
+						box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+					}
+				}
+			`}</style>
+		</Tooltip>
 	);
 };
 

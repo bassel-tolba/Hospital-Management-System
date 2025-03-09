@@ -76,21 +76,21 @@ const DashboardContent = ({ loading, error, chartData, granularity, colorMode })
 					items: [{ name: "Admissions", field: "count" }],
 				});
 
-			// Apply the theme *after* initial chart setup.
-			newChart.theme(g2Themes[colorMode]); // Use the mapping function.
+			// Apply theme
+			newChart.theme(g2Themes[colorMode]);
 			newChart.render();
 			setChart(newChart);
 		} else if (chart && chartData.length > 0) {
 			chart.changeData(chartData);
-			chart.theme(g2Themes[colorMode]); // Update theme on data/colorMode change
+			chart.theme(g2Themes[colorMode]); // Update theme when data changes
 		}
-		//clean up
+
 		return () => {
 			if (chart) {
 				chart.destroy();
 			}
 		};
-	}, [chartData, granularity, colorMode]); // Add colorMode to dependencies
+	}, [chartData, granularity, colorMode]);
 
 	if (loading) {
 		return (

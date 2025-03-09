@@ -4,7 +4,7 @@ import { notification } from "antd";
 import { useAuthStore } from "../auth.service";
 import moment from "moment";
 
-const MEDICATION_API_BASE_URL = `http://localhost:8080/api/medications`;
+const MEDICATION_API_BASE_URL = `/api/medications`;
 
 export const useMedicationHistoryStore = create((set, get) => ({
 	medicationHistory: [],

@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const BED_API_BASE_URL = `http://localhost:8080/api/beds`;
+const BED_API_BASE_URL = `/api/beds`;
 
 export const useBedStore = create((set, get) => ({
 	beds: [],

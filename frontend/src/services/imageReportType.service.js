@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
 import { notification } from "antd";
 
-const IMAGE_REPORT_TYPE_API_BASE_URL = `http://localhost:8080/api/imagereporttypes`;
+const IMAGE_REPORT_TYPE_API_BASE_URL = `/api/imagereporttypes`;
 
 export const useImageReportTypeStore = create((set, get) => ({
 	imageReportTypes: [],

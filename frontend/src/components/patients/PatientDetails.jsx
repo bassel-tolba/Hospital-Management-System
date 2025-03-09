@@ -521,7 +521,7 @@ const PatientDetails = () => {
 	const handleSaveQuickNotes = async (patientId, notes) => {
 		try {
 			// Call your API endpoint to save the notes
-			const response = await fetch(`http://localhost:8080/api/patients/${patientId}/notes`, {
+			const response = await fetch(`/api/patients/${patientId}/notes`, {
 				method: "PUT", // Or POST, depending on your API design
 				headers: {
 					"Content-Type": "application/json",

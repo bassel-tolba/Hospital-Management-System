@@ -1,4 +1,5 @@
 // frontend/src/components/User/UserList.js
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Table, Input, Button, Space, Typography, notification, Form, Select, Avatar } from "antd"; // Import Avatar
 import { useUserStore } from "../../services/user.service";
@@ -77,6 +78,7 @@ const UserList = () => {
 		return `${fileUrl}`;
 	};
 	const showModal = (user) => {
+		console.log("showModal called with user:", user);
 		setSelectedUser(user);
 		if (user) {
 			form.setFieldsValue({
@@ -86,16 +88,20 @@ const UserList = () => {
 				roomIds: user.roomIds || [], // Ensure arrays
 				patientIds: user.patientIds || [], // Ensure arrays
 			});
+			console.log("Form values after setFieldsValue:", form.getFieldsValue());
 		} else {
 			form.resetFields();
+			console.log("Form values after resetFields:", form.getFieldsValue());
 		}
 		setIsModalVisible(true);
 	};
 
 	const handleCancel = () => {
+		console.log("handleCancel called");
 		setIsModalVisible(false);
 		setSelectedUser(null);
 		form.resetFields();
+		console.log("Form values after resetFields in handleCancel:", form.getFieldsValue());
 	};
 	const handleRoleChange = (value) => {
 		setRoleFilter(value);
@@ -103,9 +109,16 @@ const UserList = () => {
 	};
 
 	const handleFormSubmit = async () => {
+		console.log("handleFormSubmit called");
 		try {
 			const values = await form.validateFields();
+			console.log("Form values after validateFields:", values);
+
 			const { unitIds, roomIds, patientIds, profilePicture, ...coreUserData } = values;
+			console.log("Core user data:", coreUserData);
+			console.log("unitIds:", unitIds);
+			console.log("roomIds:", roomIds);
+			console.log("patientIds:", patientIds);
 
 			let removedProfilePictureUrl = null;
 			if (selectedUser && selectedUser.profilePictureURL && !profilePicture) {
@@ -121,6 +134,7 @@ const UserList = () => {
 				}
 				// Update core user data
 				updatedUser = await updateUser(selectedUser.id, coreUserData, profilePicture, removedProfilePictureUrl);
+				console.log("Updated user (core data):", updatedUser);
 			} else {
 				if (!hasAuthority("CREATE_USER")) {
 					notification.error({ message: "Error", description: "You do not have permission to create users." });
@@ -128,23 +142,27 @@ const UserList = () => {
 				}
 				// Create user, and get the created user's ID.
 				updatedUser = await createUser(coreUserData, profilePicture);
+				console.log("Created user:", updatedUser);
 			}
 
 			// Update related entities only if the arrays are not empty, and *after* core user creation/update
 			if (unitIds && unitIds.length > 0) {
+				console.log("Calling updateUserUnits with userId:", updatedUser.id, "and unitIds:", unitIds);
 				await updateUserUnits(updatedUser.id, unitIds);
 			}
 			if (roomIds && roomIds.length > 0) {
+				console.log("Calling updateUserRooms with userId:", updatedUser.id, "and roomIds:", roomIds);
 				await updateUserRooms(updatedUser.id, roomIds);
 			}
 			if (patientIds && patientIds.length > 0) {
+				console.log("Calling updateUserPatients with userId:", updatedUser.id, "and patientIds:", patientIds);
 				await updateUserPatients(updatedUser.id, patientIds);
 			}
-
-			fetchUsers();
+			// Move fetchUsers *after* the modal is closed and form is reset
 			setIsModalVisible(false);
 			form.resetFields();
 			setSelectedUser(null);
+			fetchUsers(); //  <--- MOVED HERE
 		} catch (error) {
 			console.error("Error in handle form submit", error);
 			notification.error({
@@ -155,6 +173,7 @@ const UserList = () => {
 	};
 
 	const handleDelete = async (userId) => {
+		console.log("handleDelete called with userId:", userId);
 		if (!hasAuthority("DELETE_USER")) {
 			notification.error({ message: "Error", description: "You do not have permission to delete users." });
 			return; // Prevent the delete
@@ -168,12 +187,14 @@ const UserList = () => {
 	};
 
 	const handleTableChange = (pagination) => {
+		console.log("handleTableChange called with pagination:", pagination);
 		setPage(pagination.current);
 		setSize(pagination.pageSize);
 	};
 
 	const handleSearch = useCallback(
 		debounce((value) => {
+			console.log("handleSearch (debounced) called with value:", value);
 			setSearchParams({ search: value });
 			setPage(1); // Reset to the first page on new search
 		}, 500),
@@ -181,19 +202,20 @@ const UserList = () => {
 	);
 	const handleInputChange = (e) => {
 		const { value } = e.target;
+		console.log("handleInputChange called with value:", value);
 		setSearchTerm(value); // Update local search term state
 		handleSearch(value); // Call debounced search
 	};
 
 	const columns = [
-		// New column for profile picture
 		{
 			title: "Profile Picture",
 			dataIndex: "profilePictureURL",
 			key: "profilePictureURL",
+			responsive: ["md"], // Only show on medium screens and up
 			render: (text, record) => (
 				<Avatar
-					size={40}
+					size={window.innerWidth <= 768 ? 30 : 40}
 					src={record.profilePictureURL ? transformImageUrl(record.profilePictureURL) : null}
 					style={{ objectFit: "cover", border: "2px solid #ddd", borderColor: "snow" }}
 				/>
@@ -203,42 +225,58 @@ const UserList = () => {
 			title: "Username",
 			dataIndex: "username",
 			key: "username",
+			ellipsis: true,
 		},
 		{
 			title: "Role",
 			dataIndex: "roleName",
 			key: "roleName",
+			responsive: ["sm"], // Only show on small screens and up
+			ellipsis: true,
 		},
 		{
 			title: "First Name",
 			dataIndex: "firstName",
 			key: "firstName",
+			responsive: ["sm"], // Only show on small screens and up
+			ellipsis: true,
 		},
 		{
 			title: "Last Name",
 			dataIndex: "lastName",
 			key: "lastName",
+			responsive: ["sm"], // Only show on small screens and up
+			ellipsis: true,
 		},
 		{
 			title: "Specialty",
 			dataIndex: "specialty",
 			key: "specialty",
+			responsive: ["md"], // Only show on medium screens and up
+			ellipsis: true,
 		},
 		{
 			title: "Actions",
 			key: "actions",
+			fixed: "right", // Keep actions visible when scrolling horizontally
 			render: (text, record) => (
-				<Space size="middle">
-					{/* Edit button - only shown if the user has UPDATE_USER permission */}
+				<Space size="small" wrap>
 					{hasAuthority("UPDATE_USER") && (
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-							Edit
+						<Button
+							type="default"
+							icon={<EditOutlined />}
+							onClick={() => showModal(record)}
+							size={window.innerWidth <= 768 ? "small" : "middle"}>
+							{window.innerWidth > 768 ? "Edit" : ""}
 						</Button>
 					)}
-					{/* Delete button - only shown if the user has DELETE_USER permission */}
 					{hasAuthority("DELETE_USER") && (
-						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-							Delete
+						<Button
+							type="danger"
+							icon={<DeleteOutlined />}
+							onClick={() => handleDelete(record.id)}
+							size={window.innerWidth <= 768 ? "small" : "middle"}>
+							{window.innerWidth > 768 ? "Delete" : ""}
 						</Button>
 					)}
 				</Space>
@@ -247,36 +285,52 @@ const UserList = () => {
 	];
 
 	return (
-		<div style={{ padding: 20 }}>
+		<div style={{ padding: "10px" }}>
 			<Title level={2}>User List</Title>
-			<Space style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", width: "100%" }}>
-				<Input.Search
-					placeholder="Search by username, role..."
-					onChange={handleInputChange}
-					style={{ width: 300 }}
-					value={searchTerm} // Controlled input
-				/>
-				<Space>
-					<Select
-						placeholder="Filter by Role"
-						style={{ width: 150 }}
-						onChange={handleRoleChange}
-						allowClear
-						loading={rolesLoading} // Show loading indicator
-					>
-						{roles.map((role) => (
-							<Option key={role.id} value={role.id}>
-								{role.name}
-							</Option>
-						))}
-					</Select>
-					{/* Create User button */}
-					{hasAuthority("CREATE_USER") && (
-						<Button type="default" onClick={() => showModal(null)}>
-							Add User
-						</Button>
-					)}
-				</Space>
+			<Space
+				direction="vertical"
+				style={{
+					marginBottom: 16,
+					width: "100%",
+				}}>
+				<div
+					style={{
+						display: "flex",
+						flexDirection: window.innerWidth <= 768 ? "column" : "row",
+						gap: "10px",
+						justifyContent: "space-between",
+						width: "100%",
+					}}>
+					<Input.Search
+						placeholder="Search by username, role..."
+						onChange={handleInputChange}
+						style={{
+							width: window.innerWidth <= 768 ? "100%" : 300,
+						}}
+						value={searchTerm}
+					/>
+					<Space
+						direction={window.innerWidth <= 768 ? "vertical" : "horizontal"}
+						style={{ width: window.innerWidth <= 768 ? "100%" : "auto" }}>
+						<Select
+							placeholder="Filter by Role"
+							style={{ width: window.innerWidth <= 768 ? "100%" : 150 }}
+							onChange={handleRoleChange}
+							allowClear
+							loading={rolesLoading}>
+							{roles.map((role) => (
+								<Option key={role.id} value={role.id}>
+									{role.name}
+								</Option>
+							))}
+						</Select>
+						{hasAuthority("CREATE_USER") && (
+							<Button type="default" onClick={() => showModal(null)} style={{ width: window.innerWidth <= 768 ? "100%" : "auto" }}>
+								Add User
+							</Button>
+						)}
+					</Space>
+				</div>
 			</Space>
 
 			<Table
@@ -285,12 +339,15 @@ const UserList = () => {
 				loading={loading}
 				rowKey="id"
 				pagination={{
-					current: page, // Use Ant Design's current directly
+					current: page,
 					pageSize: size,
 					total: total,
-					onChange: handleTableChange, // Simplified change handler
+					onChange: handleTableChange,
 					showSizeChanger: true,
+					responsive: true,
 				}}
+				scroll={{ x: true }} // Enable horizontal scrolling for small screens
+				style={{ overflowX: "auto" }} // Ensure table container is scrollable
 			/>
 
 			<UserFormModal

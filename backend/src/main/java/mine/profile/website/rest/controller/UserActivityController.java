@@ -26,8 +26,8 @@ public class UserActivityController {
     private UserActivityService userActivityService;
 
     @PostMapping
-    public ResponseEntity<UserActivityDTO> createUserActivity(@RequestBody UserActivityDTO userActivityDTO) {
-        UserActivityDTO createdActivity = userActivityService.createUserActivity(userActivityDTO);
+    public ResponseEntity<List<UserActivityDTO>> createUserActivity(@RequestBody UserActivityDTO userActivityDTO) {
+        List<UserActivityDTO> createdActivity = userActivityService.createUserActivity(userActivityDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdActivity);
     }
 
