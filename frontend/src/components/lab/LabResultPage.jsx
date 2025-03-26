@@ -35,7 +35,7 @@ const LabResultPage = () => {
 	const { labTests, fetchLabTests } = useLabStore();
 
 	const { user, hasAuthority } = useAuthStore(); // Get user and hasAuthority
-	const API_BASE_URL = `/api/lab-results`;
+	const API_BASE_URL = `http://localhost:8080/api/lab-results`;
 
 	// Permission Checks
 	const canCreateLabResult = hasAuthority("CREATE_LAB_RESULT");
@@ -362,7 +362,7 @@ const LabResultPage = () => {
 				</Col>
 				<Col xs={24} sm={12}>
 					{canCreateLabResult && (
-						<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
+						<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
 							Add New Lab Result
 						</Button>
 					)}

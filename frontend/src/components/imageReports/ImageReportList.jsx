@@ -314,7 +314,7 @@ const ImageReportList = () => {
 			render: (text, record) => (
 				<Space size="middle">
 					<Tooltip title="Edit">
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
 							edit
 						</Button>
 					</Tooltip>
@@ -349,7 +349,7 @@ const ImageReportList = () => {
 					/>
 				</Col>
 				<Col xs={24} sm={12}>
-					<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
+					<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
 						Add New Image Report
 					</Button>
 				</Col>
@@ -379,7 +379,7 @@ const ImageReportList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={() => form.submit()}>
+					<Button key="submit" type="primary" onClick={() => form.submit()}>
 						{selectedImageReport ? "Update" : "Save"}
 					</Button>,
 				]}

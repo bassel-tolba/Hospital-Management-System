@@ -183,7 +183,7 @@ const VoiceNavigation = ({ onNavigate }) => {
 			const formData = new FormData();
 			formData.append("audio", audioBlob, "navigation-audio.webm");
 
-			const response = await fetch(`/api/gemini/navigate`, {
+			const response = await fetch(`http://localhost:8080/api/gemini/navigate`, {
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
@@ -262,7 +262,7 @@ const VoiceNavigation = ({ onNavigate }) => {
 				ghost
 				icon={isProcessing ? <LoadingOutlined /> : isRecording ? <AudioOutlined /> : <AudioMutedOutlined />}
 				onClick={isRecording ? stopRecording : startRecording}
-				type={isRecording || isProcessing ? "primary" : "default"}
+				type={isRecording || isProcessing ? "primary" : "primary"}
 				style={getButtonStyle()}
 				disabled={isProcessing}>
 				{/* Only show text on larger screens */}

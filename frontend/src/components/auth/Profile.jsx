@@ -1,9 +1,11 @@
+// src/components/auth/Profile.js
 import React from "react";
 import { useAuthStore } from "../../services/auth.service";
 import { Button, Typography, Space, Alert, Card, Avatar, Tooltip, Row, Col } from "antd";
 import { UserOutlined, MedicineBoxOutlined, HeartOutlined, AuditOutlined, CheckCircleOutlined, KeyOutlined } from "@ant-design/icons";
 // Removed: motion, AnimatePresence (no longer needed)
 import styled from "styled-components";
+import { useTranslation } from "react-i18next"; // Import
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -36,28 +38,29 @@ const PermissionItem = styled.div`
 
 // Reusing your existing RoleIcon for consistency
 const RoleIcon = ({ role }) => {
+	const { t } = useTranslation(); // Use in sub-components if needed
 	switch (role) {
 		case "ADMIN":
 			return (
-				<Tooltip title="Administrator">
+				<Tooltip title={t("administrator")}>
 					<AuditOutlined style={{ fontSize: "24px", color: "#40a9ff" }} />
 				</Tooltip>
 			);
 		case "DOCTOR":
 			return (
-				<Tooltip title="Doctor">
+				<Tooltip title={t("doctor")}>
 					<MedicineBoxOutlined style={{ fontSize: "24px", color: "#52c41a" }} />
 				</Tooltip>
 			);
 		case "NURSE":
 			return (
-				<Tooltip title="Nurse">
+				<Tooltip title={t("nurse")}>
 					<HeartOutlined style={{ fontSize: "24px", color: "#eb2f96" }} />
 				</Tooltip>
 			);
 		case "HEAD_NURSE":
 			return (
-				<Tooltip title="Head Nurse">
+				<Tooltip title={t("head-nurse")}>
 					<HeartOutlined style={{ fontSize: "24px", color: "#c41a52" }} />
 				</Tooltip>
 			);
@@ -72,10 +75,11 @@ const transformImageUrl = (url) => {
 	if (fileUrl.startsWith(".")) {
 		fileUrl = fileUrl.substring(1);
 	}
-	return `/{fileUrl}`;
+	return `/${fileUrl}`;
 };
 const Profile = () => {
 	const { user, logout, status, error, clearError } = useAuthStore();
+	const { t } = useTranslation();
 
 	const handleLogout = () => {
 		logout();
@@ -93,12 +97,12 @@ const Profile = () => {
 					<Title level={2} style={{ textAlign: "center" }}>
 						<Space>
 							<KeyOutlined />
-							Profile
+							{t("profile")}
 						</Space>
 					</Title>
 
-					{status === "loading" && <Alert message="Loading..." type="info" />}
-					{error && <Alert message={`Error: ${error}`} type="error" />}
+					{status === "loading" && <Alert message={t("loading")} type="info" />}
+					{error && <Alert message={`${t("error")}: ${error}`} type="error" />}
 
 					{user ? (
 						<Space direction="vertical" size="middle" style={{ width: "100%" }}>
@@ -124,7 +128,7 @@ const Profile = () => {
 										</Text>
 									</Title>
 									<Text type="secondary" style={{ fontSize: "1.2rem" }}>
-										{user.roleName}
+										{t(user.roleName.toLowerCase())}
 									</Text>
 								</div>
 							</div>
@@ -142,13 +146,13 @@ const Profile = () => {
 										}}>
 										{[
 											{
-												label: "Username",
+												label: t("username"),
 												value: user.username,
 												icon: <UserOutlined style={{ color: "#1890ff" }} />,
 											},
 											{
-												label: "Specialty",
-												value: user.specialty || "Not Specified",
+												label: t("specialty"),
+												value: user.specialty || t("not-specified"),
 												icon: <MedicineBoxOutlined style={{ color: "#52c41a" }} />,
 											},
 										].map((item, index) => (
@@ -182,7 +186,7 @@ const Profile = () => {
 										title={
 											<div style={{ display: "flex", alignItems: "center" }}>
 												<AuditOutlined style={{ marginRight: "8px", color: "#722ed1" }} />
-												<Text strong>Permissions</Text>
+												<Text strong>{t("permissions")}</Text>
 											</div>
 										}
 										size="small"
@@ -200,12 +204,12 @@ const Profile = () => {
 														}}>
 														{/* Removed: motion.div, whileHover, transition */}
 														<CheckCircleOutlined style={{ color: "green" }} />
-														<Text>{permission}</Text>
+														<Text>{t(permission.toLowerCase().replace(/_/g, "-"))}</Text>
 													</PermissionItem>
 												))}
 											</div>
 										) : (
-											<Text type="secondary">No permissions found.</Text>
+											<Text type="secondary">{t("no-permissions-found")}</Text>
 										)}
 									</Card>
 								</Col>
@@ -213,13 +217,13 @@ const Profile = () => {
 							{/* Removed: motion.div, variants, whileHover, whileTap */}
 							<div style={{ display: "flex", justifyContent: "center", marginTop: 30 }}>
 								<Button type="primary" onClick={handleLogout} style={{ width: "200px" }}>
-									Logout
+									{t("logout")}
 								</Button>
 							</div>
 						</Space>
 					) : (
 						// Removed: motion.div, initial, animate, transition
-						<Text style={{ textAlign: "center" }}>You are not logged in</Text>
+						<Text style={{ textAlign: "center" }}>{t("you-are-not-logged-in")}</Text>
 					)}
 				</Space>
 			</StyledCard>

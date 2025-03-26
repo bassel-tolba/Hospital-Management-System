@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import mine.profile.website.models.LabResult;
@@ -28,4 +29,13 @@ public interface LabResultRepository extends JpaRepository<LabResult, Long> {
 
     @Query("SELECT lr.labTest.testName, COUNT(lr) FROM LabResult lr GROUP BY lr.labTest.testName ORDER BY COUNT(lr) DESC")
     List<Object[]> countLabResultsByTest();
+
+    // Sort by resultDateTime, latest first
+    Page<LabResult> findByPatientIdOrderByResultDateTimeDesc(Long patientId, Pageable pageable);
+
+    @Query("SELECT l FROM LabResult l WHERE l.patient.id = :patientId AND l.resultDateTime >= :admissionDate ORDER BY l.resultDateTime DESC")
+    Page<LabResult> findByPatientIdAndResultDateTimeAfter(
+            @Param("patientId") Long patientId,
+            @Param("admissionDate") LocalDateTime admissionDate,
+            Pageable pageable);
 }

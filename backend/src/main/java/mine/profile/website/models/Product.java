@@ -47,7 +47,8 @@ public class Product {
         MEDICATION,
         DEVICE,
         CONSUMABLE,
-        SERVICE
+        SERVICE,
+        APPOINTMENT
     }
 
     public enum PricingModel {

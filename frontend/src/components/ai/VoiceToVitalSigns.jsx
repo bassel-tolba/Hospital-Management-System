@@ -166,12 +166,12 @@ const VoiceToVitalSigns = ({ onDataExtracted, disabled, isUpdate = false, origin
 
 			let url, method;
 			if (isUpdate) {
-				url = `/api/gemini/transcribe-vitals-update/${originalData.id}`;
+				url = `http://localhost:8080/api/gemini/transcribe-vitals-update/${originalData.id}`;
 				// Convert originalData to JSON string
 				const originalDataJson = JSON.stringify(originalData);
 				formData.append("originalData", originalDataJson); // Append as a string
 			} else {
-				url = `/api/gemini/transcribe-vitals`;
+				url = `http://localhost:8080/api/gemini/transcribe-vitals`;
 			}
 
 			const response = await fetch(url, {

@@ -11,12 +11,9 @@ import {
 	Select,
 	AutoComplete,
 	notification,
-	Tag,
-	Row,
-	Col,
-	Tooltip,
-	InputNumber,
-	List, // Import List from Ant Design
+	List,
+	Grid,
+	InputNumber, // Import InputNumber
 } from "antd";
 import { useAdmissionStore } from "../../services/admission.service";
 import { usePatientStore } from "../../services/patient.service";
@@ -24,7 +21,7 @@ import { useBedStore } from "../../services/bed.service";
 import { useRoomStore } from "../../services/room.service";
 import { useUnitStore } from "../../services/unit.service";
 import { useAuthStore } from "../../services/auth.service";
-import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined, StopOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -32,6 +29,7 @@ import admissionDocsContent from "../../docs/admission";
 
 const { Title } = Typography;
 const { Option } = Select;
+const { useBreakpoint } = Grid; // Use the useBreakpoint hook
 
 const AdmissionList = () => {
 	const {
@@ -81,6 +79,12 @@ const AdmissionList = () => {
 
 	const [showDocs, setShowDocs] = useState(false);
 
+	const screens = useBreakpoint(); // Get current breakpoints
+
+	// Helper functions for responsive styles
+	const getResponsivePadding = () => (screens.xs ? "8px" : screens.sm ? "12px" : "24px");
+	const getResponsiveMargin = () => (screens.xs ? "8px 0" : screens.sm ? "12px 0" : "24px 16px");
+
 	useEffect(() => {
 		fetchAllAdmissionTypes();
 	}, [fetchAllAdmissionTypes]);
@@ -108,11 +112,7 @@ const AdmissionList = () => {
 	}, [page, size, searchParams]);
 
 	const fetchAdmissions = async () => {
-		if (!searchParams?.patientId) {
-			setAdmissions([]);
-			return;
-		}
-
+		// Removed the unnecessary check for patientId here.  It's OK to search with no patientId.
 		setLoading(true);
 		try {
 			await searchAdmissions({ ...searchParams, page, size });
@@ -376,6 +376,34 @@ const AdmissionList = () => {
 	const toggleDocs = () => {
 		setShowDocs(!showDocs);
 	};
+	const getActionColumn = () => {
+		const actions = [];
+		if (canUpdateAdmission) {
+			actions.push(
+				<Button key="edit" type="primary" onClick={() => showModal(record)}>
+					Edit
+				</Button>
+			);
+		}
+		if (canDeleteAdmission) {
+			actions.push(
+				<Button key="delete" type="danger" onClick={() => handleDelete(record.id)}>
+					Delete
+				</Button>
+			);
+		}
+		actions.push(
+			<Button key="end" type="default" onClick={() => handleEndAdmission(record)}>
+				End
+			</Button>
+		);
+
+		return {
+			title: "Actions",
+			key: "actions",
+			render: (text, record) => <Space size="middle">{actions}</Space>,
+		};
+	};
 
 	const columns = [
 		{
@@ -401,28 +429,12 @@ const AdmissionList = () => {
 				return bed ? bed.bedNumber : "N/A";
 			},
 		},
-		{
-			title: "Actions",
-			key: "actions",
-			render: (text, record) => (
-				<Space size="middle">
-					<Button type="primary" onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="danger" onClick={() => handleDelete(record.id)}>
-						Delete
-					</Button>
-					<Button type="default" onClick={() => handleEndAdmission(record)}>
-						End
-					</Button>
-				</Space>
-			),
-		},
-	];
+		getActionColumn(),
+	].filter(Boolean);
 
 	return (
-		<div style={{ padding: 20 }}>
-			<Title level={2}>
+		<div style={{ padding: getResponsivePadding() }}>
+			<Title level={2} style={{ margin: getResponsiveMargin() }}>
 				Admission List
 				<Button type="link" icon={<QuestionCircleOutlined />} onClick={toggleDocs} />
 			</Title>
@@ -439,9 +451,9 @@ const AdmissionList = () => {
 				width="80%">
 				<ReactMarkdown remarkPlugins={[remarkGfm]}>{admissionDocsContent}</ReactMarkdown>
 			</Modal>
-			<Space style={{ marginBottom: 16 }} direction="vertical" size="middle">
+			<Space style={{ marginBottom: 16 }} direction={screens.xs ? "vertical" : "horizontal"} size="middle">
 				<AutoComplete
-					style={{ width: "100%" }}
+					style={{ width: screens.xs ? "100%" : "300px" }}
 					options={patientOptions}
 					onSearch={handlePatientSearch}
 					placeholder="Search for a patient"
@@ -449,11 +461,13 @@ const AdmissionList = () => {
 					onSelect={handleSearchPatientFilter}
 				/>
 				<Space>
-					<Button type="primary" onClick={() => showModal(null)}>
-						Add New Admission
-					</Button>
+					{canCreateAdmission && (
+						<Button type="primary" onClick={() => showModal(null)}>
+							Add New Admission
+						</Button>
+					)}
 					{/* Button to manage admission types */}
-					<Button type="default" onClick={() => showTypeModal(null)}>
+					<Button type="primary" onClick={() => showTypeModal(null)}>
 						Manage Admission Types
 					</Button>
 				</Space>
@@ -468,11 +482,14 @@ const AdmissionList = () => {
 					current: page + 1,
 					pageSize: size,
 					total: total,
+					showSizeChanger: true, // Add this line
+
 					onChange: (page, pageSize) => {
 						setPage(page - 1);
 						setSize(pageSize);
 					},
 				}}
+				scroll={{ x: "max-content" }} // Add horizontal scrolling for tables
 			/>
 
 			{/* Modal for Adding/Editing Admissions */}
@@ -481,94 +498,112 @@ const AdmissionList = () => {
 				open={isModalVisible}
 				onCancel={handleCancel}
 				onOk={handleFormSubmit}
-				width={"90%"}>
-				<Form form={form} layout="vertical">
-					{/* Row for Patient and Admission Type */}
-					<Row gutter={16}>
-						<Col xs={24} sm={12} md={12} lg={12}>
-							<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
-								<AutoComplete
-									options={patientOptions}
-									onSearch={handlePatientSearch}
-									placeholder="Search for a patient"
-									filterOption={false}
-									onSelect={(patientId) => {
-										setSelectedPatientId(patientId); // Keep track of selected patient
-										form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId }); // Update form
-									}}
-								/>
-							</Form.Item>
-						</Col>
-						<Col xs={24} sm={12} md={12} lg={12}>
-							<Form.Item
-								label="Admission Type"
-								name="admissionTypeId"
-								rules={[{ required: true, message: "Please select an admission type" }]}>
-								<Select placeholder="Select an Admission Type">
-									{admissionTypes?.map((type) => (
-										<Option key={type.id} value={type.id}>
-											{type.name}
-										</Option>
-									))}
-								</Select>
-							</Form.Item>
-						</Col>
-					</Row>
-					{/* Row for Unit */}
-					<Row gutter={16}>
-						<Col span={24}>
-							<Form.Item label="Unit" name="unitId" rules={[{ required: true, message: "Please select a unit" }]}>
-								<Select placeholder="Select a Unit" onChange={handleUnitChangeModal} value={selectedUnit}>
-									{units?.map((unit) => (
-										<Option key={unit.id} value={unit.id}>
-											{unit.name}
-										</Option>
-									))}
-								</Select>
-							</Form.Item>
-						</Col>
-					</Row>
-					{/* Row for Room and Bed */}
-					<Row gutter={16}>
-						<Col xs={24} sm={12} md={12} lg={12}>
-							<Form.Item label="Room" name="roomId" rules={[{ required: true, message: "Please select a room" }]}>
-								<Select
-									placeholder="Select a Room"
-									onChange={handleRoomChangeModal}
-									disabled={!selectedUnit} // Disable if no unit is selected
-									value={selectedRoom}>
-									{filteredRooms?.map((room) => (
-										<Option key={room.id} value={room.id}>
-											{room.roomNumber}
-										</Option>
-									))}
-								</Select>
-							</Form.Item>
-						</Col>
-						<Col xs={24} sm={12} md={12} lg={12}>
-							<Form.Item label="Bed" name="bedId" rules={[{ required: true, message: "Please select a bed" }]}>
-								<Select placeholder="Select a Bed" disabled={!selectedRoom}>
-									{filteredBeds?.map((bed) => (
-										<Option key={bed.id} value={bed.id} disabled={bed.occupied}>
-											{bed.bedNumber} {bed.occupied ? "(Occupied)" : ""}
-										</Option>
-									))}
-								</Select>
-							</Form.Item>
-						</Col>
-					</Row>
-					{/* Row for Admission Date */}
-					<Row gutter={16}>
-						<Col span={24}>
-							<Form.Item
-								label="Admission Date"
-								name="admissionDate"
-								rules={[{ required: true, message: "Please select an admission date" }]}>
-								<DatePicker showTime style={{ width: "100%" }} />
-							</Form.Item>
-						</Col>
-					</Row>
-					{/* Removed Discharge Date */}
+				width={screens.xs ? "95%" : "80%"} // Responsive width
+				style={{ maxWidth: screens.xs ? "95vw" : "900px" }} // Max-width
+				bodyStyle={{ padding: getResponsivePadding() }} // Responsive padding
+			>
+				<Form form={form} layout={screens.xs ? "vertical" : "horizontal"}>
+					{/* Patient and Admission Type */}
+					<Form.Item
+						labelCol={!screens.xs ? { span: 6 } : {}}
+						wrapperCol={!screens.xs ? { span: 18 } : {}}
+						label="Patient"
+						name="patientId"
+						rules={[{ required: true, message: "Please select a patient" }]}
+						style={{ width: "100%" }} // Important for responsiveness within the Form.Item
+					>
+						<AutoComplete
+							style={{ width: "100%" }} // Full width on all screens
+							options={patientOptions}
+							onSearch={handlePatientSearch}
+							placeholder="Search for a patient"
+							filterOption={false}
+							onSelect={(patientId) => {
+								setSelectedPatientId(patientId);
+								form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId });
+							}}
+						/>
+					</Form.Item>
+					<Form.Item
+						labelCol={!screens.xs ? { span: 6 } : {}}
+						wrapperCol={!screens.xs ? { span: 18 } : {}}
+						label="Admission Type"
+						name="admissionTypeId"
+						rules={[{ required: true, message: "Please select an admission type" }]}
+						style={{ width: "100%" }}>
+						<Select placeholder="Select an Admission Type" style={{ width: "100%" }}>
+							{admissionTypes?.map((type) => (
+								<Option key={type.id} value={type.id}>
+									{type.name}
+								</Option>
+							))}
+						</Select>
+					</Form.Item>
+
+					{/* Unit */}
+					<Form.Item
+						labelCol={!screens.xs ? { span: 6 } : {}}
+						wrapperCol={!screens.xs ? { span: 18 } : {}}
+						label="Unit"
+						name="unitId"
+						rules={[{ required: true, message: "Please select a unit" }]}
+						style={{ width: "100%" }}>
+						<Select placeholder="Select a Unit" onChange={handleUnitChangeModal} value={selectedUnit} style={{ width: "100%" }}>
+							{units?.map((unit) => (
+								<Option key={unit.id} value={unit.id}>
+									{unit.name}
+								</Option>
+							))}
+						</Select>
+					</Form.Item>
+
+					{/* Room and Bed */}
+					<Form.Item
+						labelCol={!screens.xs ? { span: 6 } : {}}
+						wrapperCol={!screens.xs ? { span: 18 } : {}}
+						label="Room"
+						name="roomId"
+						rules={[{ required: true, message: "Please select a room" }]}
+						style={{ width: "100%" }}>
+						<Select
+							placeholder="Select a Room"
+							onChange={handleRoomChangeModal}
+							disabled={!selectedUnit}
+							value={selectedRoom}
+							style={{ width: "100%" }}>
+							{filteredRooms?.map((room) => (
+								<Option key={room.id} value={room.id}>
+									{room.roomNumber}
+								</Option>
+							))}
+						</Select>
+					</Form.Item>
+					<Form.Item
+						labelCol={!screens.xs ? { span: 6 } : {}}
+						wrapperCol={!screens.xs ? { span: 18 } : {}}
+						label="Bed"
+						name="bedId"
+						rules={[{ required: true, message: "Please select a bed" }]}
+						style={{ width: "100%" }}>
+						<Select placeholder="Select a Bed" disabled={!selectedRoom} style={{ width: "100%" }}>
+							{filteredBeds?.map((bed) => (
+								<Option key={bed.id} value={bed.id} disabled={bed.occupied}>
+									{bed.bedNumber} {bed.occupied ? "(Occupied)" : ""}
+								</Option>
+							))}
+						</Select>
+					</Form.Item>
+
+					{/* Admission Date */}
+					<Form.Item
+						labelCol={!screens.xs ? { span: 6 } : {}}
+						wrapperCol={!screens.xs ? { span: 18 } : {}}
+						label="Admission Date"
+						name="admissionDate"
+						rules={[{ required: true, message: "Please select an admission date" }]}
+						style={{ width: "100%" }}>
+						<DatePicker showTime style={{ width: "100%" }} />
+					</Form.Item>
 				</Form>
 			</Modal>
 
@@ -578,7 +613,10 @@ const AdmissionList = () => {
 				open={isTypeModalVisible}
 				onCancel={handleTypeCancel}
 				onOk={handleTypeFormSubmit}
-				okButtonProps={{ loading: loading }} // Show loading state
+				okButtonProps={{ loading: loading }}
+				width={screens.xs ? "95%" : "80%"} // Responsive width
+				style={{ maxWidth: screens.xs ? "95vw" : "600px" }} // Max-width
+				bodyStyle={{ padding: getResponsivePadding() }} // Responsive padding
 			>
 				<Form form={typeForm} layout="vertical">
 					<Form.Item label="Name" name="name" rules={[{ required: true, message: "Please enter the admission type name" }]}>
@@ -593,6 +631,7 @@ const AdmissionList = () => {
 				<List
 					itemLayout="horizontal"
 					dataSource={admissionTypes}
+					style={{ marginTop: "20px" }}
 					renderItem={(item) => (
 						<List.Item
 							actions={[
@@ -607,13 +646,6 @@ const AdmissionList = () => {
 						</List.Item>
 					)}
 				/>
-
-				{/* Conditional Delete Button (Keep this for confirmation) */}
-				{selectedAdmissionType && (
-					<Button type="danger" onClick={() => handleTypeDelete(selectedAdmissionType.id)}>
-						Delete
-					</Button>
-				)}
 			</Modal>
 		</div>
 	);

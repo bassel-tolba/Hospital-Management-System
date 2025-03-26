@@ -1,30 +1,11 @@
 // Register.jsx
 import React from "react";
-import { Card, Space } from "antd";
+import { Card, Space, Typography } from "antd"; // Import Typography
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+// Removed: motion, AnimatePresence
 import UserRegistration from "./UserRegistration";
-
-// Animation variants (kept for the Register component's animation)
-const containerVariants = {
-	hidden: { opacity: 0 },
-	visible: {
-		opacity: 1,
-		transition: {
-			when: "beforeChildren",
-			staggerChildren: 0.1,
-		},
-	},
-};
-
-const itemVariants = {
-	hidden: { y: 20, opacity: 0 },
-	visible: {
-		y: 0,
-		opacity: 1,
-		transition: { type: "spring", stiffness: 300, damping: 24 },
-	},
-};
+import { useTranslation } from "react-i18next"; // Import
+import { UserAddOutlined } from "@ant-design/icons";
 
 // StyledCard (kept, but now using Ant Design's Card directly)
 const StyledCard = styled(Card)`
@@ -38,27 +19,25 @@ const StyledCard = styled(Card)`
 		max-width: 95%;
 	}
 `;
+const { Title } = Typography;
 
 const Register = () => {
+	const { t } = useTranslation();
 	return (
-		<AnimatePresence>
-			<motion.div
-				style={{ padding: 20, display: "flex", justifyContent: "center" }}
-				initial="hidden"
-				animate="visible"
-				variants={containerVariants}>
-				{/* Wrap with motion.div for the itemVariants */}
-				<motion.div variants={itemVariants} style={{ width: "100%", maxWidth: "700px" }}>
-					<StyledCard>
-						{" "}
-						{/* Use StyledCard, which now styles antd's Card */}
-						<Space direction="vertical" size="large" style={{ width: "100%" }}>
-							<UserRegistration />
+		// Removed: AnimatePresence, motion.div
+		<div style={{ padding: 20, display: "flex", justifyContent: "center" }}>
+			<StyledCard>
+				<Space direction="vertical" size="large" style={{ width: "100%" }}>
+					<Title level={2} style={{ textAlign: "center" }}>
+						<Space>
+							<UserAddOutlined />
+							{t("register-user")}
 						</Space>
-					</StyledCard>
-				</motion.div>
-			</motion.div>
-		</AnimatePresence>
+					</Title>
+					<UserRegistration />
+				</Space>
+			</StyledCard>
+		</div>
 	);
 };
 

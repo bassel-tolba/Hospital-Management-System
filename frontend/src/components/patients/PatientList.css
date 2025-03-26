@@ -1,14 +1,39 @@
 /* components/PatientList.css */
 
+/* --- Define CSS Variables for Color Palette --- */
+:root {
+	--color-stable: #27ae60;
+	--color-attention: #3498db;
+	--color-urgent: #f39c12;
+	--color-critical: #e74c3c;
+	--color-emergency: #8e44ad;
+	--color-stable-bg: rgba(39, 174, 96, 0.04);
+	--color-attention-bg: rgba(52, 152, 219, 0.05);
+	--color-urgent-bg: rgba(243, 156, 18, 0.06);
+	--color-critical-bg: rgba(231, 76, 60, 0.07);
+	--color-emergency-bg: rgba(142, 68, 173, 0.08);
+	--color-stable-bg-hover: rgba(39, 174, 96, 0.1);
+	--color-attention-bg-hover: rgba(52, 152, 219, 0.12);
+	--color-urgent-bg-hover: rgba(243, 156, 18, 0.15);
+	--color-critical-bg-hover: rgba(231, 76, 60, 0.15);
+	--color-emergency-bg-hover: rgba(142, 68, 173, 0.18);
+	--color-default-border: #e0e0e0;
+	--color-focus: rgba(52, 152, 219, 0.6); /* Focus color - kept consistent */
+	--color-urgent-text: #995200;
+	--color-critical-text: #c0392b;
+	--color-emergency-text: #8e44ad;
+}
+
 /* --- General Styles for Patient Rows --- */
 .patient-row {
 	transition: box-shadow 0.3s ease, background-color 0.3s ease;
-	border-left: 5px solid transparent;
+	border-left: 5px solid var(--color-default-border); /* Default border */
 	position: relative;
+	/* Removed animation properties */
 }
 
 .patient-row:hover {
-	box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+	box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12); /* Consistent box-shadow on hover */
 	cursor: pointer;
 }
 
@@ -16,129 +41,92 @@
 
 /* Stable - Green */
 .patient-row.severity-1 {
-	background-color: rgba(39, 174, 96, 0.04);
-	border-left-color: #27ae60;
+	background-color: var(--color-stable-bg);
+	border-left-color: var(--color-stable);
 }
 
 .patient-row.severity-1:hover {
-	background-color: rgba(39, 174, 96, 0.1);
+	background-color: var(--color-stable-bg-hover);
 }
 
 /* Attention - Blue */
 .patient-row.severity-2 {
-	background-color: rgba(52, 152, 219, 0.05);
-	border-left-color: #3498db;
+	background-color: var(--color-attention-bg);
+	border-left-color: var(--color-attention);
 }
 
 .patient-row.severity-2:hover {
-	background-color: rgba(52, 152, 219, 0.12);
+	background-color: var(--color-attention-bg-hover);
 }
 
 /* Urgent - Orange */
 .patient-row.severity-3 {
-	background-color: rgba(243, 156, 18, 0.06);
-	border-left-color: #f39c12;
-	border-left-width: 6px;
+	background-color: var(--color-urgent-bg);
+	border-left-color: var(--color-urgent);
+	/* Removed border-width change */
 }
 
 .patient-row.severity-3:hover {
-	background-color: rgba(243, 156, 18, 0.15);
-	box-shadow: 0 4px 12px rgba(243, 156, 18, 0.2);
+	background-color: var(--color-urgent-bg-hover);
+	/* Removed increased box-shadow on hover for consistency*/
 }
 
 /* Critical - Red */
 .patient-row.severity-4 {
-	background-color: rgba(231, 76, 60, 0.07);
-	border-left-color: #e74c3c;
-	border-left-width: 7px;
-	animation: criticalPulse 2s infinite;
+	background-color: var(--color-critical-bg);
+	border-left-color: var(--color-critical);
+	/* Removed border-width change */
+	/* Removed animation */
 }
 
 .patient-row.severity-4:hover {
-	background-color: rgba(231, 76, 60, 0.15);
-	box-shadow: 0 4px 15px rgba(231, 76, 60, 0.25);
+	background-color: var(--color-critical-bg-hover);
+	/* Removed increased box-shadow on hover for consistency*/
 }
 
 /* Highest Emergency - Purple */
 .patient-row.severity-5 {
-	background-color: rgba(142, 68, 173, 0.08);
-	border-left-color: #8e44ad;
-	border-left-width: 8px;
-	animation: emergencyBackground 1.5s infinite, emergencyPulse 1.2s infinite;
+	background-color: var(--color-emergency-bg);
+	border-left-color: var(--color-emergency);
+	/* Removed border-width change */
+	/* Removed animation */
 }
 
 .patient-row.severity-5:hover {
-	background-color: rgba(142, 68, 173, 0.18);
-	box-shadow: 0 5px 18px rgba(142, 68, 173, 0.3);
+	background-color: var(--color-emergency-bg-hover);
+	/* Removed increased box-shadow on hover for consistency*/
 }
 
-/* --- Animations --- */
-
-/* Critical (Severity 4) Animation */
-@keyframes criticalPulse {
-	0% {
-		box-shadow: inset 0 0 0 0 rgba(231, 76, 60, 0.15);
-	}
-	50% {
-		box-shadow: inset 0 0 0 3px rgba(231, 76, 60, 0.25);
-	}
-	100% {
-		box-shadow: inset 0 0 0 0 rgba(231, 76, 60, 0.15);
-	}
-}
-
-/* Emergency (Severity 5) Animations */
-@keyframes emergencyBackground {
-	0% {
-		background-color: rgba(142, 68, 173, 0.08);
-	}
-	50% {
-		background-color: rgba(142, 68, 173, 0.18);
-	}
-	100% {
-		background-color: rgba(142, 68, 173, 0.08);
-	}
-}
-
-@keyframes emergencyPulse {
-	0% {
-		box-shadow: inset 0 0 0 0 rgba(142, 68, 173, 0.2);
-	}
-	50% {
-		box-shadow: inset 0 0 0 4px rgba(142, 68, 173, 0.35);
-	}
-	100% {
-		box-shadow: inset 0 0 0 0 rgba(142, 68, 173, 0.2);
-	}
-}
+/* --- Removed Animations Section --- */
 
 /* --- Typography --- */
+/* Use CSS variables for font colors.  Consider creating a full typographic scale
+   if more control over text styles is needed. */
 .patient-row.severity-3 .ant-table-cell {
 	font-weight: 500;
-	color: #995200;
+	color: var(--color-urgent-text);
 }
 
 .patient-row.severity-4 .ant-table-cell {
 	font-weight: 600;
-	color: #c0392b;
+	color: var(--color-critical-text);
 }
 
 .patient-row.severity-5 .ant-table-cell {
 	font-weight: 700;
-	color: #8e44ad;
+	color: var(--color-emergency-text);
 	letter-spacing: 0.01em;
 }
-
 /* --- Focus State --- */
 .patient-row:focus-within {
 	outline: none;
-	box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.6);
+	box-shadow: 0 0 0 3px var(--color-focus); /* Using CSS variable */
 }
 
 /* --- Default State --- */
 .patient-row.severity-none {
 	background-color: transparent;
-	border-left-color: #e0e0e0;
+	border-left-color: var(--color-default-border);
 }
 
 /* --- Table Cell Adjustments --- */
@@ -147,10 +135,11 @@
 }
 
 .patient-row .ant-table-cell:first-child {
-	padding-left: 14px !important;
+	padding-left: 14px; /* Removed !important */
 }
 
-/* Add a subtle indicator for critical and emergency patients */
+/* Removed the animated ::after pseudo-element for critical/emergency */
+/* Added static indicators.  Consider using icons or text labels in the HTML instead */
 .patient-row.severity-4::after,
 .patient-row.severity-5::after {
 	content: "";
@@ -164,42 +153,24 @@
 }
 
 .patient-row.severity-4::after {
-	background-color: #e74c3c;
-	box-shadow: 0 0 6px #e74c3c;
+	background-color: var(--color-critical);
+	box-shadow: 0 0 6px var(--color-critical); /*Consistent box-shadow*/
 }
 
 .patient-row.severity-5::after {
-	background-color: #8e44ad;
-	box-shadow: 0 0 8px #8e44ad;
-	animation: dotPulse 1s infinite;
+	background-color: var(--color-emergency);
+	box-shadow: 0 0 8px var(--color-emergency); /*Consistent box-shadow*/
+	/*Removed dotPulse Animation*/
 }
-
-@keyframes dotPulse {
-	0%,
-	100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.5;
-	}
-}
-
 /* --- Responsive Design --- */
 @media (max-width: 768px) {
+	/* Simplified border-left-width to be consistent */
 	.patient-row {
 		border-left-width: 5px;
 	}
 
-	.patient-row.severity-4 {
-		border-left-width: 6px;
-	}
-
-	.patient-row.severity-5 {
-		border-left-width: 7px;
-	}
-
 	/* Adjust cell padding for mobile */
 	.patient-row .ant-table-cell:first-child {
-		padding-left: 10px !important;
+		padding-left: 10px; /* Removed !important */
 	}
 }

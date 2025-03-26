@@ -23,7 +23,7 @@ const AssessmentList = ({ darkMode }) => {
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [searchParams, setSearchParams] = useState({});
 	const { user, hasAuthority } = useAuthStore();
-	const API_BASE_URL = `/api/assessments`;
+	const API_BASE_URL = `http://localhost:8080/api/assessments`;
 	const { patients, searchPatients } = usePatientStore();
 
 	const canCreateAssessment = hasAuthority("CREATE_ASSESSMENT");
@@ -201,7 +201,7 @@ const AssessmentList = ({ darkMode }) => {
 				</Col>
 				<Col xs={24} sm={12} md={8}>
 					{canCreateAssessment && (
-						<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId}>
+						<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId}>
 							Add New Assessment
 						</Button>
 					)}

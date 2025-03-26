@@ -1,21 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Typography, Modal, Form, notification, Divider, Tooltip, Row, Col } from "antd";
+import {
+	Table,
+	Input,
+	Button,
+	Space,
+	Typography,
+	Modal,
+	Form,
+	notification,
+	Divider,
+	Tooltip,
+	Row,
+	Col,
+	Popconfirm,
+	Alert, // Import Alert
+} from "antd";
 import { useAuthStore } from "../../services/auth.service";
-import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import { PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useLabStore } from "../../services/lab.service";
-import LabTestTableBuilder from "./LabTestTableBuilder"; // Import the table builder
+import LabTestTableBuilder from "./LabTestTableBuilder";
 
 const { Title } = Typography;
 
 const LabTestList = () => {
+	// ... (rest of your component state and functions) ...
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [isViewModalVisible, setIsViewModalVisible] = useState(false);
 	const [selectedLabTest, setSelectedLabTest] = useState(null);
 	const [form] = Form.useForm();
-	const { labTests, loading, error, fetchLabTests, createLabTest } = useLabStore();
-	const { hasAuthority } = useAuthStore(); // Use hasAuthority
+	const { labTests, loading, error, fetchLabTests, createLabTest, updateLabTest, deleteLabTest } = useLabStore(); // Add deleteLabTest
+	const { hasAuthority } = useAuthStore();
 	const [searchTerm, setSearchTerm] = useState("");
-	const [tableData, setTableData] = useState(null); // State for table data
+	const [tableData, setTableData] = useState(null);
 	const [initialTableData, setInitialTableData] = useState(null);
 	const [viewTableData, setViewTableData] = useState(null);
 	const [viewInitialTableData, setViewInitialTableData] = useState(null);
@@ -23,6 +39,8 @@ const LabTestList = () => {
 	// Permission Checks
 	const canCreateLabTest = hasAuthority("CREATE_LAB_TEST");
 	const canReadLabTest = hasAuthority("READ_LAB_TEST");
+	const canUpdateLabTest = hasAuthority("UPDATE_LAB_TEST");
+	const canDeleteLabTest = hasAuthority("DELETE_LAB_TEST"); // Add delete permission check
 
 	useEffect(() => {
 		if (canReadLabTest) {
@@ -36,14 +54,16 @@ const LabTestList = () => {
 	}, [searchTerm, fetchLabTests, canReadLabTest]);
 
 	const showModal = (labTest) => {
-		if (!canCreateLabTest) {
-			// Check permission BEFORE opening modal
+		const hasPermission = labTest ? canUpdateLabTest : canCreateLabTest;
+
+		if (!hasPermission) {
 			notification.error({
 				message: "Permission Denied",
-				description: "You do not have permission to create lab tests.",
+				description: `You do not have permission to ${labTest ? "update" : "create"} lab tests.`,
 			});
 			return;
 		}
+
 		setSelectedLabTest(labTest);
 		if (labTest) {
 			setInitialTableData(labTest.structureMap?.table);
@@ -54,10 +74,8 @@ const LabTestList = () => {
 		}
 		setIsModalVisible(true);
 	};
-
 	const showViewModal = (labTest) => {
 		if (!canReadLabTest) {
-			//check permission before viewing data
 			notification.error({
 				message: "Permission Denied",
 				description: "You do not have permission to view lab tests.",
@@ -79,7 +97,7 @@ const LabTestList = () => {
 		setSelectedLabTest(null);
 		form.resetFields();
 		setInitialTableData(null);
-		setTableData(null); //clear the table data
+		setTableData(null);
 	};
 
 	const handleViewCancel = () => {
@@ -89,25 +107,27 @@ const LabTestList = () => {
 		setViewTableData(null);
 	};
 	const handleTableChange = (data) => {
-		setTableData(data); // Store table data from builder
+		setTableData(data);
 	};
 
 	const handleFormSubmit = async () => {
-		if (!canCreateLabTest) {
-			// Double-check permission before submission
+		const hasPermission = selectedLabTest ? canUpdateLabTest : canCreateLabTest;
+		if (!hasPermission) {
 			notification.error({
 				message: "Permission Denied",
-				description: "You do not have permission to create lab tests.",
+				description: `You do not have permission to ${selectedLabTest ? "update" : "create"} lab tests.`,
 			});
 			return;
 		}
 		try {
 			const values = await form.validateFields();
-
 			const labTestData = { ...values, structureMap: { table: tableData } };
 
 			if (selectedLabTest) {
-				//logic to update is not needed yet just create will do for now
+				const updatedLabTest = await updateLabTest(selectedLabTest.id, labTestData);
+				if (updatedLabTest) {
+					fetchLabTests(searchTerm);
+				}
 			} else {
 				const createdLabTest = await createLabTest(labTestData);
 				if (createdLabTest) {
@@ -118,16 +138,30 @@ const LabTestList = () => {
 			setSelectedLabTest(null);
 			form.resetFields();
 			setInitialTableData(null);
-			setTableData(null); //clear the table data
+			setTableData(null);
 		} catch (error) {
 			notification.error({
 				message: "Error",
-				description: `Failed to save lab test: ${error.message}`,
+				description: `Failed to ${selectedLabTest ? "update" : "save"} lab test: ${error.message}`,
 			});
 		}
 	};
 	const handleSearch = (e) => {
 		setSearchTerm(e.target.value);
+	};
+	const handleDelete = async (id) => {
+		if (!canDeleteLabTest) {
+			notification.error({
+				message: "Permission Denied",
+				description: "You do not have permission to delete lab tests.",
+			});
+			return;
+		}
+
+		try {
+			await deleteLabTest(id); // Call the service function
+			fetchLabTests(searchTerm); // Refresh the list after deletion
+		} catch (error) {}
 	};
 
 	const columns = [
@@ -135,20 +169,20 @@ const LabTestList = () => {
 			title: "Test Name",
 			dataIndex: "testName",
 			key: "testName",
-			render: (text) => (canReadLabTest ? text : "***"), // Data masking
+			render: (text) => (canReadLabTest ? text : "***"),
 		},
 		{
 			title: "Price",
 			dataIndex: "price",
 			key: "price",
-			render: (text) => (canReadLabTest ? text : "***"), // Data masking
+			render: (text) => (canReadLabTest ? text : "***"),
 		},
 		{
 			title: "Description",
 			dataIndex: "description",
 			key: "description",
 			render: (text) =>
-				canReadLabTest ? <Tooltip title={text}>{text && text.length > 50 ? `${text.substring(0, 50)}...` : text}</Tooltip> : "***", // Data masking
+				canReadLabTest ? <Tooltip title={text}>{text && text.length > 50 ? `${text.substring(0, 50)}...` : text}</Tooltip> : "***",
 		},
 		{
 			title: "Action",
@@ -159,6 +193,34 @@ const LabTestList = () => {
 						<Button type="default" icon={<EyeOutlined />} onClick={() => showViewModal(record)}>
 							View
 						</Button>
+					)}
+					{canUpdateLabTest && (
+						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+							Edit
+						</Button>
+					)}
+					{/* Improved Delete Button with Confirmation */}
+					{canDeleteLabTest && (
+						<Popconfirm
+							title={
+								<div>
+									<p>
+										<b>Deleting a lab test is generally not recommended.</b>
+									</p>
+									<p>It can lead to data inconsistencies if results are associated with this test.</p>
+									<p>Are you sure you want to proceed?</p>
+									<p style={{ color: "red" }}>Note: If this lab test is linked to any lab results, deletion is not possible.</p>
+								</div>
+							}
+							onConfirm={() => handleDelete(record.id)}
+							okText="Yes, Delete"
+							cancelText="No"
+							okButtonProps={{ danger: true }} // Make "Yes" button red
+						>
+							<Button type="default" danger icon={<DeleteOutlined />}>
+								Delete
+							</Button>
+						</Popconfirm>
 					)}
 				</Space>
 			),
@@ -180,7 +242,7 @@ const LabTestList = () => {
 				</Col>
 				<Col xs={24} sm={12} md={8}>
 					{canCreateLabTest && (
-						<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
+						<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
 							Add New Lab Test
 						</Button>
 					)}
@@ -188,24 +250,25 @@ const LabTestList = () => {
 			</Row>
 			<Table
 				columns={columns}
-				dataSource={canReadLabTest ? labTests : []} // Conditionally display data
+				dataSource={canReadLabTest ? labTests : []}
 				loading={loading}
 				rowKey="id"
-				scroll={{ x: true }} // Enable horizontal scrolling for small screens
+				scroll={{ x: true }}
 				pagination={{ pageSize: 10, responsive: true }}
 			/>
+			{/* Edit/Add Modal */}
 			<Modal
 				title={selectedLabTest ? "Edit Lab Test" : "Add Lab Test"}
 				open={isModalVisible}
 				onCancel={handleCancel}
-				width="90%" // Make modal width responsive
-				style={{ maxWidth: 800 }} // Set a maximum width for larger screens
+				width="90%"
+				style={{ maxWidth: 800 }}
 				footer={[
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					canCreateLabTest && (
-						<Button key="submit" type="default" onClick={handleFormSubmit}>
+					(selectedLabTest ? canUpdateLabTest : canCreateLabTest) && (
+						<Button key="submit" type="primary" onClick={handleFormSubmit}>
 							{selectedLabTest ? "Update" : "Save"}
 						</Button>
 					),
@@ -214,23 +277,37 @@ const LabTestList = () => {
 					<Row gutter={[16, 16]}>
 						<Col xs={24} sm={12}>
 							<Form.Item label="Test Name" name="testName" rules={[{ required: true, message: "Please enter the test name" }]}>
-								<Input disabled={!canCreateLabTest} />
+								<Input disabled={!(selectedLabTest ? canUpdateLabTest : canCreateLabTest)} />
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12}>
 							<Form.Item label="Price" name="price" rules={[{ required: true, message: "Please enter the price" }]}>
-								<Input type="number" disabled={!canCreateLabTest} />
+								<Input type="number" disabled={!(selectedLabTest ? canUpdateLabTest : canCreateLabTest)} />
 							</Form.Item>
 						</Col>
 					</Row>
 					<Form.Item label="Description" name="description" rules={[{ required: true, message: "Please enter the description" }]}>
-						<Input.TextArea rows={4} disabled={!canCreateLabTest} />
+						<Input.TextArea rows={4} disabled={!(selectedLabTest ? canUpdateLabTest : canCreateLabTest)} />
 					</Form.Item>
 
 					<Divider>Define Result Structure</Divider>
-					{canCreateLabTest && <LabTestTableBuilder onTableChange={handleTableChange} initialTableData={initialTableData} />}
+					{(selectedLabTest ? canUpdateLabTest : canCreateLabTest) && (
+						<>
+							{/* Note for Editing */}
+							{selectedLabTest && (
+								<Alert
+									message="Important: When editing the table structure, make sure to click 'Generate JSON' to save your changes."
+									type="info"
+									showIcon
+									style={{ marginBottom: 16 }}
+								/>
+							)}
+							<LabTestTableBuilder onTableChange={handleTableChange} initialTableData={initialTableData} />
+						</>
+					)}
 				</Form>
 			</Modal>
+			{/*view modal*/}
 			<Modal
 				title={`View Lab Test: ${selectedLabTest?.testName}`}
 				open={isViewModalVisible}

@@ -1,3 +1,4 @@
+// BillingService.java
 package mine.profile.website.service;
 
 import java.math.BigDecimal;
@@ -88,6 +89,7 @@ public class BillingService {
 
         Billing billing = entityMapper.toEntity(billingDTO, patient);
         billing.setBillDate(LocalDateTime.now());
+        // No need to set paidBillHtml now
         Billing savedBilling = billingRepository.save(billing);
         BillingDTO billingDto = updateBillingTotal(savedBilling.getId());
         billingDto.setBill(billingDto.generateBillHtml()); // Generate bill after updating total
@@ -103,7 +105,7 @@ public class BillingService {
                 patientProductUsageRepository, labResultRepository, imageReportRepository, productRepository,
                 procedureRepository, admissionRepository, patientRepository, medicationAdministrationRepository,
                 bedRepository);
-        billingDTO.setBill(billingDTO.generateBillHtml());
+        billingDTO.setBill(billingDTO.getBill()); // Use getBill(), not generateBillHtml() to respect stored
         return billingDTO;
     }
 
@@ -237,6 +239,7 @@ public class BillingService {
         }
 
         billing.setTotalAmount(totalBill);
+        // No, don't set paidBillHtml here.
         Billing savedBilling = billingRepository.save(billing);
         BillingDTO billingDTO = BillingDTO.toDto(savedBilling, paymentRepository, procedureLogRepository,
                 patientProductUsageRepository, labResultRepository, imageReportRepository, productRepository,
@@ -249,7 +252,10 @@ public class BillingService {
 
     @Transactional
     public void deleteById(Long id) {
-        billingRepository.deleteById(id);
+        Billing billing = billingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Billing ID: " + id));
+        billing.setDeleted(true);
+        billingRepository.save(billing);
     }
 
     @Transactional
@@ -262,7 +268,7 @@ public class BillingService {
                         procedureRepository, admissionRepository, patientRepository,
                         medicationAdministrationRepository, bedRepository))
                 .map(billingDto -> {
-                    billingDto.setBill(billingDto.generateBillHtml());
+                    billingDto.setBill(billingDto.getBill()); // Use getBill, not generateBillHtml
                     return billingDto;
                 })
                 .collect(Collectors.toList());
@@ -280,7 +286,7 @@ public class BillingService {
                         procedureRepository, admissionRepository, patientRepository,
                         medicationAdministrationRepository, bedRepository))
                 .map(billingDto -> {
-                    billingDto.setBill(billingDto.generateBillHtml());
+                    billingDto.setBill(billingDto.getBill()); // Use getBill, not generateBillHtml
                     return billingDto;
                 })
                 .collect(Collectors.toList());
@@ -302,7 +308,7 @@ public class BillingService {
                         procedureRepository, admissionRepository, patientRepository,
                         medicationAdministrationRepository, bedRepository))
                 .map(billingDto -> {
-                    billingDto.setBill(billingDto.generateBillHtml());
+                    billingDto.setBill(billingDto.getBill()); // Use getBill, not generateBillHtml
                     return billingDto;
                 })
                 .collect(Collectors.toList());
@@ -320,7 +326,7 @@ public class BillingService {
                     patientProductUsageRepository, labResultRepository, imageReportRepository, productRepository,
                     procedureRepository, admissionRepository, patientRepository, medicationAdministrationRepository,
                     bedRepository);
-            billingDTO.setBill(billingDTO.generateBillHtml());
+            billingDTO.setBill(billingDTO.getBill()); // Use getBill, not generateBillHtml
             return billingDTO;
 
         }

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = `/api/auth`;
-const API_VOICE_URL = `/api/analyze-voice`;
+const API_URL = `http://localhost:8080/api/auth`;
+const API_VOICE_URL = `http://localhost:8080/api/analyze-voice`;
 
 export const useAuthStore = create((set, get) => ({
 	user: JSON.parse(localStorage.getItem("user")) || null,

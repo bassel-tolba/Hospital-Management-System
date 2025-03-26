@@ -3,9 +3,9 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
 import { notification } from "antd";
 
-const IMAGE_REPORT_API_BASE_URL = `/api/imagereports`;
-const PATIENT_API_BASE_URL = `/api/patients`;
-const USER_API_BASE_URL = `/api/users`;
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
 
 export const useImageReportStore = create((set, get) => ({
 	imageReports: [],

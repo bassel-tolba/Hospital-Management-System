@@ -23,7 +23,7 @@ const AssessmentForm = ({ assessment, onSave, onCancel, darkMode, canCreateAsses
 	const [selectedPatientId, setSelectedPatientId] = useState(null);
 	const { patients, searchPatients } = usePatientStore();
 	const { user } = useAuthStore();
-	const API_BASE_URL = `/api/assessments`;
+	const API_BASE_URL = `http://localhost:8080/api/assessments`;
 	const mediaRecorder = useRef(null);
 	const recordedChunks = useRef([]);
 	const ckEditorRef = useRef(null); // { editor: CKEditorInstance | null }
@@ -204,7 +204,7 @@ const AssessmentForm = ({ assessment, onSave, onCancel, darkMode, canCreateAsses
 			formData.append("currentHtml", ckEditorRef.current.editor.getData()); // Get current content
 			formData.append("patientId", selectedPatientId.toString());
 
-			const response = await axios.post("/api/assessments/ai/transcribe-and-populate", formData, {
+			const response = await axios.post("http://localhost:8080/api/assessments/ai/transcribe-and-populate", formData, {
 				headers: { Authorization: `Bearer ${user?.token}` },
 			});
 
@@ -332,7 +332,7 @@ const AssessmentForm = ({ assessment, onSave, onCancel, darkMode, canCreateAsses
 				<Button key="cancel" onClick={onCancel} style={{ marginRight: 8 }}>
 					Cancel
 				</Button>
-				<Button key="submit" type="default" onClick={handleFormSubmit}>
+				<Button key="submit" type="primary" onClick={handleFormSubmit}>
 					{assessment ? "Update" : "Save"}
 				</Button>
 			</div>

@@ -223,6 +223,8 @@ package mine.profile.website.models;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -242,6 +244,8 @@ public class Appointment {
     private Long id;
 
     private LocalDateTime appointmentDateTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     @ManyToOne
     @JoinColumn(name = "patient_id")
@@ -251,12 +255,27 @@ public class Appointment {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Appointment(LocalDateTime appointmentDateTime, Patient patient, User user) {
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatus status; // New status field
+
+    public enum AppointmentStatus {
+        SCHEDULED, // Default, initially scheduled
+        COMPLETED, // Manually marked as completed
+        MISSED, // Automatically set if past due and not completed. Could also be manually set.
+        CANCELLED // Added cancelled state
+    }
+
+    public Appointment(LocalDateTime appointmentDateTime, LocalDateTime startTime, LocalDateTime endTime,
+            Patient patient, User user) {
         this.appointmentDateTime = appointmentDateTime;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.patient = patient;
         this.user = user;
+        this.status = AppointmentStatus.SCHEDULED; // Initialize to SCHEDULED
     }
 }
+
 ```
 ├── Assessment.java:```
 package mine.profile.website.models;
@@ -344,17 +363,22 @@ public class Bed {
 }
 ```
 ├── Billing.java:```
+// Billing.java (Entity)
 package mine.profile.website.models;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.Where;
+
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
@@ -365,6 +389,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@Where(clause = "deleted = false") // Add this annotation
 public class Billing {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -397,6 +422,14 @@ public class Billing {
 
     @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MedicationAdministration> medicationAdministrations;
+
+    @Lob
+    @Column(columnDefinition = "TEXT") // Use TEXT for large HTML content
+    private String paidBillHtml;
+
+    private LocalDateTime paidDate;
+
+    private boolean deleted = false; // Add this field
 
     public Billing(LocalDateTime billDate, double totalAmount, boolean isPaid, Patient patient) {
         this.billDate = billDate;
@@ -1043,11 +1076,12 @@ public class NursingCarePlan {
 }
 ```
 ├── Patient.java:```
-// models/Patient.java
+// models/Patient.java (Modified)
 package mine.profile.website.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -1074,7 +1108,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "deleted = false") // Add this annotation
+@Where(clause = "deleted = false")
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1094,10 +1128,9 @@ public class Patient {
 
     private String email;
 
-    // NEW: Image URL field
     private String profilePictureURL;
 
-    @Column(unique = true) // VERY IMPORTANT: Ensures uniqueness in the database
+    @Column(unique = true)
     private String medicalRecordNumber;
 
     private String bloodType;
@@ -1107,7 +1140,6 @@ public class Patient {
     @Lob
     private String medicalHistory;
 
-    // Change severityLevel to Integer and add validation
     @Min(value = 1, message = "Severity level must be at least 1")
     @Max(value = 5, message = "Severity level must be at most 5")
     private Integer severityLevel;
@@ -1127,7 +1159,10 @@ public class Patient {
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NursingCarePlan> nursingCarePlans;
 
-    private boolean deleted = false; // Add this field
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuickNote> quickNotes = new ArrayList<>(); // Initialize the list
+
+    private boolean deleted = false;
 
     public Unit getUnit() {
         return getCurrentAdmission()
@@ -1139,18 +1174,26 @@ public class Patient {
         return getCurrentAdmission().map(admission -> admission.getBed().getRoom()).orElse(null);
     }
 
-    // Helper method to get the *current* (active) admission
-    private Optional<Admission> getCurrentAdmission() {
+    public Optional<Admission> getCurrentAdmission() {
         if (admissions == null || admissions.isEmpty()) {
             return Optional.empty();
         }
 
-        // Find the *latest* admission that is still active
         return admissions.stream()
-                .filter(
-                        admission -> admission.getDischargeDate() == null
-                                || admission.getDischargeDate().isAfter(LocalDateTime.now()))
-                .max(Comparator.comparing(Admission::getAdmissionDate)); // Most recent, active admission
+                .filter(admission -> admission.getDischargeDate() == null
+                        || admission.getDischargeDate().isAfter(LocalDateTime.now()))
+                .max(Comparator.comparing(Admission::getAdmissionDate));
+    }
+
+    // Add helper methods for QuickNotes
+    public void addQuickNote(QuickNote quickNote) {
+        quickNotes.add(quickNote);
+        quickNote.setPatient(this); // Set the bidirectional relationship
+    }
+
+    public void removeQuickNote(QuickNote quickNote) {
+        quickNotes.remove(quickNote);
+        quickNote.setPatient(null); // Important for orphan removal
     }
 }
 ```
@@ -1273,12 +1316,14 @@ package mine.profile.website.models;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -1292,6 +1337,8 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "payment_date")
+    @NotNull(message = "Payment date cannot be null")
     private LocalDateTime paymentDate;
 
     private double amount;
@@ -1302,11 +1349,15 @@ public class Payment {
     @JoinColumn(name = "billing_id")
     private Billing billing;
 
-    public Payment(LocalDateTime paymentDate, double amount, String paymentMethod, Billing billing) {
+    @Column(columnDefinition = "TEXT") // Use TEXT for potentially large JSON strings
+    private String statistics;
+
+    public Payment(LocalDateTime paymentDate, double amount, String paymentMethod, Billing billing, String statistics) {
         this.paymentDate = paymentDate;
         this.amount = amount;
         this.paymentMethod = paymentMethod;
         this.billing = billing;
+        this.statistics = statistics;
     }
 }
 ```
@@ -1518,6 +1569,7 @@ public class ProcedureLog {
     private LocalDateTime endTime;
 
     private String notes;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
@@ -1527,17 +1579,22 @@ public class ProcedureLog {
     private Procedure procedure;
 
     @ManyToOne
-    @JoinColumn(name = "billing_id")
+    @JoinColumn(name = "billing_id") // Keep the billing association
     private Billing billing;
 
+    @ManyToOne
+    @JoinColumn(name = "patient_id") // Add patient association
+    private Patient patient;
+
     public ProcedureLog(LocalDateTime startTime, LocalDateTime endTime, String notes, User user, Procedure procedure,
-            Billing billing) {
+            Billing billing, Patient patient) { // Add patient to constructor
         this.startTime = startTime;
         this.endTime = endTime;
         this.notes = notes;
         this.user = user;
         this.procedure = procedure;
         this.billing = billing;
+        this.patient = patient;
     }
 }
 ```
@@ -1591,7 +1648,8 @@ public class Product {
         MEDICATION,
         DEVICE,
         CONSUMABLE,
-        SERVICE
+        SERVICE,
+        APPOINTMENT
     }
 
     public enum PricingModel {
@@ -1607,6 +1665,47 @@ public class Product {
         }
         return product.getUnitPrice().multiply(quantity);
     }
+}
+```
+├── QuickNote.java:```
+// models/QuickNote.java
+package mine.profile.website.models;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class QuickNote {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Lob // For potentially long notes
+    private String noteText;
+
+    private LocalDateTime createdAt;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id", nullable = false) // Important: Foreign key relationship
+    private Patient patient;
+
+    // Optional added by user for later
+    private String addedByUser;
 }
 ```
 ├── Role.java:```

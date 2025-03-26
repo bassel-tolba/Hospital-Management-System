@@ -160,7 +160,7 @@ const DocumentTypeList = () => {
 			render: (text, record) => (
 				<Space size="middle">
 					{canUpdateDocumentType && (
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
 							Edit
 						</Button>
 					)}
@@ -182,7 +182,7 @@ const DocumentTypeList = () => {
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24}>
 					{canCreateDocumentType && (
-						<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
+						<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
 							Add New Document Type
 						</Button>
 					)}
@@ -216,7 +216,7 @@ const DocumentTypeList = () => {
 						Cancel
 					</Button>,
 					(selectedDocumentType ? canUpdateDocumentType : canCreateDocumentType) && (
-						<Button key="submit" type="default" onClick={() => form.submit()}>
+						<Button key="submit" type="primary" onClick={() => form.submit()}>
 							{selectedDocumentType ? "Update" : "Save"}
 						</Button>
 					),

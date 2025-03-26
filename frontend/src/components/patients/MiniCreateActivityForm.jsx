@@ -4,6 +4,7 @@ import { Form, Input, Button, Select, Spin, message, Card, Typography } from "an
 import { useActivityStore } from "../../services/activity.service";
 import { useLabStore } from "../../services/lab.service";
 import { useImageReportTypeStore } from "../../services/imageReportType.service";
+import { useTranslation } from "react-i18next"; // Import
 
 import { LoadingOutlined } from "@ant-design/icons"; // More specific loading icon
 
@@ -12,6 +13,7 @@ const { TextArea } = Input;
 const { Title } = Typography;
 
 const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
+	const { t } = useTranslation(); // Initialize
 	const { createActivity, loading, error, clearError } = useActivityStore();
 	const { labTests, fetchLabTests, loading: labLoading } = useLabStore();
 	const { imageReportTypes, fetchImageReportTypes, loading: imageReportLoading } = useImageReportTypeStore();
@@ -126,10 +128,10 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 			form.resetFields(); // Reset Ant Design form fields
 
 			onActivityCreated();
-			message.success("Activity created successfully");
+			message.success(t("activity-created-successfully"));
 		} catch (err) {
 			console.error("Failed to create activity", err);
-			message.error(err.message || "Failed to create activity"); // More robust error handling
+			message.error(err.message || t("failed-to-create-activity")); // More robust error handling
 		}
 	};
 
@@ -146,9 +148,11 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 	if (error) {
 		return (
 			<Card style={{ borderColor: "red" }}>
-				<p style={{ color: "red" }}>Error: {error}</p>
+				<p style={{ color: "red" }}>
+					{t("error")}: {error}
+				</p>
 				<Button type="link" size="small" onClick={clearError}>
-					Clear Error
+					{t("clear-error")}
 				</Button>
 			</Card>
 		);
@@ -158,27 +162,27 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 	return (
 		<Card>
 			<Title level={4} style={{ textAlign: "center", marginBottom: "20px" }}>
-				Request Service
+				{t("request-service")}
 			</Title>
 			<Form form={form} layout="vertical" onFinish={onFinish} initialValues={formData}>
-				<Form.Item label="Service Type" name="activityType" rules={[{ required: true, message: "Please select a service type" }]}>
-					<Select placeholder="Select a service type" onChange={(value) => handleInputChange("activityType", value)} allowClear>
-						<Option value="LAB_TEST">Lab Test</Option>
-						<Option value="IMAGE_REPORT">Image Report</Option>
-						<Option value="VITAL_SIGNS">Vital Signs</Option>
-						<Option value="MEDICATION_ADMINISTRATION">Medication Administration</Option>
-						<Option value="ASSESSMENT">Assessment</Option>
-						<Option value="PRODUCT">Product</Option>
+				<Form.Item label={t("service-type")} name="activityType" rules={[{ required: true, message: t("please-select-service-type") }]}>
+					<Select placeholder={t("select-service-type")} onChange={(value) => handleInputChange("activityType", value)} allowClear>
+						<Option value="LAB_TEST">{t("lab-test")}</Option>
+						<Option value="IMAGE_REPORT">{t("image-report")}</Option>
+						<Option value="VITAL_SIGNS">{t("vital-signs")}</Option>
+						<Option value="MEDICATION_ADMINISTRATION">{t("medication-administration")}</Option>
+						<Option value="ASSESSMENT">{t("assessment")}</Option>
+						<Option value="PRODUCT">{t("product")}</Option>
 					</Select>
 				</Form.Item>
 
 				{formData.activityType === "LAB_TEST" && (
 					<Form.Item
-						label="Lab Test"
+						label={t("lab-test")}
 						name="labTest"
-						rules={[{ required: formData.activityType === "LAB_TEST", message: "Please select a lab test" }]}>
+						rules={[{ required: formData.activityType === "LAB_TEST", message: t("please-select-lab-test") }]}>
 						<Select
-							placeholder="Select a Lab Test"
+							placeholder={t("select-lab-test")}
 							options={getLabTestOptions()}
 							onSelect={handleLabTestSelect}
 							filterOption={(inputValue, option) => option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
@@ -189,11 +193,11 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 
 				{formData.activityType === "IMAGE_REPORT" && (
 					<Form.Item
-						label="Image Report Type"
+						label={t("image-report-type")}
 						name="imageReportType"
-						rules={[{ required: formData.activityType === "IMAGE_REPORT", message: "Please select an image report type" }]}>
+						rules={[{ required: formData.activityType === "IMAGE_REPORT", message: t("please-select-image-report-type") }]}>
 						<Select
-							placeholder="Select an Image Report Type"
+							placeholder={t("select-image-report-type")}
 							options={getImageReportTypeOptions()}
 							onSelect={handleImageReportTypeSelect}
 							filterOption={(inputValue, option) => option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
@@ -203,20 +207,20 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 				)}
 
 				<Form.Item
-					label="Description"
+					label={t("description")}
 					name="description"
 					rules={[
 						{
 							required: true,
-							message: "Please enter a description",
+							message: t("please-enter-description"),
 						},
 					]}>
-					<TextArea rows={4} placeholder="Enter description" />
+					<TextArea rows={4} placeholder={t("enter-description")} />
 				</Form.Item>
 
 				<Form.Item>
 					<Button type="primary" htmlType="submit" loading={loading} block>
-						Create Activity
+						{t("create-activity")}
 					</Button>
 				</Form.Item>
 			</Form>

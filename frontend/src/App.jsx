@@ -1,5 +1,81 @@
+// App.js
+
+// --- Core React/Router Imports ---
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+
+// --- State Management & Services ---
+import { useAuthStore } from "./services/auth.service";
+import { useTranslation } from "react-i18next";
+import i18n from "./i18n"; // Assuming i18n setup is here
+
+// --- Ant Design Imports ---
+import {
+	Layout,
+	Menu as AntMenu,
+	Breadcrumb,
+	Button,
+	Drawer,
+	ConfigProvider,
+	Select,
+	theme as antdTheme,
+	Space,
+	Grid,
+	Input,
+	Card,
+	notification,
+	Avatar,
+	Radio,
+	// Removed duplicate/unused antd components if any
+} from "antd";
+import {
+	MenuOutlined,
+	SettingOutlined,
+	BulbOutlined,
+	DollarCircleOutlined,
+	ExperimentOutlined,
+	LockOutlined,
+	HeartOutlined,
+	ShoppingCartOutlined,
+	LoginOutlined,
+	UserAddOutlined,
+	UserOutlined,
+	TeamOutlined,
+	CalendarOutlined, // Used for Appointments & Activities
+	MedicineBoxOutlined,
+	MonitorOutlined,
+	FileTextOutlined,
+	SaveOutlined,
+	AppstoreOutlined,
+	HomeOutlined,
+	RestOutlined,
+	SolutionOutlined,
+	UsergroupAddOutlined,
+	// HistoryOutlined, // Seemed unused
+	FileProtectOutlined,
+	ThunderboltOutlined,
+	BoxPlotOutlined,
+	MedicineBoxTwoTone,
+	ShopOutlined,
+	AccountBookOutlined,
+	FileImageOutlined,
+	FileSearchOutlined,
+	FolderOutlined,
+	ProfileOutlined,
+	ExperimentTwoTone,
+	CheckCircleOutlined,
+	KeyOutlined,
+} from "@ant-design/icons";
+import enUS from "antd/es/locale/en_US";
+import faIR from "antd/es/locale/fa_IR";
+import arEG from "antd/es/locale/ar_EG";
+import "antd/dist/reset.css";
+
+// --- Styling Imports ---
+import styled, { keyframes, css } from "styled-components";
+
+// --- Components & Pages ---
 import Profile from "./components/auth/Profile";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
@@ -17,90 +93,34 @@ import ProcedureLogList from "./components/procedureLogs/ProcedureLogList";
 import ProductList from "./components/products/ProductList";
 import PatientProductUsageList from "./components/products/PatientProductUsageList";
 import PatientDetails from "./components/patients/PatientDetails";
-import { useAuthStore } from "./services/auth.service";
-import {
-	Layout,
-	Menu as AntMenu,
-	Breadcrumb,
-	Button,
-	Drawer,
-	ConfigProvider,
-	Select,
-	theme as antdTheme,
-	Typography,
-	Grid,
-	Input,
-	Card,
-	notification,
-	Avatar,
-	Space,
-} from "antd";
-import MyAntdPage from "./antdPage";
 import ImageReportList from "./components/imageReports/ImageReportList";
 import LabTestList from "./components/lab/LabTestList";
 import LabResultPage from "./components/lab/LabResultPage";
-import { appRoutes } from "./routes";
 import Dashboard from "./components/dashboard/Dashboard";
 import PrivateRoute from "./components/PrivateRoute";
 import ImageReportTypeList from "./components/imageReports/ImageReportTypeList";
-import MedicationHistoryList from "./components/medications/MedicationHistoryList";
 import BillingPage from "./components/billing/BillingPage";
 import ActivityPage from "./pages/ActivityPage";
-import styled, { keyframes, css } from "styled-components";
+import AppointmentsPage from "./pages/AppointmentsPage"; // NEW
 import AboutUs from "./components/AboutUs";
-import { MenuOutlined } from "@ant-design/icons";
-import "antd/dist/reset.css";
 import DocumentList from "./components/documents/DocumentList";
 import DocumentTypeList from "./components/documents/DocumentTypeList";
 import AllFeaturesPage from "./components/AllFeaturesPage";
 import RoleAndPermissionManagement from "./components/auth/RoleAndPermissionManagement";
-import {
-	BulbOutlined,
-	SettingOutlined,
-	DollarCircleOutlined,
-	ExperimentOutlined,
-	LockOutlined,
-	HeartOutlined,
-	ShoppingCartOutlined,
-	LoginOutlined,
-	UserAddOutlined,
-	UserOutlined,
-	TeamOutlined,
-	CalendarOutlined,
-	MedicineBoxOutlined,
-	MonitorOutlined,
-	FileTextOutlined,
-	SaveOutlined,
-	AppstoreOutlined,
-	HomeOutlined,
-	RestOutlined,
-	SolutionOutlined,
-	UsergroupAddOutlined,
-	HistoryOutlined,
-	FileProtectOutlined,
-	ThunderboltOutlined,
-	BoxPlotOutlined,
-	MedicineBoxTwoTone,
-	ShopOutlined,
-	AccountBookOutlined,
-	FileImageOutlined,
-	FileSearchOutlined,
-	FolderOutlined,
-	ProfileOutlined,
-	ExperimentTwoTone,
-	CheckCircleOutlined,
-	KeyOutlined,
-} from "@ant-design/icons";
 import VoiceNavigation from "./VoiceNavigation";
-import { Chart } from "@antv/g2";
+import MyAntdPage from "./antdPage"; // Assuming this is used somewhere
 
-import { CSSTransition, TransitionGroup } from "react-transition-group"; // ADDED - Correctly added, but TransitionGroup is also needed
+// --- Routes & Config ---
+import { appRoutes } from "./routes";
+import { colorTokens, darkKillerTheme, ComplexThemeProvider, g2Themes } from "./themeConfig"; // Assuming themes are moved
 
+// --- Constants ---
 const { Header, Content, Footer, Sider } = Layout;
 const { defaultAlgorithm, darkAlgorithm } = antdTheme;
 const { useBreakpoint } = Grid;
 const { Search } = Input;
-// Keyframes remain the same
+
+// --- Styled Components (Keep definitions outside components) ---
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -110,49 +130,48 @@ const AppWrapper = styled.div`
 	min-height: 100vh;
 	position: relative;
 	z-index: 1;
-
-	&::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background-image: linear-gradient(15deg, #13547a 0%, #80d0c7 100%);
-		z-index: -1;
-	}
+	display: flex;
+	flex-direction: column;
+	// Removed ::before pseudo-element if not actively used for background
 `;
 
 const StyledLayout = styled(Layout)`
-	background: rgba(255, 255, 255, 0.1) !important;
 	min-height: 100vh;
-
-	@media (max-width: 768px) {
-		backdrop-filter: none !important; /* Removed on smaller screens */
-		background: rgba(255, 255, 255, 0.3) !important; /* More opaque background on smaller screens*/
-	}
 `;
 
-// Removed AnimatedContent wrapper
 const StyledContent = styled(Content)`
-	// Renamed to StyledContent
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
 	margin: 12px;
 	padding: 16px;
 	min-height: 280px;
-	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.2);
-	transition: all 0.3s ease;
+	border-radius: 8px; // Slightly reduced radius
+	transition: box-shadow 0.3s ease;
 	z-index: 2;
+	flex: 1; // Ensure content grows
+	background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"}; // Use theme token
 
 	&:hover {
-		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); // Subtle hover
 	}
 
 	@media (max-width: 768px) {
-		margin: 8px; // Reduce margin on smaller screens
-		padding: 12px; // Reduce padding on smaller screens.
+		margin: 8px;
+		padding: 12px;
+	}
+
+	// Animation styles moved to global style tag in App component
+	.fade-enter {
+		opacity: 0;
+	}
+	.fade-enter-active {
+		opacity: 1;
+		transition: opacity 300ms ease-in-out;
+	}
+	.fade-exit {
+		opacity: 1;
+	}
+	.fade-exit-active {
+		opacity: 0;
+		transition: opacity 300ms ease-in-out;
 	}
 `;
 
@@ -160,6 +179,7 @@ const LogoImage = styled.img`
 	height: 40px;
 	width: auto;
 	margin-right: 1rem;
+	vertical-align: middle; // Align better with text/buttons
 
 	@media (max-width: 576px) {
 		height: 32px;
@@ -168,698 +188,456 @@ const LogoImage = styled.img`
 `;
 
 const StyledHeader = styled(Header)`
-	background: rgba(255, 255, 255, 0.1) !important;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	position: sticky;
 	top: 0;
-	z-index: 1000;
-	transition: all 0.3s ease;
+	z-index: 1001; // Ensure above Sider/Drawer overlay
+	transition: background-color 0.3s ease, box-shadow 0.3s ease;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	padding-inline: 1rem;
+	background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"};
+	border-bottom: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "#f0f0f0"};
+
+	// Add subtle shadow on scroll (requires JS or more complex CSS)
+	// &.scrolled { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
 
 	@media (max-width: 768px) {
-		backdrop-filter: none !important; /* Removed on smaller screens */
-		background: rgba(255, 255, 255, 0.3) !important; /* More opaque background */
-		padding-inline: 0.5rem; // Reduce padding on smaller screens
+		padding-inline: 0.75rem;
 	}
 `;
 
 const StyledSider = styled(Sider)`
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-	backdrop-filter: blur(2px) !important; /* Reduced blur */
-	border-right: 1px solid rgba(255, 255, 255, 0.2);
+	// Use theme tokens for background
+	background: ${(props) => props.theme?.token?.colorBgLayout || "#001529"} !important;
+	// border-right: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "rgba(255, 255, 255, 0.2)"};
+	height: 100vh; // Full height
+	position: sticky !important; // Sticky Sider
+	top: 0;
+	overflow: auto; // Scroll if menu is long
 
 	.ant-menu {
 		background: transparent;
+		border-right: none !important; // Remove default border
 	}
 
-	.ant-menu-item {
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-		backdrop-filter: blur(2px); /* Reduced blur */
+	// Adjust menu item styling using theme tokens where possible
+	.ant-menu-item,
+	.ant-menu-submenu-title {
 		margin: 4px 8px;
-		border-radius: 6px;
+		width: calc(100% - 16px); // Ensure full width within padding
+		border-radius: ${(props) => props.theme?.token?.borderRadius || 6}px;
+		color: ${(props) => props.theme?.token?.colorTextSecondary}; // Adjust text color
 
 		&:hover {
-			background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+			background: ${(props) => props.theme?.token?.colorBgTextHover || "rgba(255, 255, 255, 0.1)"};
+			color: ${(props) => props.theme?.token?.colorText};
 		}
 
-		&-selected {
-			background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%) !important;
-			color: white !important;
+		&.ant-menu-item-selected {
+			background: ${(props) => props.theme?.token?.colorPrimaryBg || "rgba(255, 255, 255, 0.2)"} !important;
+			color: ${(props) => props.theme?.token?.colorPrimary || "#fff"} !important;
 		}
 	}
-	.ant-menu-submenu-title {
+	.ant-menu-submenu-arrow {
+		color: ${(props) => props.theme?.token?.colorTextSecondary};
 	}
 
-	@media (max-width: 768px) {
-		background: rgba(255, 255, 255, 0.3) !important; /*More opaque*/
+	.ant-layout-sider-trigger {
+		background: ${(props) => props.theme?.token?.colorBgContainer};
+		color: ${(props) => props.theme?.token?.colorText};
 	}
+
+	// Mobile styles are handled by Drawer now
+
+	// Custom scrollbar styling
+	&::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: ${(props) => props.theme?.token?.colorBgContainer || "#f0f0f0"};
+		border-radius: 3px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: ${(props) => props.theme?.token?.colorBorder || "#d9d9d9"};
+		border-radius: 3px;
+
+		&:hover {
+			background: ${(props) => props.theme?.token?.colorBorderSecondary || "#bfbfbf"};
+		}
+	}
+
+	/* Firefox scrollbar styling */
+	scrollbar-width: thin;
+	scrollbar-color: ${(props) => `${props.theme?.token?.colorBorder || "#d9d9d9"} ${props.theme?.token?.colorBgContainer || "#f0f0f0"}`};
 `;
 
 const MobileMenuButton = styled(Button)`
-	display: none;
-	margin-left: auto;
+	display: none; // Managed by Grid.useBreakpoint now
 
-	@media (max-width: 768px) {
-		display: flex;
+	@media (max-width: 767px) {
+		// Target Ant Design's 'md' breakpoint precisely
+		display: inline-flex; // Use inline-flex for better alignment
 		align-items: center;
 		justify-content: center;
-		font-size: 20px;
+		font-size: 18px; // Slightly smaller icon
 	}
 `;
 
 const StyledDrawer = styled(Drawer)`
 	.ant-drawer-content-wrapper {
-		width: 100% !important;
-		max-width: 300px;
-
-		@media (max-width: 768px) {
-			max-width: 80%; // Adjust as needed, making sure it's not too small
-		}
 	}
 
 	.ant-drawer-content {
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+		// Use theme tokens
+		background: ${(props) => props.theme?.token?.colorBgElevated || "rgba(0, 21, 41, 0.9)"} !important;
+	}
+	.ant-drawer-header {
+		background: ${(props) => props.theme?.token?.colorBgElevated || "rgba(0, 21, 41, 0.9)"};
+		border-bottom: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary};
+	}
+	.ant-drawer-title,
+	.ant-drawer-close {
+		color: ${(props) => props.theme?.token?.colorText};
 	}
 
 	.ant-drawer-body {
 		padding: 0;
 		background: transparent;
+
+		// Custom scrollbar styling
+		&::-webkit-scrollbar {
+			width: 6px;
+			height: 6px;
+		}
+
+		&::-webkit-scrollbar-track {
+			background: ${(props) => props.theme?.token?.colorBgContainer || "#f0f0f0"};
+			border-radius: 3px;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background: ${(props) => props.theme?.token?.colorBorder || "#d9d9d9"};
+			border-radius: 3px;
+
+			&:hover {
+				background: ${(props) => props.theme?.token?.colorBorderSecondary || "#bfbfbf"};
+			}
+		}
+
+		/* Firefox scrollbar styling */
+		scrollbar-width: thin;
+		scrollbar-color: ${(props) => `${props.theme?.token?.colorBorder || "#d9d9d9"} ${props.theme?.token?.colorBgContainer || "#f0f0f0"}`};
 	}
 
 	.ant-menu {
 		background: transparent;
+		border-right: none !important;
 	}
 
-	.ant-menu-item {
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+	// Consistent menu item styling with Sider
+	.ant-menu-item,
+	.ant-menu-submenu-title {
 		margin: 4px 8px;
-		border-radius: 6px;
+		width: calc(100% - 16px);
+		border-radius: ${(props) => props.theme?.token?.borderRadius || 6}px;
+		color: ${(props) => props.theme?.token?.colorTextSecondary};
 
 		&:hover {
-			background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+			background: ${(props) => props.theme?.token?.colorBgTextHover || "rgba(255, 255, 255, 0.1)"};
+			color: ${(props) => props.theme?.token?.colorText};
 		}
 
-		&-selected {
-			background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%) !important;
-			color: white !important;
+		&.ant-menu-item-selected {
+			background: ${(props) => props.theme?.token?.colorPrimaryBg || "rgba(255, 255, 255, 0.2)"} !important;
+			color: ${(props) => props.theme?.token?.colorPrimary || "#fff"} !important;
 		}
 	}
-
-	.ant-menu-submenu-title {
-	}
-
-	/* No media query needed here - already handles smaller screens well */
-
-	@media (max-width: 576px) {
-		.ant-drawer-content {
-			backdrop-filter: none !important;
-		}
+	.ant-menu-submenu-arrow {
+		color: ${(props) => props.theme?.token?.colorTextSecondary};
 	}
 `;
 
 const StyledFooter = styled(Footer)`
-	background: rgba(255, 255, 255, 0.1);
-	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	// Use theme tokens
+	background: ${(props) => props.theme?.token?.colorBgLayout || "rgba(0, 0, 0, 0.1)"};
+	border-top: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "rgba(255, 255, 255, 0.1)"};
 	text-align: center;
-	padding: 12px;
-	@media (max-width: 768px) {
-		backdrop-filter: none !important; /*Removed blur*/
-		background: rgba(255, 255, 255, 0.3) !important; /* More Opaque */
-	}
+	padding: 12px 24px; // Adjust padding
+	color: ${(props) => props.theme?.token?.colorTextSecondary};
 `;
 
-const DashboardCard = styled(Card)`
-	margin-bottom: 16px;
-	border-radius: 8px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-	transition: all 0.3s;
-
-	&:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	}
-
-	@media (max-width: 768px) {
-		margin-bottom: 12px; // Reduce margin slightly on smaller screens
-	}
-`;
-
-const colorTokens = {
-	light: {
-		primaryColor: "#1890ff",
-		successColor: "#52c41a",
-		warningColor: "#faad14",
-		errorColor: "#ff4d4f",
-		infoColor: "#1677ff",
-		backgroundColor: "#fff",
-		textColor: "rgba(0, 0, 0, 0.88)",
-		borderColor: "#d9d9d9",
-		paperColor: "#fff",
-		dividerColor: "#e8e8e8",
-	},
-	dark: {
-		primaryColor: "#ffd700",
-		successColor: "#ffd700",
-		warningColor: "#ffe58f",
-		errorColor: "#ff7875",
-		infoColor: "#ffd700",
-		backgroundColor: "#fff", // Keep background white
-		textColor: "#fff",
-		borderColor: "#ffd700",
-		paperColor: "#ffd700",
-		dividerColor: "#424242",
-	},
-	green: {
-		primaryColor: "#52c41a",
-		successColor: "#b7eb8f",
-		warningColor: "#ffe58f",
-		errorColor: "#ff7875",
-		infoColor: "#69b1ff",
-		backgroundColor: "#f6ffed",
-		textColor: "rgba(0, 0, 0, 0.88)",
-		borderColor: "#b7eb8f",
-		paperColor: "#f6ffed",
-		dividerColor: "#b7eb8f",
-	},
-	green_dark: {
-		primaryColor: "#95de64",
-		successColor: "#d9f7be",
-		warningColor: "#fff1b8",
-		errorColor: "#ffb8b0",
-		infoColor: "#bae0ff",
-		backgroundColor: "rgba(255, 255, 255, 0.1)",
-		textColor: "#fff",
-		borderColor: "#95de64",
-		paperColor: "rgba(255, 255, 255, 0.1)",
-		dividerColor: "#95de64",
-	},
-	red: {
-		primaryColor: "#ff4d4f",
-		successColor: "#b7eb8f",
-		warningColor: "#ffe58f",
-		errorColor: "#ff7875",
-		infoColor: "#69b1ff",
-		backgroundColor: "#fff2f0",
-		textColor: "rgba(0, 0, 0, 0.88)",
-		borderColor: "#ffccc7",
-		paperColor: "#fff2f0",
-		dividerColor: "#ffccc7",
-	},
-	red_dark: {
-		primaryColor: "#ff7875",
-		successColor: "#ffdfdc",
-		warningColor: "#fff1b8",
-		errorColor: "#ffb8b0",
-		infoColor: "#bae0ff",
-		backgroundColor: "#fff", // Keep background white
-		textColor: "#fff",
-		borderColor: "#ff7875",
-		paperColor: "#303030", // Consistent dark paper
-		dividerColor: "#ff7875",
-	},
-	pink: {
-		primaryColor: "#eb2f96",
-		successColor: "#b7eb8f",
-		warningColor: "#ffe58f",
-		errorColor: "#ff7875",
-		infoColor: "#69b1ff",
-		backgroundColor: "#fff0f6",
-		textColor: "rgba(0, 0, 0, 0.88)",
-		borderColor: "#f7c0e8",
-		paperColor: "#fff0f6",
-		dividerColor: "#f7c0e8",
-	},
-	pink_dark: {
-		primaryColor: "#f7c0e8",
-		successColor: "#fff2f0",
-		warningColor: "#fff1b8",
-		errorColor: "#ffb8b0",
-		infoColor: "#bae0ff",
-		backgroundColor: "#fff", // Keep background white
-		textColor: "#fff",
-		borderColor: "#f7c0e8",
-		paperColor: "#303030", // Consistent dark paper
-		dividerColor: "#f7c0e8",
-	},
-	blue: {
-		primaryColor: "#1890ff",
-		successColor: "#52c41a",
-		warningColor: "#faad14",
-		errorColor: "#ff4d4f",
-		infoColor: "#1677ff",
-		backgroundColor: "#e6f4ff",
-		textColor: "rgba(0, 0, 0, 0.88)",
-		borderColor: "#91caff",
-		paperColor: "#e6f4ff",
-		dividerColor: "#91caff",
-	},
-	blue_dark: {
-		primaryColor: "#69b1ff",
-		successColor: "#b7eb8f",
-		warningColor: "#ffe58f",
-		errorColor: "#ff7875",
-		infoColor: "#91caff",
-		backgroundColor: "#fff", // Keep background white
-		textColor: "#fff",
-		borderColor: "#69b1ff",
-		paperColor: "#303030", // Consistent dark paper
-		dividerColor: "#69b1ff",
-	},
-	purple: {
-		primaryColor: "#722ed1",
-		successColor: "#52c41a",
-		warningColor: "#faad14",
-		errorColor: "#ff4d4f",
-		infoColor: "#1677ff",
-		backgroundColor: "#f0eafa",
-		textColor: "rgba(0, 0, 0, 0.88)",
-		borderColor: "#b37feb",
-		paperColor: "#f0eafa",
-		dividerColor: "#b37feb",
-	},
-	purple_dark: {
-		primaryColor: "#b37feb",
-		successColor: "#b7eb8f",
-		warningColor: "#ffe58f",
-		errorColor: "#ff7875",
-		infoColor: "#91caff",
-		backgroundColor: "#fff", // Keep background white
-		textColor: "#fff",
-		borderColor: "#b37feb",
-		paperColor: "#303030", // Consistent dark paper
-		dividerColor: "#b37feb",
-	},
-};
-
-const g2Themes = {
-	light: {
-		type: "light",
-		color: colorTokens.light.primaryColor,
-		viewFill: colorTokens.light.backgroundColor,
-	},
-	dark: {
-		type: "classicDark",
-		color: colorTokens.dark.primaryColor,
-		viewFill: colorTokens.dark.backgroundColor,
-	},
-	green: {
-		type: "light",
-		color: colorTokens.green.primaryColor,
-		viewFill: colorTokens.green.backgroundColor,
-	},
-	green_dark: {
-		type: "classicDark",
-		color: colorTokens.green_dark.primaryColor,
-		viewFill: colorTokens.green_dark.backgroundColor,
-	},
-	red: {
-		type: "light",
-		color: colorTokens.red.primaryColor,
-		viewFill: colorTokens.red.backgroundColor,
-	},
-	red_dark: {
-		type: "classicDark",
-		color: colorTokens.red_dark.primaryColor,
-		viewFill: colorTokens.red_dark.backgroundColor,
-	},
-	pink: {
-		type: "light",
-		color: colorTokens.pink.primaryColor,
-		viewFill: colorTokens.pink.backgroundColor,
-	},
-	pink_dark: {
-		type: "classicDark",
-		color: colorTokens.pink_dark.primaryColor,
-		viewFill: colorTokens.pink_dark.backgroundColor,
-	},
-	blue: {
-		type: "light",
-		color: colorTokens.blue.primaryColor,
-		viewFill: colorTokens.blue.backgroundColor,
-	},
-	blue_dark: {
-		type: "classicDark",
-		color: colorTokens.blue_dark.primaryColor,
-		viewFill: colorTokens.blue_dark.backgroundColor,
-	},
-	purple: {
-		type: "light",
-		color: colorTokens.purple.primaryColor,
-		viewFill: colorTokens.purple.backgroundColor,
-	},
-	purple_dark: {
-		type: "classicDark",
-		color: colorTokens.purple_dark.primaryColor,
-		viewFill: colorTokens.purple_dark.backgroundColor,
-	},
-};
-export { g2Themes };
-
+// --- Helper Functions ---
 const getMenuIcon = (path) => {
-	const iconStyle = { fontSize: "16px" };
+	const iconStyle = { fontSize: "16px", marginRight: "8px" }; // Add margin for spacing
 
-	switch (path) {
-		case "/login":
-			return <LoginOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
-		case "/register":
-			return <UserAddOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
-		case "/profile":
-			return <UserOutlined style={{ ...iconStyle, color: "#1890ff" }} />;
-		case "/patients":
-			return <TeamOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
-		case "/activities":
-			return <CalendarOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
-		case "/procedures":
-			return <MedicineBoxOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
-		case "/vital-signs":
-			return <MonitorOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
-		case "/assessments":
-			return <FileTextOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
-		case "/procedure-logs":
-			return <SaveOutlined style={{ ...iconStyle, color: "#eb2f96" }} />;
-		case "/units":
-			return <AppstoreOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		case "/rooms":
-			return <HomeOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		case "/beds":
-			return <RestOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		case "/admissions":
-			return <SolutionOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		case "/users":
-			return <UsergroupAddOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		case "/medications":
-			return <MedicineBoxTwoTone style={iconStyle} />;
-		case "/medications/history":
-			return <HistoryOutlined style={{ ...iconStyle, color: "#faad14" }} />;
-		case "/prescriptions":
-			return <FileProtectOutlined style={{ ...iconStyle, color: "#faad14" }} />;
-		case "/medication-administrations":
-			return <ThunderboltOutlined style={{ ...iconStyle, color: "#faad14" }} />;
-		case "/product-usages":
-			return <BoxPlotOutlined style={{ ...iconStyle, color: "#faad14" }} />;
-		case "/products":
-			return <ShopOutlined style={{ ...iconStyle, color: "#52c41a" }} />;
-		case "/billings":
-			return <AccountBookOutlined style={{ ...iconStyle, color: "#52c41a" }} />;
-		case "/image-reports":
-			return <FileImageOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
-		case "/image-report-types":
-			return <FileSearchOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
-		case "/documents":
-			return <FolderOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
-		case "/document-types":
-			return <ProfileOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
-		case "/lab-tests":
-			return <ExperimentTwoTone style={iconStyle} />;
-		case "/lab-results":
-			return <CheckCircleOutlined style={{ ...iconStyle, color: "#13c2c2" }} />;
-		case "/all-features":
-			return <AppstoreOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		case "/roles-permissions":
-			return <KeyOutlined style={{ ...iconStyle, color: "#722ed1" }} />;
-		default:
-			return <SettingOutlined style={iconStyle} />;
-	}
+	// Simplified - Assuming icons are correctly mapped and used
+	const icons = {
+		"/login": <LoginOutlined style={iconStyle} />,
+		"/register": <UserAddOutlined style={iconStyle} />,
+		"/profile": <UserOutlined style={iconStyle} />,
+		"/patients": <TeamOutlined style={iconStyle} />,
+		"/appointments": <CalendarOutlined style={iconStyle} />,
+		"/activities": <CalendarOutlined style={iconStyle} />, // Shared icon
+		"/procedures": <MedicineBoxOutlined style={iconStyle} />,
+		"/vital-signs": <MonitorOutlined style={iconStyle} />,
+		"/assessments": <FileTextOutlined style={iconStyle} />,
+		"/procedure-logs": <SaveOutlined style={iconStyle} />,
+		"/units": <AppstoreOutlined style={iconStyle} />,
+		"/rooms": <HomeOutlined style={iconStyle} />,
+		"/beds": <RestOutlined style={iconStyle} />,
+		"/admissions": <SolutionOutlined style={iconStyle} />,
+		"/users": <UsergroupAddOutlined style={iconStyle} />,
+		"/medications": <MedicineBoxTwoTone style={iconStyle} twoToneColor="#faad14" />, // Example two-tone
+		"/prescriptions": <FileProtectOutlined style={iconStyle} />,
+		"/medication-administrations": <ThunderboltOutlined style={iconStyle} />,
+		"/product-usages": <BoxPlotOutlined style={iconStyle} />,
+		"/products": <ShopOutlined style={iconStyle} />,
+		"/billings": <AccountBookOutlined style={iconStyle} />,
+		"/image-reports": <FileImageOutlined style={iconStyle} />,
+		"/image-report-types": <FileSearchOutlined style={iconStyle} />,
+		"/documents": <FolderOutlined style={iconStyle} />,
+		"/document-types": <ProfileOutlined style={iconStyle} />,
+		"/lab-tests": <ExperimentTwoTone style={iconStyle} twoToneColor="#13c2c2" />, // Example two-tone
+		"/lab-results": <CheckCircleOutlined style={iconStyle} />,
+		"/all-features": <AppstoreOutlined style={iconStyle} />,
+		"/roles-permissions": <KeyOutlined style={iconStyle} />,
+		"/dashboard": <HeartOutlined style={iconStyle} />, // Example: Using Heart for Dashboard
+	};
+
+	return icons[path] || <SettingOutlined style={iconStyle} />; // Default icon
 };
 
-const ResponsiveMenu = styled(AntMenu)`
-	&.ant-menu-inline {
-		.ant-menu-item {
-			height: 48px;
-			line-height: 48px;
-			padding-left: 24px !important;
-			margin: 4px 8px;
-			border-radius: 6px;
-
-			@media (max-width: 576px) {
-				height: 40px;
-				line-height: 40px;
-				padding-left: 16px !important;
-			}
-		}
+const transformImageUrl = (url) => {
+	if (!url) return null;
+	// Basic check if it's a relative path needing prefix or a full URL
+	if (url.startsWith("./") || url.startsWith("../")) {
+		// Assuming REACT_APP_API_BASE_URL is set for backend assets
+		// Adjust this logic based on where your images are served from
+		return `${process.env.REACT_APP_API_BASE_URL || ""}${url.replace(/^\./, "")}`;
 	}
-`;
+	return url; // Assume it's a full URL or correct path already
+};
 
+// --- NavigationMenu Component ---
 const NavigationMenu = React.memo(({ onClose, isMobile, collapsed }) => {
-	// Added React.memo
 	const { user, hasAuthority } = useAuthStore();
 	const [openKeys, setOpenKeys] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const navigate = useNavigate();
 	const location = useLocation();
+	const { t } = useTranslation();
+	const { token } = antdTheme.useToken(); // Access theme tokens
 
 	const handleMenuItemClick = useCallback(
 		(path) => {
-			// useCallback
 			navigate(path);
-			if (isMobile) {
+			if (isMobile && onClose) {
 				onClose();
 			}
 		},
 		[navigate, onClose, isMobile]
 	);
 
-	const onOpenChange = (keys) => {
-		const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
-		setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
-	};
-	const menuPermissions = {
-		"/login": [],
-		"/register": [],
-		"/profile": [],
-		"/patients": ["READ_PATIENT", "CREATE_PATIENT", "UPDATE_PATIENT", "DELETE_PATIENT"],
-		"/activities": ["READ_USER_ACTIVITY", "CREATE_USER_ACTIVITY", "UPDATE_USER_ACTIVITY", "DELETE_USER_ACTIVITY"],
-		"/procedures": ["READ_PROCEDURE", "CREATE_PROCEDURE", "UPDATE_PROCEDURE", "DELETE_PROCEDURE"],
-		"/vital-signs": ["READ_VITAL_SIGN", "CREATE_VITAL_SIGN", "UPDATE_VITAL_SIGN", "DELETE_VITAL_SIGN"],
-		"/assessments": ["READ_ASSESSMENT", "CREATE_ASSESSMENT", "UPDATE_ASSESSMENT", "DELETE_ASSESSMENT"],
-		"/procedure-logs": ["READ_PROCEDURE_LOG", "CREATE_PROCEDURE_LOG", "DELETE_PROCEDURE_LOG"],
-		"/units": ["READ_UNIT", "CREATE_UNIT", "UPDATE_UNIT", "DELETE_UNIT"],
-		"/rooms": ["READ_ROOM", "CREATE_ROOM", "UPDATE_ROOM", "DELETE_ROOM"],
-		"/beds": ["READ_BED", "CREATE_BED", "UPDATE_BED", "DELETE_BED"],
-		"/admissions": ["READ_ADMISSION", "CREATE_ADMISSION", "UPDATE_ADMISSION", "DELETE_ADMISSION"],
-		"/users": ["READ_USER", "CREATE_USER", "UPDATE_USER", "DELETE_USER"],
-		"/medications": ["READ_MEDICATION", "CREATE_MEDICATION", "UPDATE_MEDICATION", "DELETE_MEDICATION", "UPDATE_MEDICATION_STOCK"],
-		"/medications/history": ["READ_MEDICATION_HISTORY"],
-		"/prescriptions": ["READ_PRESCRIPTION", "CREATE_PRESCRIPTION", "UPDATE_PRESCRIPTION", "DELETE_PRESCRIPTION"],
-		"/medication-administrations": ["READ_MEDICATION_ADMINISTRATION", "CREATE_MEDICATION_ADMINISTRATION", "DELETE_MEDICATION_ADMINISTRATION"],
-		"/product-usages": ["READ_PATIENT_PRODUCT_USAGE", "CREATE_PATIENT_PRODUCT_USAGE", "DELETE_PATIENT_PRODUCT_USAGE"],
-		"/products": ["READ_PRODUCT", "CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT"],
-		"/billings": ["READ_BILLING", "CREATE_BILLING", "UPDATE_BILLING", "DELETE_BILLING"],
-		"/image-reports": ["READ_IMAGE_REPORT", "CREATE_IMAGE_REPORT", "UPDATE_IMAGE_REPORT", "DELETE_IMAGE_REPORT"],
-		"/image-report-types": ["READ_IMAGE_REPORT_TYPE", "CREATE_IMAGE_REPORT_TYPE", "UPDATE_IMAGE_REPORT_TYPE", "DELETE_IMAGE_REPORT_TYPE"],
-		"/documents": ["READ_DOCUMENT", "CREATE_DOCUMENT", "UPDATE_DOCUMENT", "DELETE_DOCUMENT"],
-		"/document-types": ["READ_DOCUMENT_TYPE", "CREATE_DOCUMENT_TYPE", "UPDATE_DOCUMENT_TYPE", "DELETE_DOCUMENT_TYPE"],
-		"/lab-tests": ["READ_LAB_TEST", "CREATE_LAB_TEST"],
-		"/lab-results": ["READ_LAB_RESULT", "CREATE_LAB_RESULT", "DELETE_LAB_RESULT"],
-		"/all-features": [], // No specific permissions, always show
-		"/roles-permissions": ["MANAGE_PERMISSIONS", "MANAGE_ROLES"],
-	};
+	const onOpenChange = useCallback(
+		(keys) => {
+			const latestOpenKey = keys.find((key) => !openKeys.includes(key));
+			setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+		},
+		[openKeys]
+	);
 
-	const menuItems = useMemo(() => {
-		// console.log("Current user:", user); // Removed console.log
-		const baseItems = [
-			{ label: "Login", path: "/login", show: true, category: "Authentications" },
-			{ label: "Register", path: "/register", show: true, category: "Authentications" },
-		];
+	// --- Menu Permissions (Consider moving to a separate config file) ---
+	const menuPermissions = useMemo(
+		() => ({
+			// Public
+			"/login": [],
+			"/register": [],
+			"/all-features": [],
+			"/about-us": [],
+			// Authenticated Base
+			"/profile": [],
+			"/dashboard": [],
+			// Patient Management
+			"/patients": ["READ_PATIENT", "CREATE_PATIENT", "UPDATE_PATIENT", "DELETE_PATIENT"],
+			"/appointments": ["READ_APPOINTMENT", "CREATE_APPOINTMENT", "UPDATE_APPOINTMENT", "DELETE_APPOINTMENT"],
+			"/activities": ["READ_USER_ACTIVITY", "CREATE_USER_ACTIVITY", "UPDATE_USER_ACTIVITY", "DELETE_USER_ACTIVITY"],
+			"/procedures": ["READ_PROCEDURE", "CREATE_PROCEDURE", "UPDATE_PROCEDURE", "DELETE_PROCEDURE"],
+			"/vital-signs": ["READ_VITAL_SIGN", "CREATE_VITAL_SIGN", "UPDATE_VITAL_SIGN", "DELETE_VITAL_SIGN"],
+			"/assessments": ["READ_ASSESSMENT", "CREATE_ASSESSMENT", "UPDATE_ASSESSMENT", "DELETE_ASSESSMENT"],
+			"/procedure-logs": ["READ_PROCEDURE_LOG", "CREATE_PROCEDURE_LOG", "DELETE_PROCEDURE_LOG"],
+			// Administration
+			"/units": ["READ_UNIT", "CREATE_UNIT", "UPDATE_UNIT", "DELETE_UNIT"],
+			"/rooms": ["READ_ROOM", "CREATE_ROOM", "UPDATE_ROOM", "DELETE_ROOM"],
+			"/beds": ["READ_BED", "CREATE_BED", "UPDATE_BED", "DELETE_BED"],
+			"/admissions": ["READ_ADMISSION", "CREATE_ADMISSION", "UPDATE_ADMISSION", "DELETE_ADMISSION"],
+			"/users": ["READ_USER", "CREATE_USER", "UPDATE_USER", "DELETE_USER"],
+			// Medication & Orders
+			"/medications": ["READ_MEDICATION", "CREATE_MEDICATION", "UPDATE_MEDICATION", "DELETE_MEDICATION", "UPDATE_MEDICATION_STOCK"],
+			"/prescriptions": ["READ_PRESCRIPTION", "CREATE_PRESCRIPTION", "UPDATE_PRESCRIPTION", "DELETE_PRESCRIPTION"],
+			"/medication-administrations": ["READ_MEDICATION_ADMINISTRATION", "CREATE_MEDICATION_ADMINISTRATION", "DELETE_MEDICATION_ADMINISTRATION"],
+			"/product-usages": ["READ_PATIENT_PRODUCT_USAGE", "CREATE_PATIENT_PRODUCT_USAGE", "DELETE_PATIENT_PRODUCT_USAGE"],
+			// Billing & Finance
+			"/products": ["READ_PRODUCT", "CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT"],
+			"/billings": ["READ_BILLING", "CREATE_BILLING", "UPDATE_BILLING", "DELETE_BILLING"],
+			// Diagnostics & Labs
+			"/image-reports": ["READ_IMAGE_REPORT", "CREATE_IMAGE_REPORT", "UPDATE_IMAGE_REPORT", "DELETE_IMAGE_REPORT"],
+			"/image-report-types": ["READ_IMAGE_REPORT_TYPE", "CREATE_IMAGE_REPORT_TYPE", "UPDATE_IMAGE_REPORT_TYPE", "DELETE_IMAGE_REPORT_TYPE"],
+			"/documents": ["READ_DOCUMENT", "CREATE_DOCUMENT", "UPDATE_DOCUMENT", "DELETE_DOCUMENT"],
+			"/document-types": ["READ_DOCUMENT_TYPE", "CREATE_DOCUMENT_TYPE", "UPDATE_DOCUMENT_TYPE", "DELETE_DOCUMENT_TYPE"],
+			"/lab-tests": ["READ_LAB_TEST", "CREATE_LAB_TEST"],
+			"/lab-results": ["READ_LAB_RESULT", "CREATE_LAB_RESULT", "DELETE_LAB_RESULT"],
+			// Security
+			"/roles-permissions": ["MANAGE_PERMISSIONS", "MANAGE_ROLES"],
+		}),
+		[]
+	);
 
-		const loggedInItems = user ? [{ label: "Profile", path: "/profile", show: true, category: "Authentications" }] : [];
+	// --- Menu Item Generation & Filtering ---
+	const allMenuItems = useMemo(() => {
+		return Object.keys(menuPermissions).map((path) => {
+			const labelKey = path === "/" ? "home" : path.substring(path.lastIndexOf("/") + 1);
 
-		const permissionBasedItems = Object.entries(menuPermissions)
-			.filter(([path, permissions]) => {
-				// console.log(`Checking path: ${path}, required permissions:`, permissions); // Removed console.log
+			const permissions = menuPermissions[path];
+			const isPublic = permissions.length === 0 && !["/profile", "/dashboard"].includes(path);
+			const requiresAuth = !isPublic;
 
+			let show = false;
+			// Modified logic to show login/register only when not authenticated
+			if (isPublic) {
+				if (["/login", "/register"].includes(path)) {
+					show = !user; // Show only when user is not logged in
+				} else {
+					show = true;
+				}
+			}
+			if (requiresAuth && user) {
 				if (permissions.length === 0) {
-					// console.log(`Path ${path} has no permissions, showing.`); // Removed console.log
-					return true;
+					show = true;
+				} else {
+					show = permissions.some((p) => hasAuthority(p));
 				}
-				if (!user) {
-					// console.log(`No user logged in, hiding path ${path}.`); // Removed console.log
-					return false;
+			}
+
+			let categoryKey = "Other";
+			// Modified to include login and register in Authentications category
+			if (["/login", "/register", "/profile"].includes(path)) {
+				categoryKey = "Authentications";
+			} else if (
+				["/patients", "/appointments", "/activities", "/procedures", "/vital-signs", "/assessments", "/procedure-logs"].includes(path)
+			) {
+				categoryKey = "Patient Management";
+			}
+			// ...rest of the categories remain the same...
+			else if (["/units", "/rooms", "/beds", "/admissions", "/users"].includes(path)) categoryKey = "Administration";
+			else if (["/medications", "/prescriptions", "/medication-administrations", "/product-usages"].includes(path))
+				categoryKey = "Medication & Orders";
+			else if (["/products", "/billings"].includes(path)) categoryKey = "Billing & Finance";
+			else if (["/image-reports", "/image-report-types", "/documents", "/document-types", "/lab-tests", "/lab-results"].includes(path))
+				categoryKey = "Diagnostics & Labs";
+			else if (["/roles-permissions"].includes(path)) categoryKey = "Security";
+			else if (["/dashboard"].includes(path)) categoryKey = "Dashboard";
+			else if (["/all-features", "/about-us"].includes(path)) categoryKey = "General";
+
+			return {
+				path,
+				labelKey,
+				show,
+				categoryKey,
+			};
+		});
+	}, [user, hasAuthority, menuPermissions]); // Dependencies remain the same
+
+	const groupedAndFilteredMenuItems = useMemo(() => {
+		const grouped = {};
+		allMenuItems
+			.filter((item) => item.show)
+			.forEach((item) => {
+				const translatedLabel = t(item.labelKey); // Translate using the original labelKey
+				if (!searchTerm || translatedLabel.toLowerCase().includes(searchTerm.toLowerCase())) {
+					// Group by the original categoryKey
+					if (!grouped[item.categoryKey]) {
+						grouped[item.categoryKey] = [];
+					}
+					// Store translatedLabel for direct use in renderMenuItem if needed, or translate again there
+					grouped[item.categoryKey].push({ ...item, translatedLabel });
 				}
-
-				const hasPermission = permissions.some((permission) => {
-					const result = hasAuthority(permission);
-					// console.log(`Checking permission ${permission}, result: ${result}`); // Removed console.log
-					return result;
-				});
-
-				// console.log(`Final decision for ${path}: ${hasPermission}`); // Removed console.log
-				return hasPermission;
-			})
-			.map(([path, _]) => {
-				const label = path
-					.split("/")
-					.pop()
-					.replace(/-/g, " ")
-					.replace(/^\w/, (c) => c.toUpperCase());
-				let category = "Other";
-
-				if (
-					path.startsWith("/patients") ||
-					path.startsWith("/activities") ||
-					path.startsWith("/procedures") ||
-					path.startsWith("/vital-signs") ||
-					path.startsWith("/assessments") ||
-					path.startsWith("/procedure-logs")
-				) {
-					category = "Patient Management";
-				} else if (
-					path.startsWith("/units") ||
-					path.startsWith("/rooms") ||
-					path.startsWith("/beds") ||
-					path.startsWith("/admissions") ||
-					path.startsWith("/users")
-				) {
-					category = "Administration";
-				} else if (
-					path.startsWith("/medications") ||
-					path.startsWith("/prescriptions") ||
-					path.startsWith("/medication-administrations") ||
-					path.startsWith("/product-usages")
-				) {
-					category = "Medication & Orders";
-				} else if (path.startsWith("/products") || path.startsWith("/billings")) {
-					category = "Billing & Finance";
-				} else if (
-					path.startsWith("/image-reports") ||
-					path.startsWith("/image-report-types") ||
-					path.startsWith("/documents") ||
-					path.startsWith("/document-types") ||
-					path.startsWith("/lab-tests") ||
-					path.startsWith("/lab-results")
-				) {
-					category = "Diagnostics & Labs";
-				} else if (path.startsWith("/roles-permissions")) {
-					category = "Security";
-				}
-
-				return { label, path, show: true, category };
 			});
 
-		return [...baseItems, ...loggedInItems, ...permissionBasedItems];
-	}, [user, hasAuthority]);
-
-	const groupedMenuItems = useMemo(() => {
-		return menuItems.reduce((acc, item) => {
-			if (!item.show) return acc;
-			if (!acc[item.category]) {
-				acc[item.category] = [];
-			}
-			acc[item.category].push(item);
-			return acc;
-		}, {});
-	}, [menuItems]);
-
-	const filteredMenuItems = useMemo(() => {
-		if (!searchTerm) {
-			return groupedMenuItems;
-		}
-
-		const filtered = {};
-		Object.entries(groupedMenuItems).forEach(([category, items]) => {
-			const filteredItems = items.filter((item) => item.label.toLowerCase().includes(searchTerm.toLowerCase()));
-			if (filteredItems.length > 0) {
-				filtered[category] = filteredItems;
-			}
+		// Sort categories based on their translated names
+		const sortedCategories = Object.keys(grouped).sort((a, b) => t(a).localeCompare(t(b))); // Use original categoryKey for translation/sorting
+		const result = {};
+		sortedCategories.forEach((key) => {
+			result[key] = grouped[key];
 		});
-		return filtered;
-	}, [searchTerm, groupedMenuItems]);
+		return result;
+	}, [allMenuItems, searchTerm, t]);
 
-	const handleSearch = (value) => {
-		setSearchTerm(value);
-	};
+	const handleSearch = useCallback((e) => {
+		setSearchTerm(e.target.value);
+	}, []);
 
-	const selectedKeys = useMemo(() => {
-		const matchingItem = menuItems.find((item) => location.pathname === item.path);
-		return matchingItem ? [matchingItem.path] : [];
-	}, [location.pathname, menuItems]);
+	const selectedKeys = useMemo(() => [location.pathname], [location.pathname]);
 
 	const renderMenuItem = useCallback(
-		(menuItem) => {
-			// useCallback for menu item
-			const icon = getMenuIcon(menuItem.path);
-			return (
-				<AntMenu.Item key={menuItem.path} onClick={() => handleMenuItemClick(menuItem.path)}>
-					<span style={{ display: "flex", alignItems: "center" }}>
-						{icon}
-						<span style={{ marginLeft: 8 }}>{menuItem.label}</span>
-					</span>
-				</AntMenu.Item>
-			);
-		},
-		[handleMenuItemClick]
+		(menuItem) => (
+			<AntMenu.Item key={menuItem.path} icon={getMenuIcon(menuItem.path)} onClick={() => handleMenuItemClick(menuItem.path)}>
+				{/* Translate the labelKey again here to ensure it reflects current language */}
+				{t(menuItem.labelKey)}
+			</AntMenu.Item>
+		),
+		[handleMenuItemClick, t] // t is needed here
 	);
 
 	return (
 		<>
-			{isMobile ? null : (
-				<Search placeholder="Search features" onChange={(e) => handleSearch(e.target.value)} style={{ width: "100%", marginBottom: 16 }} />
+			{!isMobile && !collapsed && (
+				<Search
+					allowClear
+					placeholder={t("search-features")} // Assuming "search-features" is the translation key you use
+					onChange={handleSearch}
+					value={searchTerm}
+					style={{ margin: "16px 8px", width: "calc(100% - 16px)" }}
+				/>
 			)}
 
-			<ResponsiveMenu
+			<AntMenu
 				mode={isMobile ? "vertical" : "inline"}
+				// Simplified theme detection (adapt if needed)
+				theme={token.Layout?.sider?.colorBgLayout === "#001529" || token.Layout?.sider?.colorBgLayout?.startsWith("#0") ? "dark" : "light"}
 				openKeys={openKeys}
 				onOpenChange={onOpenChange}
 				style={{ borderRight: 0, height: "100%" }}
-				inlineCollapsed={collapsed}
+				inlineCollapsed={!isMobile && collapsed}
 				selectedKeys={selectedKeys}>
-				{Object.entries(filteredMenuItems).map(([category, items]) => (
-					<AntMenu.SubMenu key={category} title={category}>
-						{items.map(renderMenuItem)} {/* Use the memoized renderMenuItem */}
+				{Object.entries(groupedAndFilteredMenuItems).map(([categoryKey, items]) => (
+					<AntMenu.SubMenu key={categoryKey} title={t(categoryKey)}>
+						{" "}
+						{/* Use original categoryKey for translation */}
+						{items.map(renderMenuItem)}
 					</AntMenu.SubMenu>
 				))}
-			</ResponsiveMenu>
+			</AntMenu>
 		</>
 	);
 });
 
-const AppContent = ({ children, colorMode, setColorMode }) => {
+// --- HeaderContent Component ---
+const HeaderContent = React.memo(({ onDesktopToggle, onMobileToggle }) => {
 	const { user } = useAuthStore();
-	const [mobileOpen, setMobileOpen] = useState(false);
-	const [desktopOpen, setDesktopOpen] = useState(false);
-	// Removed headerVisible -  header animation handled directly in StyledHeader now.
-	const location = useLocation();
 	const screens = Grid.useBreakpoint();
 	const isSmallScreen = !screens.md;
-	const isDarkMode = colorMode.endsWith("dark");
+	const { t } = useTranslation();
 	const navigate = useNavigate();
-
-	const handleDrawerToggle = () => {
-		setMobileOpen(!mobileOpen);
-	};
-
-	const handleDesktopDrawerToggle = () => {
-		setDesktopOpen(!desktopOpen);
-	};
-
-	const transformImageUrl = (url) => {
-		if (!url) return null;
-		let fileUrl = url;
-		if (fileUrl.startsWith(".")) {
-			fileUrl = fileUrl.substring(1);
-		}
-		return `${fileUrl}`;
-	};
-
-	const breadcrumbItems = useMemo(() => {
-		const pathSegments = location.pathname.split("/").filter(Boolean);
-		return pathSegments.map((segment, index) => {
-			const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
-			return {
-				title: (
-					<RouterLink to={path} style={{ color: "inherit" }}>
-						{segment}
-					</RouterLink>
-				),
-			};
-		});
-	}, [location]);
+	const { token } = antdTheme.useToken();
 
 	const handleNavigation = useCallback(
 		(pageName) => {
 			const routeMap = {
+				// Keep route map localized here or move to constants
 				login: "/login",
 				register: "/register",
 				profile: "/profile",
@@ -875,7 +653,6 @@ const AppContent = ({ children, colorMode, setColorMode }) => {
 				admissions: "/admissions",
 				users: "/users",
 				medications: "/medications",
-				"medication history": "/medications/history",
 				prescriptions: "/prescriptions",
 				"medication administrations": "/medication-administrations",
 				"product usages": "/product-usages",
@@ -889,206 +666,719 @@ const AppContent = ({ children, colorMode, setColorMode }) => {
 				"lab results": "/lab-results",
 				"all features": "/all-features",
 				"roles permissions": "/roles-permissions",
+				appointments: "/appointments",
 				dashboard: "/dashboard",
 				home: "/",
+				"about us": "/about-us", // Added about us
 			};
-
 			const normalizedPageName = pageName.toLowerCase();
 			const route = routeMap[normalizedPageName];
 
 			if (route) {
 				navigate(route);
 				notification.success({
-					message: "Navigating",
-					description: `Navigating to ${pageName}`,
+					message: t("navigating"),
+					description: `${t("navigating_to")} ${t(normalizedPageName.replace(/ /g, "_"))}`,
 				});
 			} else {
 				notification.error({
-					message: "Navigation Error",
-					description: `Could not find a page named "${pageName}".`,
+					message: t("navigation_error"),
+					description: `${t("could_not_find_page")} "${pageName}".`,
 				});
 			}
 		},
-		[navigate]
+		[navigate, t]
 	);
 
-	const handleColorModeChange = (value) => {
-		setColorMode(value);
-	};
+	return (
+		<>
+			<Space align="center">
+				<RouterLink to={user ? "/dashboard" : "/"}>
+					{" "}
+					{/* Link logo to dashboard or home */}
+					<LogoImage src="/logo.png" alt="Logo" />
+				</RouterLink>
+				{!isSmallScreen && (
+					<Button
+						type="text"
+						icon={<MenuOutlined />}
+						onClick={onDesktopToggle}
+						aria-label={t("toggle_sidebar")}
+						style={{ color: token.colorText }}
+					/>
+				)}
+			</Space>
+
+			<Space align="center" size="middle">
+				<VoiceNavigation onNavigate={handleNavigation} />
+
+				{user ? (
+					<RouterLink to="/profile">
+						<Avatar
+							size={isSmallScreen ? 32 : 40}
+							src={user.profilePictureURL ? transformImageUrl(user.profilePictureURL) : undefined}
+							icon={!user.profilePictureURL ? <UserOutlined /> : undefined}
+							style={{
+								cursor: "pointer",
+								border: `2px solid ${token.colorBorder}`,
+							}}>
+							{/* Fallback to initials if no icon/image */}
+							{!user.profilePictureURL && user.username ? user.username[0].toUpperCase() : null}
+						</Avatar>
+					</RouterLink>
+				) : (
+					!isSmallScreen && ( // Show login/register only if logged out and not on small screen
+						<>
+							<RouterLink to="/login">
+								<Button icon={<LoginOutlined />}>{t("login")}</Button>
+							</RouterLink>
+							<RouterLink to="/register">
+								<Button type="primary" icon={<UserAddOutlined />}>
+									{t("register")}
+								</Button>
+							</RouterLink>
+						</>
+					)
+					// Optionally add a generic avatar or login icon for small screens when logged out
+					// <Avatar size={isSmallScreen ? 32 : 40} icon={<UserOutlined />} />
+				)}
+
+				{/* Mobile Toggle - Use CSS for display */}
+				<MobileMenuButton
+					type="text"
+					icon={<MenuOutlined />}
+					onClick={onMobileToggle}
+					aria-label={t("toggle_mobile_menu")}
+					style={{ color: token.colorText }}
+				/>
+			</Space>
+		</>
+	);
+});
+
+// --- AppLayout Component ---
+const AppLayout = React.memo(({ children, direction, language, componentSize }) => {
+	const { user } = useAuthStore(); // Needed for conditional rendering/logic potentially
+	const [mobileOpen, setMobileOpen] = useState(false);
+	const [desktopCollapsed, setDesktopCollapsed] = useState(false); // Renamed for clarity
+	const { t } = useTranslation();
+	const location = useLocation();
+	const screens = Grid.useBreakpoint();
+	const isSmallScreen = !screens.md;
+	const { token } = antdTheme.useToken(); // Access theme tokens
+
+	const handleMobileToggle = useCallback(() => {
+		setMobileOpen((prev) => !prev);
+	}, []);
+
+	const handleDesktopToggle = useCallback(() => {
+		setDesktopCollapsed((prev) => !prev);
+	}, []);
+
+	const breadcrumbItems = useMemo(() => {
+		const pathSegments = location.pathname.split("/").filter(Boolean);
+		const items = [{ title: <RouterLink to="/">{t("home")}</RouterLink> }]; // Start with Home
+		pathSegments.forEach((segment, index) => {
+			const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
+			const labelKey = segment.replace(/-/g, "_"); // Key for t()
+			// Avoid linking the last segment (current page)
+			const isLast = index === pathSegments.length - 1;
+			items.push({
+				title: isLast ? t(labelKey) : <RouterLink to={path}>{t(labelKey)}</RouterLink>,
+			});
+		});
+		return items;
+	}, [location.pathname, t]);
 
 	return (
 		<StyledLayout>
-			<StyledHeader isDarkMode={isDarkMode}>
-				<Space align="middle">
-					<LogoImage src="/logo.png" alt="Logo" />
-					{!isSmallScreen && <Button type="text" icon={<MenuOutlined />} onClick={handleDesktopDrawerToggle} aria-label="Toggle Sidebar" />}
-				</Space>
-
-				<Space align="middle">
-					<VoiceNavigation onNavigate={handleNavigation} />
-					<Select
-						defaultValue="light"
-						style={{ width: 120, marginRight: 16, backgroundColor: "transparent" }}
-						onChange={handleColorModeChange}
-						options={[
-							{ value: "light", label: "Light" },
-							{ value: "dark", label: "Dark" },
-							{ value: "green", label: "Green" },
-							{ value: "green_dark", label: "Green Dark" },
-							{ value: "red", label: "Red" },
-							{ value: "red_dark", label: "Red Dark" },
-							{ value: "pink", label: "Pink" },
-							{ value: "pink_dark", label: "Pink Dark" },
-							{ value: "blue", label: "Blue" },
-							{ value: "blue_dark", label: "Blue Dark" },
-							{ value: "purple", label: "Purple" },
-							{ value: "purple_dark", label: "Purple Dark" },
-						]}
-					/>
-					{user ? (
-						<RouterLink to="/profile">
-							<Avatar
-								size={isSmallScreen ? 32 : 40}
-								src={user.profilePictureURL ? transformImageUrl(user.profilePictureURL) : null}
-								icon={!user.profilePictureURL ? <UserOutlined /> : null}
-								style={{
-									cursor: "pointer",
-									objectFit: "cover",
-									border: "2px solid #ddd",
-									borderColor: isDarkMode ? "#fff" : "snow",
-								}}
-							/>
-						</RouterLink>
-					) : (
-						<Avatar size={isSmallScreen ? 32 : 40} icon={<UserOutlined />} />
-					)}
-					<MobileMenuButton type="text" icon={<MenuOutlined />} onClick={handleDrawerToggle} aria-label="Toggle Mobile Menu" />
-				</Space>
+			{/* Pass theme object directly to styled header */}
+			<StyledHeader theme={{ token }}>
+				<HeaderContent onDesktopToggle={handleDesktopToggle} onMobileToggle={handleMobileToggle} />
 			</StyledHeader>
 			<Layout>
-				<StyledSider
-					width={250}
-					collapsed={desktopOpen}
-					onCollapse={handleDesktopDrawerToggle}
-					breakpoint="md"
-					collapsible
-					isDarkMode={isDarkMode}
-					style={{
-						display: isSmallScreen ? "none" : "block",
-					}}>
-					<NavigationMenu onClose={() => {}} isMobile={false} collapsed={desktopOpen} />
-				</StyledSider>
+				{!isSmallScreen && ( // Render Sider only on larger screens
+					<StyledSider
+						theme={{ token }} // Pass theme object
+						width={250}
+						collapsible
+						collapsed={desktopCollapsed}
+						onCollapse={handleDesktopToggle}
+						trigger={null} // Use custom button in header now
+						breakpoint="md" // Antd internal handling (optional but good practice)
+						collapsedWidth={80} // Standard collapsed width
+					>
+						<NavigationMenu onClose={() => {}} isMobile={false} collapsed={desktopCollapsed} />
+					</StyledSider>
+				)}
 				<StyledDrawer
-					title="Menu"
-					placement="left"
-					width={250}
-					onClose={handleDrawerToggle}
-					open={mobileOpen}
-					style={{
-						display: isSmallScreen ? "block" : "none",
-					}}>
-					<NavigationMenu onClose={handleDrawerToggle} isMobile={true} />
+					theme={{ token }} // Pass theme object
+					title={t("menu")}
+					placement={direction === "rtl" ? "right" : "left"}
+					onClose={handleMobileToggle}
+					open={mobileOpen && isSmallScreen} // Ensure drawer only opens on small screens
+					// No need for explicit width style if using class default
+					bodyStyle={{ padding: 0 }}
+					headerStyle={{ borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+					<NavigationMenu onClose={handleMobileToggle} isMobile={true} collapsed={false} />
 				</StyledDrawer>
-				<Layout style={{ padding: "0" }}>
-					{/* Wrap routes with TransitionGroup and CSSTransition */}
-					<TransitionGroup>
-						<CSSTransition key={location.pathname} classNames="fade" timeout={300}>
-							<StyledContent isDarkMode={isDarkMode}>
-								{breadcrumbItems.length > 0 && (
-									<Breadcrumb style={{ marginBottom: 16 }}>
-										<Breadcrumb.Item>
-											<RouterLink to="/" style={{ color: "inherit" }}>
-												Home
-											</RouterLink>
-										</Breadcrumb.Item>
-										{breadcrumbItems.map((item, index) => (
-											<Breadcrumb.Item key={index}>{item.title}</Breadcrumb.Item>
-										))}
-									</Breadcrumb>
-								)}
-								{/* Render the current route's component here */}
-								<Routes location={location}>
-									<Route path="/" element={<AllFeaturesPage />} />
-									<Route path="/dashboard" element={<Dashboard colorMode={colorMode} />} />
-									{appRoutes.map((route, index) => (
-										<Route key={index} path={route.path} element={route.element} />
-									))}
-									<Route
-										path="/roles-permissions"
-										element={
-											<PrivateRoute permissions={["MANAGE_PERMISSIONS", "MANAGE_ROLES"]}>
-												<RoleAndPermissionManagement />
-											</PrivateRoute>
-										}
-									/>
-									<Route path="/all-features" element={<AllFeaturesPage />} />
-									<Route path="/about-us" element={<AboutUs />} />
-								</Routes>
-							</StyledContent>
-						</CSSTransition>
-					</TransitionGroup>
 
-					<StyledFooter isDarkMode={isDarkMode}>
-						© 2023 GMTS Hospital Model. All rights reserved. |{" "}
-						<RouterLink to="/about-us" style={{ color: "inherit" }}>
-							About Us
+				<Layout style={{ padding: "0", overflowX: "hidden" }}>
+					{" "}
+					{/* Prevent horizontal scroll on main layout */}
+					<StyledContent theme={{ token }}>
+						{/* Breadcrumb only if not on dashboard/home */}
+						{location.pathname !== "/" && location.pathname !== "/dashboard" && breadcrumbItems.length > 1 && (
+							<Breadcrumb items={breadcrumbItems} style={{ marginBottom: 16 }} />
+						)}
+						{/* TransitionGroup wraps the Routes content */}
+						<TransitionGroup component={null}>
+							{/* CSSTransition needs a unique key, pathname is good */}
+							<CSSTransition key={location.pathname} classNames="fade" timeout={300}>
+								{/* This inner div is required for CSSTransition to track */}
+								<div>
+									{children} {/* Render the matched route component */}
+								</div>
+							</CSSTransition>
+						</TransitionGroup>
+					</StyledContent>
+					<StyledFooter theme={{ token }}>
+						© {new Date().getFullYear()} GMTS Hospital Model. {t("all_rights_reserved")} |{" "}
+						<RouterLink to="/about-us" style={{ color: token.colorPrimary }}>
+							{t("about_us")}
 						</RouterLink>
 					</StyledFooter>
 				</Layout>
 			</Layout>
 		</StyledLayout>
 	);
-};
+});
 
+// --- SettingsDrawer Component ---
+const SettingsDrawer = React.memo(
+	({ visible, onClose, language, onLanguageChange, theme, onThemeChange, size, onSizeChange, languageOptions, themeOptions }) => {
+		const { t } = useTranslation();
+
+		return (
+			<Drawer title={t("settings")} placement="right" onClose={onClose} open={visible} width={300}>
+				<Space direction="vertical" size="large" style={{ width: "100%" }}>
+					<Space direction="vertical" style={{ width: "100%" }}>
+						<label htmlFor="language-select">{t("language")}:</label>
+						<Select
+							id="language-select"
+							value={language}
+							options={languageOptions}
+							onChange={onLanguageChange}
+							style={{ width: "100%" }}
+						/>
+					</Space>
+
+					<Space direction="vertical" style={{ width: "100%" }}>
+						<label htmlFor="theme-select">{t("theme")}:</label>
+						<Select id="theme-select" value={theme} options={themeOptions} onChange={onThemeChange} style={{ width: "100%" }} />
+					</Space>
+
+					<Space direction="vertical" style={{ width: "100%" }}>
+						<label>{t("size")}:</label>
+						<Radio.Group value={size} onChange={onSizeChange}>
+							<Radio.Button value="small">{t("small")}</Radio.Button>
+							<Radio.Button value="middle">{t("middle")}</Radio.Button>
+							<Radio.Button value="large">{t("large")}</Radio.Button>
+						</Radio.Group>
+					</Space>
+				</Space>
+			</Drawer>
+		);
+	}
+);
+
+// --- Main App Component ---
 const App = () => {
-	const [colorMode, setColorMode] = useState("light");
-	const isDarkMode = colorMode.endsWith("dark");
+	const [direction, setDirection] = useState("ltr");
+	const [language, setLanguage] = useState("en");
+	const [selectedTheme, setSelectedTheme] = useState("light"); // e.g., 'light', 'dark', 'blue_dark', 'dark_killer'
+	const [componentSize, setComponentSize] = useState("middle");
+	const [settingsDrawerVisible, setSettingsDrawerVisible] = useState(false);
+	const { i18n, t } = useTranslation();
 
+	// --- Theme & Language Options ---
+	const themeOptions = useMemo(
+		() => [
+			...Object.keys(colorTokens).map((name) => ({ value: name, label: t(`theme_${name}`) || name })), // Translate theme names
+			{ value: "dark_killer", label: t("theme_dark_killer") || "Dark Killer" },
+		],
+		[t]
+	); // Depend on t for translations
+
+	const languageOptions = useMemo(
+		() => [
+			{ value: "en", label: "English" },
+			{ value: "fa", label: "فارسی" },
+			{ value: "ar", label: "العربية" },
+		],
+		[]
+	);
+
+	// --- Ant Design Locale ---
+	const antdLocale = useMemo(() => {
+		switch (language) {
+			case "fa":
+				return faIR;
+			case "ar":
+				return arEG;
+			default:
+				return enUS;
+		}
+	}, [language]);
+
+	// --- Calculate Ant Design Theme Config ---
 	const antDesignTheme = useMemo(() => {
-		const currentTokens = colorTokens[colorMode];
+		if (selectedTheme === "dark_killer" || !colorTokens[selectedTheme]) {
+			return {}; // Return empty for complex or invalid themes handled separately
+		}
+		const currentTokens = colorTokens[selectedTheme];
+		const isSystemDark = currentTokens.Button.algorithm; // Infer if it's a dark variant
 		return {
-			algorithm: isDarkMode ? darkAlgorithm : defaultAlgorithm,
+			// Use array for dark themes to leverage darkAlgorithm
+			algorithm: isSystemDark ? [defaultAlgorithm, darkAlgorithm] : defaultAlgorithm,
 			token: {
 				colorPrimary: currentTokens.primaryColor,
 				colorSuccess: currentTokens.successColor,
 				colorWarning: currentTokens.warningColor,
 				colorError: currentTokens.errorColor,
 				colorInfo: currentTokens.infoColor,
+				colorBgLayout: currentTokens.backgroundColor, // Map background
+				colorBgContainer: currentTokens.paperColor, // Map container/paper bg
+				colorTextBase: currentTokens.textColor, // Map base text color
+				colorBorder: currentTokens.borderColor, // Map border color
+				colorBorderSecondary: currentTokens.dividerColor, // Map divider/secondary border
 				borderRadius: 6,
+				// Add more token mappings as needed
+			},
+			components: {
+				// Component-specific overrides
+				Button: {
+					colorPrimary: currentTokens.Button.colorPrimary,
+					algorithm: currentTokens.Button.algorithm, // Needed for button hover/active states
+					// Add other button overrides if necessary
+				},
+				// Add other component overrides...
+				Layout: {
+					// Ensure Sider background uses theme
+					sider: {
+						colorBgLayout: currentTokens.backgroundColor,
+					},
+					header: {
+						colorBgHeader: currentTokens.paperColor, // Header background
+						colorHeaderTitle: currentTokens.textColor,
+					},
+					footer: {
+						colorBgFooter: currentTokens.backgroundColor,
+						colorTextFooter: currentTokens.textColor,
+					},
+				},
+				Menu: {
+					// colorItemBg: 'transparent', // Already handled by StyledSider/Drawer?
+					colorItemText: currentTokens.textColor, // Base text color
+					colorItemTextHover: currentTokens.primaryColor, // Hover text
+					colorItemTextSelected: currentTokens.primaryColor, // Selected text
+					colorActiveBarHeight: 3,
+					colorActiveBarWidth: 0, // Remove underline/bar if not needed
+					colorItemBgSelected: isSystemDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.04)", // Adjust selected bg
+					// Dark theme specific overrides if needed
+					...(isSystemDark
+						? {
+								colorItemText: "rgba(255, 255, 255, 0.75)",
+								colorItemTextHover: "#ffffff",
+								colorItemTextSelected: "#ffffff", // Often same as hover in dark
+								colorSubmenuArrow: "rgba(255, 255, 255, 0.75)",
+						  }
+						: {}),
+				},
 			},
 		};
-	}, [colorMode, isDarkMode]);
+	}, [selectedTheme]);
+
+	// --- Event Handlers ---
+	const handleThemeSelectChange = useCallback((value) => {
+		setSelectedTheme(value);
+	}, []);
+
+	const handleLanguageChange = useCallback(
+		(value) => {
+			setLanguage(value);
+			i18n.changeLanguage(value);
+			const newDirection = value === "ar" || value === "fa" ? "rtl" : "ltr";
+			setDirection(newDirection);
+			// Optionally update document direction
+			document.documentElement.dir = newDirection;
+			document.documentElement.lang = value;
+		},
+		[i18n]
+	); // Added i18n dependency
+
+	useEffect(() => {
+		// Set initial direction and lang on mount
+		const initialDirection = language === "ar" || language === "fa" ? "rtl" : "ltr";
+		document.documentElement.dir = initialDirection;
+		document.documentElement.lang = language;
+	}, []); // Run only once on mount
+
+	const handleComponentSizeChange = useCallback((e) => {
+		setComponentSize(e.target.value);
+	}, []);
+
+	const toggleSettingsDrawer = useCallback(() => {
+		setSettingsDrawerVisible((prev) => !prev);
+	}, []);
+
+	// --- Settings Button Style (Dynamic based on theme) ---
+	const settingsButtonStyles = useMemo(() => {
+		let colors = {
+			primary: "#1677ff",
+			text: "rgba(0, 0, 0, 0.88)",
+			background: "#ffffff",
+			paper: "#ffffff",
+		};
+
+		if (selectedTheme === "dark_killer") {
+			colors = {
+				primary: darkKillerTheme.token.colorPrimary,
+				text: darkKillerTheme.token.colorTextBase,
+				background: darkKillerTheme.token.colorBgBase,
+				paper: darkKillerTheme.token.colorBgBase, // Assuming paper is same as base bg
+			};
+		} else if (colorTokens[selectedTheme]) {
+			const themeTokens = colorTokens[selectedTheme];
+			colors = {
+				primary: themeTokens.primaryColor,
+				text: themeTokens.textColor,
+				background: themeTokens.backgroundColor,
+				paper: themeTokens.paperColor,
+			};
+		}
+
+		// Simplified style object - adjust as needed for specific button look
+		return {
+			"--setting-btn-bg": colors.paper,
+			"--setting-btn-text": colors.primary,
+			"--setting-btn-border": colors.primary,
+			"--setting-btn-hover-bg": colors.primary,
+			"--setting-btn-hover-text": colors.paper, // Or text color depending on contrast needs
+		};
+	}, [selectedTheme]);
+
+	// --- Determine Theme Provider and Config ---
+	const ThemeProviderComponent = selectedTheme === "dark_killer" ? ComplexThemeProvider : ConfigProvider;
+	const themeConfig = selectedTheme === "dark_killer" ? { theme: darkKillerTheme } : { theme: antDesignTheme };
 
 	return (
 		<AppWrapper>
-			{/* CSS for Route Transitions (Place this in your CSS file or within a Styled Component) */}
-
+			{/* Inject global styles and dynamic button styles */}
 			<style>{`
-                .fade-enter {
-                  opacity: 0;
+                :root {
+                    ${Object.entries(settingsButtonStyles)
+						.map(([key, value]) => `${key}: ${value};`)
+						.join("\n")}
                 }
-                .fade-enter-active {
-                  opacity: 1;
-                  transition: opacity 300ms ease-in-out;
+                .settings-button {
+                    background-color: var(--setting-btn-bg);
+                    color: var(--setting-btn-text);
+                    border-color: var(--setting-btn-border);
+                    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
                 }
-                .fade-exit {
-                  opacity: 1;
-                }
-                .fade-exit-active {
-                  opacity: 0;
-                  transition: opacity 300ms ease-in-out;
-                }
+                 .settings-button:hover {
+                    background-color: var(--setting-btn-hover-bg) !important;
+                    color: var(--setting-btn-hover-text) !important;
+                    border-color: var(--setting-btn-hover-bg) !important;
+                 }
+
             `}</style>
-			<ConfigProvider theme={antDesignTheme}>
-				<Router>
-					<AppContent colorMode={colorMode} setColorMode={setColorMode}>
-						{/* Routes are now rendered inside AppContent */}
-						{/* No Routes component here */}
-					</AppContent>
-				</Router>
-			</ConfigProvider>
+			<Router>
+				<ThemeProviderComponent
+					direction={direction}
+					locale={antdLocale}
+					componentSize={componentSize}
+					{...themeConfig} // Spread the calculated theme config
+				>
+					{/* Pass state down to AppLayout */}
+					<AppLayout direction={direction} language={language} componentSize={componentSize}>
+						{/* Routes are rendered as children of AppLayout */}
+						<Routes>
+							{/* Define base routes */}
+							<Route path="/" element={<AllFeaturesPage />} />
+							<Route path="/login" element={<Login />} />
+							<Route path="/register" element={<Register />} />
+							<Route path="/about-us" element={<AboutUs />} />
+
+							{/* Private / Authenticated Routes */}
+							<Route
+								path="/dashboard"
+								element={
+									<PrivateRoute>
+										<Dashboard />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/profile"
+								element={
+									<PrivateRoute>
+										<Profile />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/patients"
+								element={
+									<PrivateRoute permissions={["READ_PATIENT"]}>
+										<PatientList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/patients/:id"
+								element={
+									<PrivateRoute permissions={["READ_PATIENT"]}>
+										<PatientDetails />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/appointments"
+								element={
+									<PrivateRoute permissions={["READ_APPOINTMENT"]}>
+										<AppointmentsPage />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/activities"
+								element={
+									<PrivateRoute permissions={["READ_USER_ACTIVITY"]}>
+										<ActivityPage />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/procedures"
+								element={
+									<PrivateRoute permissions={["READ_PROCEDURE"]}>
+										<ProcedureList />
+									</PrivateRoute>
+								}
+							/>
+							{/* <Route path="/vital-signs" element={<PrivateRoute>...</PrivateRoute>} /> */}
+							{/* <Route path="/assessments" element={<PrivateRoute>...</PrivateRoute>} /> */}
+							<Route
+								path="/procedure-logs"
+								element={
+									<PrivateRoute permissions={["READ_PROCEDURE_LOG"]}>
+										<ProcedureLogList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/units"
+								element={
+									<PrivateRoute permissions={["READ_UNIT"]}>
+										<UnitList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/rooms"
+								element={
+									<PrivateRoute permissions={["READ_ROOM"]}>
+										<RoomList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/beds"
+								element={
+									<PrivateRoute permissions={["READ_BED"]}>
+										<BedList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/admissions"
+								element={
+									<PrivateRoute permissions={["READ_ADMISSION"]}>
+										<AdmissionList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/users"
+								element={
+									<PrivateRoute permissions={["READ_USER"]}>
+										<UserList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/medications"
+								element={
+									<PrivateRoute permissions={["READ_MEDICATION"]}>
+										<MedicationList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/prescriptions"
+								element={
+									<PrivateRoute permissions={["READ_PRESCRIPTION"]}>
+										<PrescriptionList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/medication-administrations"
+								element={
+									<PrivateRoute permissions={["READ_MEDICATION_ADMINISTRATION"]}>
+										<MedicationAdministrationList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/product-usages"
+								element={
+									<PrivateRoute permissions={["READ_PATIENT_PRODUCT_USAGE"]}>
+										<PatientProductUsageList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/products"
+								element={
+									<PrivateRoute permissions={["READ_PRODUCT"]}>
+										<ProductList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/billings"
+								element={
+									<PrivateRoute permissions={["READ_BILLING"]}>
+										<BillingPage />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/image-reports"
+								element={
+									<PrivateRoute permissions={["READ_IMAGE_REPORT"]}>
+										<ImageReportList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/image-report-types"
+								element={
+									<PrivateRoute permissions={["READ_IMAGE_REPORT_TYPE"]}>
+										<ImageReportTypeList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/documents"
+								element={
+									<PrivateRoute permissions={["READ_DOCUMENT"]}>
+										<DocumentList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/document-types"
+								element={
+									<PrivateRoute permissions={["READ_DOCUMENT_TYPE"]}>
+										<DocumentTypeList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/lab-tests"
+								element={
+									<PrivateRoute permissions={["READ_LAB_TEST"]}>
+										<LabTestList />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/lab-results"
+								element={
+									<PrivateRoute permissions={["READ_LAB_RESULT"]}>
+										<LabResultPage />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/all-features"
+								element={
+									<PrivateRoute>
+										<AllFeaturesPage />
+									</PrivateRoute>
+								}
+							/>
+							<Route
+								path="/roles-permissions"
+								element={
+									<PrivateRoute permissions={["MANAGE_PERMISSIONS", "MANAGE_ROLES"]}>
+										<RoleAndPermissionManagement />
+									</PrivateRoute>
+								}
+							/>
+							{/* Add other routes from appRoutes if they aren't covered above */}
+							{/* Example:
+                            {appRoutes.map((route, index) => (
+                                <Route key={index} path={route.path} element={route.element} />
+                            ))}
+                            */}
+
+							{/* Catch-all or 404 route (optional) */}
+							{/* <Route path="*" element={<NotFoundPage />} /> */}
+						</Routes>
+					</AppLayout>
+				</ThemeProviderComponent>
+			</Router>
+
+			{/* Settings Drawer and Toggle Button */}
+			<SettingsDrawer
+				visible={settingsDrawerVisible}
+				onClose={toggleSettingsDrawer}
+				language={language}
+				onLanguageChange={handleLanguageChange}
+				theme={selectedTheme}
+				onThemeChange={handleThemeSelectChange}
+				size={componentSize}
+				onSizeChange={handleComponentSizeChange}
+				languageOptions={languageOptions}
+				themeOptions={themeOptions}
+			/>
+
+			<Button
+				className="settings-button" // Apply dynamic styles via class
+				type="primary" // Base type, styling overridden by CSS vars
+				shape="circle"
+				icon={<SettingOutlined />}
+				size="large"
+				onClick={toggleSettingsDrawer}
+				aria-label={t("settings")}
+				style={{
+					position: "fixed",
+					bottom: 20,
+					right: direction === "ltr" ? 20 : "auto",
+					left: direction === "rtl" ? 20 : "auto",
+					zIndex: 1002, // Ensure above header/content
+					boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+				}}
+			/>
 		</AppWrapper>
 	);
 };
+
+export { g2Themes };
 
 export default App;

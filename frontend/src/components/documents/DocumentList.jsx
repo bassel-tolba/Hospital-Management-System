@@ -416,7 +416,7 @@ const DocumentList = () => {
 				</Col>
 				<Col xs={24} sm={12}>
 					{canCreateDocument && (
-						<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
+						<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId} block>
 							Add New Document
 						</Button>
 					)}
@@ -442,7 +442,7 @@ const DocumentList = () => {
 						Cancel
 					</Button>,
 					(selectedDocument ? canUpdateDocument : canCreateDocument) && (
-						<Button key="submit" type="default" onClick={() => form.submit()}>
+						<Button key="submit" type="primary" onClick={() => form.submit()}>
 							{selectedDocument ? "Update" : "Save"}
 						</Button>
 					),

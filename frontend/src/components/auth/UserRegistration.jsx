@@ -15,6 +15,7 @@ import {
 	UploadOutlined,
 	UserAddOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "react-i18next"; // Import
 
 const { Title } = Typography;
 
@@ -32,6 +33,7 @@ const UserRegistration = () => {
 	const { units, fetchAllUnits, loading: unitLoading } = useUnitStore();
 	const { roles, loading: rolesLoading, fetchAllRoles } = useRoleStore(); // Use the hook
 	const { status, error, register, clearError } = useAuthStore();
+	const { t } = useTranslation();
 
 	const [userForm] = Form.useForm();
 
@@ -72,72 +74,75 @@ const UserRegistration = () => {
 
 		<Card>
 			<Space direction="vertical" size="large" style={{ width: "100%" }}>
-				<Title level={2} style={{ textAlign: "center" }}>
-					<Space>
-						<UserAddOutlined />
-						Register User
-					</Space>
-				</Title>
+				{status === "loading" && <Alert message={t("loading")} type="info" />}
 
-				{status === "loading" && <Alert message="Loading..." type="info" />}
+				{error && <Alert message={`${t("registration-failed")}: ${error}`} type="error" />}
 
-				{error && <Alert message={`Registration Failed: ${error}`} type="error" />}
-
-				{registrationSuccess && <Alert message="Registration successful!" type="success" />}
+				{registrationSuccess && <Alert message={t("registration-successful")} type="success" />}
 
 				<Form form={userForm} onFinish={handleUserSubmit}>
-					<Form.Item rules={[{ required: true, message: "Please enter username!" }]}>
-						<Input prefix={<UserOutlined />} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
+					<Form.Item rules={[{ required: true, message: t("please-enter-username") }]}>
+						<Input prefix={<UserOutlined />} value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t("username")} />
 					</Form.Item>
 
-					<Form.Item rules={[{ required: true, message: "Please enter password!" }]}>
+					<Form.Item rules={[{ required: true, message: t("please-enter-password") }]}>
 						<Input
 							prefix={<LockOutlined />}
 							type="password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							placeholder="Password"
+							placeholder={t("password")}
 						/>
 					</Form.Item>
 
-					<Form.Item rules={[{ required: true, message: "Please enter first name!" }]}>
+					<Form.Item rules={[{ required: true, message: t("please-enter-first-name") }]}>
 						<Input
 							prefix={<IdcardOutlined />}
 							value={firstName}
 							onChange={(e) => setFirstName(e.target.value)}
-							placeholder="First Name"
+							placeholder={t("first-name")}
 						/>
 					</Form.Item>
 
-					<Form.Item rules={[{ required: true, message: "Please enter last name!" }]}>
-						<Input prefix={<ContactsOutlined />} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last Name" />
+					<Form.Item rules={[{ required: true, message: t("please-enter-last-name") }]}>
+						<Input
+							prefix={<ContactsOutlined />}
+							value={lastName}
+							onChange={(e) => setLastName(e.target.value)}
+							placeholder={t("last-name")}
+						/>
 					</Form.Item>
 
-					<Form.Item rules={[{ required: true, message: "Please enter specialty!" }]}>
+					<Form.Item rules={[{ required: true, message: t("please-enter-specialty") }]}>
 						<Input
 							prefix={<SolutionOutlined />}
 							value={specialty}
 							onChange={(e) => setSpecialty(e.target.value)}
-							placeholder="Specialty"
+							placeholder={t("specialty")}
 						/>
 					</Form.Item>
 
-					<Form.Item rules={[{ required: true, message: "Please select a role!" }]}>
-						<Select placeholder="Select a role" onChange={handleRoleChange} value={roleId} loading={rolesLoading}>
+					<Form.Item rules={[{ required: true, message: t("please-select-a-role") }]}>
+						<Select placeholder={t("select-a-role")} onChange={handleRoleChange} value={roleId} loading={rolesLoading}>
 							{roles.map((role) => (
 								<Select.Option key={role.id} value={role.id}>
-									{role.name}
+									{t(role.name.toLowerCase())}
 								</Select.Option>
 							))}
 						</Select>
 					</Form.Item>
 
 					<Form.Item>
-						<Select mode="multiple" placeholder="Select units" onChange={handleUnitChange} value={selectedUnits} loading={unitLoading}>
+						<Select
+							mode="multiple"
+							placeholder={t("select-units")}
+							onChange={handleUnitChange}
+							value={selectedUnits}
+							loading={unitLoading}>
 							{Array.isArray(units) &&
 								units.map((unit) => (
 									<Select.Option key={unit.id} value={unit.id}>
-										{unit.name}
+										{t(unit.name.toLowerCase())}
 									</Select.Option>
 								))}
 						</Select>
@@ -161,13 +166,13 @@ const UserRegistration = () => {
 							onChange={handleImageChange}
 							beforeUpload={() => false}
 							maxCount={1}>
-							<Button icon={<UploadOutlined />}>Upload Profile Picture</Button>
+							<Button icon={<UploadOutlined />}>{t("upload-profile-picture")}</Button>
 						</Upload>
 					</Form.Item>
 
 					<Form.Item style={{ display: "flex", justifyContent: "center" }}>
 						<Button type="primary" htmlType="submit" disabled={status === "loading"} style={{ width: "200px" }}>
-							<UserAddOutlined /> Register
+							<UserAddOutlined /> {t("register")}
 						</Button>
 					</Form.Item>
 				</Form>

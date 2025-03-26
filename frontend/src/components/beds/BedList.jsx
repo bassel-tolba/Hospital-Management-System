@@ -266,7 +266,7 @@ const BedList = () => {
 			render: (text, record) => (
 				<Space size="middle">
 					{canUpdateBed && (
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
 							Edit
 						</Button>
 					)}
@@ -315,7 +315,7 @@ const BedList = () => {
 				<Col xs={24} sm={12} md={8} lg={6}>
 					<Space>
 						{canCreateBed && (
-							<Button type="default" onClick={() => showModal(null)}>
+							<Button type="primary" onClick={() => showModal(null)}>
 								Add New Bed
 							</Button>
 						)}

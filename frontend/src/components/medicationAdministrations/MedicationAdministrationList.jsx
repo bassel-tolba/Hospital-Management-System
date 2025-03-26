@@ -484,7 +484,7 @@ const MedicationAdministrationList = () => {
 			<Title level={2}>Medication Administration List</Title>
 			<Space style={{ marginBottom: 16 }}>
 				{canCreateMedicationAdministration && (
-					<Button type="default" onClick={() => showModal(null)}>
+					<Button type="primary" onClick={() => showModal(null)}>
 						Add New Administration
 					</Button>
 				)}
@@ -524,7 +524,7 @@ const MedicationAdministrationList = () => {
 						Cancel
 					</Button>,
 					canCreateMedicationAdministration && (
-						<Button key="submit" type="default" onClick={handleFormSubmit}>
+						<Button key="submit" type="primary" onClick={handleFormSubmit}>
 							Save
 						</Button>
 					),

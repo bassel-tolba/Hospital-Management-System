@@ -23,6 +23,8 @@ public class ProcedureLogDTO {
     private Long procedureId;
     private Long billingId; // Keep billingId
     private Long patientId; // Add patientId
+    private String procedureName;
+    private String userName;
 
     public static ProcedureLog toEntity(ProcedureLogDTO dto, User user, Procedure procedure, Billing billing,
             Patient patient) {
@@ -50,6 +52,9 @@ public class ProcedureLogDTO {
             dto.setBillingId(entity.getBilling().getId());
         }
         dto.setPatientId(entity.getPatient().getId()); // Set the patientId in the DTO
+        dto.setProcedureName(entity.getProcedure().getName());
+        dto.setUserName(entity.getUser().getUsername());
+
         return dto;
     }
 }

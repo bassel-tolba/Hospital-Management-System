@@ -43,7 +43,7 @@ const VitalSignList = () => {
 	const { createVitalSign, updateVitalSign, deleteVitalSign, loading, setVitalSigns, vitalSigns } = useVitalSignStore();
 
 	const user = useAuthStore((state) => state.user);
-	const API_BASE_URL = `/api/vital-signs`;
+	const API_BASE_URL = `http://localhost:8080/api/vital-signs`;
 
 	useEffect(() => {
 		fetchVitalSignsData();
@@ -408,7 +408,7 @@ const VitalSignList = () => {
 					/>
 				</Col>
 				<Col xs={24} sm={12} md={8}>
-					<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId}>
+					<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId}>
 						Add New Vital Sign
 					</Button>
 				</Col>
@@ -431,7 +431,7 @@ const VitalSignList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleFormSubmit}>
+					<Button key="submit" type="primary" onClick={handleFormSubmit}>
 						{selectedVitalSign ? "Update" : "Save"}
 					</Button>,
 				]}

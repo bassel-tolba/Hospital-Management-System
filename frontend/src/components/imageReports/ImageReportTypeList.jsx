@@ -132,7 +132,7 @@ const ImageReportTypeList = () => {
 			render: (text, record) => (
 				<Space size="middle">
 					<Tooltip title="Edit">
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)} />
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)} />
 					</Tooltip>
 					<Tooltip title="Delete">
 						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
@@ -148,7 +148,7 @@ const ImageReportTypeList = () => {
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={12}></Col>
 				<Col xs={24} sm={12}>
-					<Button type="default" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
+					<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} block>
 						Add New Image Report Type
 					</Button>
 				</Col>
@@ -169,7 +169,7 @@ const ImageReportTypeList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={() => form.submit()}>
+					<Button key="submit" type="primary" onClick={() => form.submit()}>
 						{selectedImageReportType ? "Update" : "Save"}
 					</Button>,
 				]}

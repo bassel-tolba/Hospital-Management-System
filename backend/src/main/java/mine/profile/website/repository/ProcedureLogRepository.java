@@ -1,11 +1,13 @@
 package mine.profile.website.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import mine.profile.website.models.ProcedureLog;
 
@@ -26,4 +28,11 @@ public interface ProcedureLogRepository extends JpaRepository<ProcedureLog, Long
 
     @Query(value = "SELECT DATE(start_time) as date, count(*) from procedure_log group by date", nativeQuery = true)
     List<Object[]> countProceduresByDate();
+
+    // Sort by startTime, latest first
+    Page<ProcedureLog> findByPatientIdOrderByStartTimeDesc(Long patientId, Pageable pageable);
+
+    @Query("SELECT p FROM ProcedureLog p WHERE p.billing.patient.id = :patientId AND p.startTime >= :admissionDate ORDER BY p.startTime DESC")
+    Page<ProcedureLog> findByPatientIdAndStartTimeAfter(@Param("patientId") Long patientId,
+            @Param("admissionDate") LocalDateTime admissionDate, Pageable pageable);
 }

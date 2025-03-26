@@ -1,8 +1,11 @@
+// ImageSlider.js
 import React, { useState, useEffect } from "react";
 import { Modal, Carousel, Spin, Radio, Image } from "antd";
 import "./ImageSlider.css";
+import { useTranslation } from "react-i18next";
 
 const ImageSlider = React.memo(({ open, onClose, data }) => {
+	const { t } = useTranslation(); // Initialize
 	// Use React.memo
 	const [loading, setLoading] = useState(true);
 	const [filteredMedia, setFilteredMedia] = useState([]);
@@ -78,17 +81,13 @@ const ImageSlider = React.memo(({ open, onClose, data }) => {
 							console.error("Error loading video:", url);
 						}}>
 						<source src={url} type={getVideoType(url)} />
-						Your browser does not support the video tag.
+						{t("browser-not-support-video")}
 					</video>
 				) : (
 					<Image
-						src={url}
+						src={"http://localhost:8080/api" + url}
 						style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain" }}
 						preview={false}
-						fallback="https://via.placeholder.com/400x300?text=Image+Not+Found"
-						onError={(e) => {
-							console.error("Error loading image", e);
-						}}
 					/>
 				)}
 			</div>
@@ -102,12 +101,12 @@ const ImageSlider = React.memo(({ open, onClose, data }) => {
 	};
 
 	return (
-		<Modal open={open} onCancel={onClose} title="Media Viewer" width={800} style={{ top: 20 }} footer={null}>
+		<Modal open={open} onCancel={onClose} title={t("media-viewer")} width={800} style={{ top: 20 }} footer={null}>
 			<div style={{ marginBottom: 16, textAlign: "center" }}>
 				<Radio.Group value={mediaTypeFilter} onChange={handleFilterChange}>
-					<Radio.Button value="All">All</Radio.Button>
-					<Radio.Button value="Image">Image</Radio.Button>
-					<Radio.Button value="Video">Video</Radio.Button>
+					<Radio.Button value="All">{t("all")}</Radio.Button>
+					<Radio.Button value="Image">{t("image")}</Radio.Button>
+					<Radio.Button value="Video">{t("video")}</Radio.Button>
 				</Radio.Group>
 			</div>
 			<div style={{ position: "relative", height: "60vh" }}>

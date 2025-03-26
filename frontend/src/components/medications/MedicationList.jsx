@@ -361,7 +361,7 @@ const MedicationList = () => {
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+					<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
 						Edit
 					</Button>
 					<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record)}>
@@ -371,11 +371,12 @@ const MedicationList = () => {
 						History
 					</Button>
 					<Button
-						type="danger"
+						type="dashed"
+						danger
 						icon={<DeleteOutlined />}
 						onClick={() => handleDelete(record.id)}
 						title="Medications cannot be deleted directly.  Click for more information."
-						style={{ opacity: 0.7 }}>
+						style={{ opacity: 0.9 }}>
 						Delete
 					</Button>
 				</Space>
@@ -410,8 +411,8 @@ const MedicationList = () => {
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="default" icon={<EditTwoTone />} onClick={() => handleEditBatch(record)} size="small" />
-					<Button type="default" icon={<DeleteTwoTone />} onClick={() => handleDeleteBatch(record.id)} size="small" danger />
+					<Button type="primary" icon={<EditTwoTone />} onClick={() => handleEditBatch(record)} size="small" />
+					<Button type="primary" icon={<DeleteTwoTone />} onClick={() => handleDeleteBatch(record.id)} size="small" danger />
 				</Space>
 			),
 		},
@@ -624,7 +625,7 @@ const MedicationList = () => {
 					<Input.Search placeholder="Search by name..." onSearch={handleSearch} style={{ width: "100%" }} />
 				</Col>
 				<Col xs={24} sm={6}>
-					<Button type="default" block onClick={() => showModal(null)}>
+					<Button type="primary" block onClick={() => showModal(null)}>
 						Add New Medication
 					</Button>
 				</Col>
@@ -658,7 +659,7 @@ const MedicationList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleFormSubmit}>
+					<Button key="submit" type="primary" onClick={handleFormSubmit}>
 						{selectedMedication ? "Update" : "Save"}
 					</Button>,
 				]}

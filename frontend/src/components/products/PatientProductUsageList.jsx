@@ -451,7 +451,7 @@ const PatientProductUsageList = () => {
 					/>
 				</Col>
 				<Col xs={24} sm={6}>
-					<Button type="default" block onClick={() => showModal(null)}>
+					<Button type="primary" block onClick={() => showModal(null)}>
 						Add New Usage
 					</Button>
 				</Col>
@@ -485,7 +485,7 @@ const PatientProductUsageList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleFormSubmit}>
+					<Button key="submit" type="primary" onClick={handleFormSubmit}>
 						{selectedUsage ? "Update" : "Save"}
 					</Button>,
 				]}

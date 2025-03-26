@@ -1,10 +1,11 @@
+// patientDetail.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_DATA_URL = `/api/patients-data`;
-const IMAGE_REPORT_API_BASE_URL = `/api/imagereports`;
+const PATIENT_API_BASE_DATA_URL = `http://localhost:8080/api/patients-data`;
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
 
 export const usePatientDetailStore = create((set, get) => ({
 	loading: false,
@@ -21,11 +22,37 @@ export const usePatientDetailStore = create((set, get) => ({
 	medicationAdministrations: [],
 	imageReports: [],
 	labResults: [],
-	documents: [], // new
+	documents: [],
+	quickNotes: [],
+	procedureLogs: [],
 	totalCounts: {},
+	// NEW:  Store filter states for each data type
+	filters: {
+		appointments: false,
+		assessments: false,
+		billings: false,
+		carePlans: false,
+		prescriptions: false,
+		vitalSigns: false,
+		productUsages: false,
+		medicationAdministrations: false,
+		imageReports: false,
+		labResults: false,
+		documents: false,
+		procedureLogs: false,
+	},
 	setLoading: (loading) => set({ loading }),
 	setError: (error) => set({ error }),
 	clearError: () => set({ error: null }),
+
+	// NEW:  Toggle filter for a specific data type
+	toggleFilter: (dataType) =>
+		set((state) => ({
+			filters: {
+				...state.filters,
+				[dataType]: !state.filters[dataType], // Toggle the boolean
+			},
+		})),
 
 	fetchPatientData: async (
 		patientId,
@@ -40,13 +67,16 @@ export const usePatientDetailStore = create((set, get) => ({
 		medicationAdministrationsPage,
 		imageReportsPage,
 		labResultsPage,
-		documentsPage, //new
+		documentsPage,
+		quickNotesPage,
+		procedureLogsPage,
 		pageSize
 	) => {
 		set({ loading: true, error: null });
 		let patientResponse;
 		try {
 			const user = useAuthStore.getState().user;
+			const { filters } = get(); // Get current filter states
 
 			patientResponse = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}`, {
 				headers: {
@@ -57,14 +87,39 @@ export const usePatientDetailStore = create((set, get) => ({
 			const requests = [];
 			const responses = {};
 
+			// Quick Notes (no filtering needed)
+			if (quickNotesPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: quickNotesPage - 1, size: pageSize },
+						})
+						.then((res) => {
+							responses.quickNotes = res;
+						})
+				);
+			}
+
+			// All other data types:  Include filterByAdmission parameter
+			if (procedureLogsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: procedureLogsPage - 1, size: pageSize, filterByAdmission: filters.procedureLogs }, // Pass filter
+						})
+						.then((res) => {
+							responses.procedureLogs = res;
+						})
+				);
+			}
 			if (admissionsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/admissions`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: admissionsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: admissionsPage - 1, size: pageSize }, // No filter for admissions
 						})
 						.then((res) => {
 							responses.admissions = res;
@@ -75,85 +130,68 @@ export const usePatientDetailStore = create((set, get) => ({
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/appointments`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: appointmentsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: appointmentsPage - 1, size: pageSize, filterByAdmission: filters.appointments }, // Pass filter
 						})
 						.then((res) => {
 							responses.appointments = res;
 						})
 				);
 			}
-
 			if (assessmentsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/assessments`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: assessmentsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: assessmentsPage - 1, size: pageSize, filterByAdmission: filters.assessments }, // Pass filter
 						})
 						.then((res) => {
 							responses.assessments = res;
 						})
 				);
 			}
-
 			if (billingsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/billings`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: billingsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: billingsPage - 1, size: pageSize, filterByAdmission: filters.billings }, // Pass filter
 						})
 						.then((res) => {
 							responses.billings = res;
 						})
 				);
 			}
-
 			if (carePlansPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/care-plans`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: carePlansPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: carePlansPage - 1, size: pageSize, filterByAdmission: filters.carePlans }, // Pass filter
 						})
 						.then((res) => {
 							responses.carePlans = res;
 						})
 				);
 			}
-
 			if (prescriptionsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/prescriptions`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: prescriptionsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: prescriptionsPage - 1, size: pageSize, filterByAdmission: filters.prescriptions }, // Pass filter
 						})
 						.then((res) => {
 							responses.prescriptions = res;
 						})
 				);
 			}
-
 			if (vitalSignsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/vital-signs`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: vitalSignsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: vitalSignsPage - 1, size: pageSize, filterByAdmission: filters.vitalSigns }, // Pass filter
 						})
 						.then((res) => {
 							responses.vitalSigns = res;
@@ -164,54 +202,49 @@ export const usePatientDetailStore = create((set, get) => ({
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/product-usages`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: productUsagesPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: productUsagesPage - 1, size: pageSize, filterByAdmission: filters.productUsages }, // Pass filter
 						})
 						.then((res) => {
 							responses.productUsages = res;
 						})
 				);
 			}
-
 			if (medicationAdministrationsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/medication-administrations`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: {
+								page: medicationAdministrationsPage - 1,
+								size: pageSize,
+								filterByAdmission: filters.medicationAdministrations, // Pass filter
 							},
-							params: { page: medicationAdministrationsPage - 1, size: pageSize },
 						})
 						.then((res) => {
 							responses.medicationAdministrations = res;
 						})
 				);
 			}
-
 			if (imageReportsPage) {
 				requests.push(
 					axios
 						.get(`${IMAGE_REPORT_API_BASE_URL}/patient/${patientId}`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: imageReportsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: imageReportsPage - 1, size: pageSize, filterByAdmission: filters.imageReports }, // Pass filter
 						})
 						.then((res) => {
 							responses.imageReports = res;
 						})
 				);
 			}
+
 			if (labResultsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/lab-results`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: labResultsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: labResultsPage - 1, size: pageSize, filterByAdmission: filters.labResults }, // Pass filter
 						})
 						.then((res) => {
 							responses.labResults = res;
@@ -222,10 +255,8 @@ export const usePatientDetailStore = create((set, get) => ({
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/documents`, {
-							headers: {
-								Authorization: `Bearer ${user?.token}`,
-							},
-							params: { page: documentsPage - 1, size: pageSize },
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: documentsPage - 1, size: pageSize, filterByAdmission: filters.documents }, // Pass filter
 						})
 						.then((res) => {
 							responses.documents = res;
@@ -251,6 +282,8 @@ export const usePatientDetailStore = create((set, get) => ({
 				imageReports: responses.imageReports?.data?.content || state.imageReports,
 				labResults: responses.labResults?.data?.content || state.labResults,
 				documents: responses.documents?.data?.content || state.documents,
+				quickNotes: responses.quickNotes?.data?.content || state.quickNotes,
+				procedureLogs: responses.procedureLogs?.data?.content || state.procedureLogs,
 				totalCounts: {
 					admissions: responses.admissions?.data?.totalElements || state.totalCounts?.admissions,
 					appointments: responses.appointments?.data?.totalElements || state.totalCounts?.appointments,
@@ -265,6 +298,8 @@ export const usePatientDetailStore = create((set, get) => ({
 					imageReports: responses.imageReports?.data?.totalElements || state.totalCounts?.imageReports,
 					labResults: responses.labResults?.data?.totalElements || state.totalCounts?.labResults,
 					documents: responses.documents?.data?.totalElements || state.totalCounts?.documents,
+					quickNotes: responses.quickNotes?.data?.totalElements || state.totalCounts?.quickNotes,
+					procedureLogs: responses.procedureLogs?.data?.totalElements || state.totalCounts?.procedureLogs,
 				},
 			}));
 		} catch (error) {
@@ -273,7 +308,128 @@ export const usePatientDetailStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to fetch patient data: ${error.message}`,
 			});
+			throw error; // Re-throw to be caught by caller
+		}
+	},
+
+	fetchProcedureLogs: async (patientId, page, pageSize, filterByAdmission) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+				params: { page: page - 1, size: pageSize, filterByAdmission: filterByAdmission },
+			});
+			set((state) => ({
+				...state,
+				loading: false,
+				procedureLogs: response.data.content,
+				totalCounts: { ...state.totalCounts, procedureLogs: response.data.totalElements },
+			}));
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to fetch procedure logs.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
 			throw error;
+		}
+	},
+	fetchQuickNotes: async (patientId, page, pageSize) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+				params: { page: page - 1, size: pageSize },
+			});
+			set((state) => ({
+				...state,
+				loading: false,
+				quickNotes: response.data.content,
+				totalCounts: { ...state.totalCounts, quickNotes: response.data.totalElements },
+			}));
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to fetch quick notes.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; // Re-throw to be caught by caller if needed
+		}
+	},
+
+	createQuickNote: async (patientId, noteText, addedByUserId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(
+				`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`,
+				{ noteText, addedByUser: addedByUserId },
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+						"Content-Type": "application/json",
+					},
+				}
+			);
+			//  Refetch quick notes after creating (or add to state directly)
+			get().fetchQuickNotes(patientId, 1, 10); // Assuming you want page 1, size 10
+			set({ loading: false });
+			return response.data; // Return the created note data
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to create quick note.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; // Re-throw to be caught by caller
+		}
+	},
+
+	updateQuickNote: async (quickNoteId, noteText, addedByUserId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(
+				`${PATIENT_API_BASE_DATA_URL}/quick-notes/${quickNoteId}`,
+				{ noteText, addedByUser: addedByUserId },
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+						"Content-Type": "application/json",
+					},
+				}
+			);
+
+			const patientId = get().patient?.id; // Get current patient ID
+			if (patientId) {
+				get().fetchQuickNotes(patientId, 1, 10); // Refetch after update
+			}
+
+			set({ loading: false });
+			return response.data; // Return updated note data
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update quick note.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; //rethrow
+		}
+	},
+
+	deleteQuickNote: async (quickNoteId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PATIENT_API_BASE_DATA_URL}/quick-notes/${quickNoteId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+
+			const patientId = get().patient?.id;
+			if (patientId) {
+				get().fetchQuickNotes(patientId, 1, 10); // Refetch after delete
+			}
+
+			set({ loading: false });
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to delete quick note.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; // Rethrow
 		}
 	},
 }));

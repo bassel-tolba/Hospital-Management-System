@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Typography, Select, Pagination, Row, Col, Avatar, message, Modal, Popconfirm } from "antd";
+import { Table, Input, Button, Space, Typography, Select, Pagination, Row, Col, Avatar, message, Modal, Popconfirm, Tooltip } from "antd";
 import { DeleteOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { usePatientStore } from "../../services/patient.service";
 import { useAuthStore } from "../../services/auth.service";
@@ -12,6 +12,8 @@ import { Link } from "react-router-dom";
 import moment from "moment";
 import "./PatientList.css";
 import PatientListActivityForm from "./PatientListActivityForm"; // NEW COMPONENT
+import { UserAddOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next"; // Import
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -22,6 +24,7 @@ const PatientList = () => {
 	const { units, fetchAllUnits } = useUnitStore();
 	const { rooms, fetchAllRooms } = useRoomStore();
 	const { createActivity } = useActivityStore(); // Get createActivity
+	const { t } = useTranslation(); // Initialize
 
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [selectedPatient, setSelectedPatient] = useState(null);
@@ -126,7 +129,7 @@ const PatientList = () => {
 			fetchPatients();
 		} catch (error) {
 			console.error("Error deleting patient:", error);
-			message.error("Failed to delete patient.  Check server logs."); // More specific error
+			message.error(t("delete-patient-failed-message")); // More specific error
 		}
 	};
 
@@ -187,16 +190,16 @@ const PatientList = () => {
 			await createActivity({ ...activityData, patientIds });
 			hideActivityForm();
 			fetchPatients(); // Refresh patient list
-			message.success("Activities created successfully for all filtered patients.");
+			message.success(t("activities-created-success-message"));
 		} catch (error) {
 			console.error("Error creating activities:", error);
-			message.error("Failed to create activities.  Check server logs."); // More specific error
+			message.error(t("create-activities-failed-message")); // More specific error
 		}
 	};
 
 	const columns = [
 		{
-			title: "Profile Picture",
+			title: t("profile-picture"),
 			dataIndex: "profilePictureURL",
 			key: "profilePictureURL",
 			render: (text, record) => (
@@ -218,62 +221,62 @@ const PatientList = () => {
 			),
 		},
 		{
-			title: "First Name",
+			title: t("first-name"),
 			dataIndex: "firstName",
 			key: "firstName",
 		},
 		{
-			title: "Last Name",
+			title: t("last-name"),
 			dataIndex: "lastName",
 			key: "lastName",
 		},
 		{
-			title: "Date of Birth",
+			title: t("date-of-birth"),
 			dataIndex: "dateOfBirth",
 			key: "dateOfBirth",
 			render: (text) => (text ? moment(text).format("YYYY-MM-DD") : null),
 		},
 		{
-			title: "Gender",
+			title: t("gender"),
 			dataIndex: "gender",
 			key: "gender",
 		},
 		{
-			title: "Medical Record Number",
+			title: t("medical-record-number"),
 			dataIndex: "medicalRecordNumber",
 			key: "medicalRecordNumber",
 		},
 		{
-			title: "Severity",
+			title: t("severity"),
 			dataIndex: "severityLevel",
 			key: "severityLevel",
 			render: (severity) => <span style={{ fontWeight: "bold" }}>{severity || "N/A"}</span>,
 		},
 		{
-			title: "Actions",
+			title: t("actions"),
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
 					{canViewPatient && (
 						<Button type="default" icon={<EyeOutlined />} onClick={() => showModal(record)}>
-							View
+							{t("view")}
 						</Button>
 					)}
 					{canDeletePatient && (
 						<Popconfirm
-							title="Delete Patient"
+							title={t("delete-patient")}
 							description={
 								<>
-									<p>Are you sure you want to delete this patient?</p>
-									<p style={{ color: "red", fontWeight: "bold" }}>This action is dangerous</p>
+									<p>{t("confirm-delete-patient")}</p>
+									<p style={{ color: "red", fontWeight: "bold" }}>{t("delete-patient-warning")}</p>
 								</>
 							}
 							onConfirm={() => confirmDelete(record.id)}
-							okText="Yes, Delete"
+							okText={t("yes-delete")}
 							okType="danger"
-							cancelText="No">
-							<Button type="danger" icon={<DeleteOutlined />}>
-								Delete
+							cancelText={t("no")}>
+							<Button type="primary" danger icon={<DeleteOutlined />}>
+								{t("delete")}
 							</Button>
 						</Popconfirm>
 					)}
@@ -288,24 +291,29 @@ const PatientList = () => {
 
 	return (
 		<div className="main-container" style={{ padding: "20px", maxWidth: "100%", overflowX: "auto" }}>
-			<Title level={2}>Patient List</Title>
+			<Title level={2}>{t("patient-list")}</Title>
 
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={12} md={8} lg={6}>
-					<Input.Search placeholder="Search..." onSearch={handleSearch} prefix={<SearchOutlined />} style={{ width: "100%" }} />
+					<Input.Search placeholder={t("search...")} onSearch={handleSearch} prefix={<SearchOutlined />} style={{ width: "100%" }} />
 				</Col>
 				<Col xs={24} sm={12} md={8} lg={6}>
-					<Select placeholder="Select a Unit" onChange={handleUnitChange} allowClear style={{ width: "100%" }} value={filterParams.unitId}>
+					<Select
+						placeholder={t("select-a-unit")}
+						onChange={handleUnitChange}
+						allowClear
+						style={{ width: "100%" }}
+						value={filterParams.unitId}>
 						{units?.map((unit) => (
 							<Option key={unit.id} value={unit.id}>
-								{unit.name}
+								{t(unit.name.toLowerCase().replace(/ /g, "-"))}
 							</Option>
 						))}
 					</Select>
 				</Col>
-				<Col xs={24} sm={12} md={8} lg={6}>
+				<Col xs={24} sm={12} md={8} lg={4}>
 					<Select
-						placeholder="Select a Room"
+						placeholder={t("select-a-room")}
 						onChange={handleRoomChange}
 						allowClear
 						style={{ width: "100%" }}
@@ -313,7 +321,7 @@ const PatientList = () => {
 						value={filterParams.roomId}>
 						{currentRooms?.map((room) => (
 							<Option key={room.id} value={room.id}>
-								{room.roomNumber}
+								{t(room.roomNumber.toLowerCase().replace(/ /g, "-"))}
 							</Option>
 						))}
 					</Select>
@@ -321,17 +329,18 @@ const PatientList = () => {
 				<Col xs={24} sm={12} md={8} lg={6}>
 					<Space>
 						{canAddPatient && (
-							<Button type="default" onClick={() => showModal(null)}>
-								Add New Patient
+							<Button type="primary" onClick={() => showModal(null)}>
+								{t("add-new-patient")}
 							</Button>
 						)}
-						<Button
-							type="primary"
-							onClick={showActivityForm}
-							disabled={!filterParams.unitId && !filterParams.roomId} // Disable unless unit or room is selected
-						>
-							Assign Activity to Filtered Patients
-						</Button>
+						<Tooltip title={t("assign-activity-tooltip")}>
+							{" "}
+							<Button
+								type="primary"
+								onClick={showActivityForm}
+								disabled={!filterParams.unitId && !filterParams.roomId}
+								icon={<UserAddOutlined />}></Button>
+						</Tooltip>
 					</Space>
 				</Col>
 			</Row>
@@ -368,7 +377,7 @@ const PatientList = () => {
 			/>
 			{/* Mini Activity Form */}
 			<Modal
-				title="Assign Activity to Filtered Patients"
+				title={t("assign-activity-modal-title")}
 				open={isActivityFormVisible}
 				onCancel={hideActivityForm}
 				footer={null} // We handle submission inside the form

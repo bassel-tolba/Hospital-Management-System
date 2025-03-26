@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileHandler {
 
     // @Value("${file.upload.directory}")
-    private String uploadDirectory = "/api/uploads";
+    private String uploadDirectory = "/api/uploads";//
 
     private final List<String> allowedImageExtensions = Arrays.asList(".png", ".jpeg", ".jpg", ".webp", ".gif");
     private final List<String> allowedVideoExtensions = Arrays.asList(".mp4", ".mov", ".avi", ".mkv");

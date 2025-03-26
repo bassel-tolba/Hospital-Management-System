@@ -688,20 +688,10 @@ const PrescriptionList = () => {
 								Expire
 							</Button>
 						))}
-					{canReadPrescription && (
-						<Button type="default" icon={<EyeOutlined />} onClick={() => showModal(record, true)}>
-							View
-						</Button>
-					)}
-					{canUpdatePrescription && (
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record, false)}>
-							Edit
-						</Button>
-					)}
+					{canReadPrescription && <Button type="default" icon={<EyeOutlined />} onClick={() => showModal(record, true)}></Button>}
+					{canUpdatePrescription && <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record, false)}></Button>}
 					{canDeletePrescription && (
-						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-							Delete
-						</Button>
+						<Button type="primary" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}></Button>
 					)}
 				</Space>
 			),
@@ -733,7 +723,7 @@ const PrescriptionList = () => {
 				</Col>
 				<Col xs={24} sm={12} md={8}>
 					{canCreatePrescription && (
-						<Button type="default" onClick={() => showModal(null)}>
+						<Button type="primary" onClick={() => showModal(null)}>
 							Add New Prescription
 						</Button>
 					)}
@@ -795,7 +785,7 @@ const PrescriptionList = () => {
 								</Button>,
 								<Button
 									key="submit"
-									type="default"
+									type="primary"
 									onClick={handleFormSubmit}
 									disabled={(!canCreatePrescription && !selectedPrescription) || (!canUpdatePrescription && selectedPrescription)}>
 									{selectedPrescription ? "Update" : "Save"}

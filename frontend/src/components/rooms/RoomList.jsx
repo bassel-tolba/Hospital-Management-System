@@ -143,12 +143,12 @@ const RoomList = () => {
 			render: (text, record) => (
 				<Space size="middle">
 					<Tooltip title="Edit Room">
-						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
 							{/* Edit */}
 						</Button>
 					</Tooltip>
 					<Tooltip title="Delete Room">
-						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+						<Button type="primary" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
 							{/* Delete */}
 						</Button>
 					</Tooltip>
@@ -186,7 +186,7 @@ const RoomList = () => {
 					</Select>
 				</Col>
 				<Col xs={24} sm={12} md={8} lg={6}>
-					<Button type="default" onClick={() => showModal(null)}>
+					<Button type="primary" onClick={() => showModal(null)}>
 						Add New Room
 					</Button>
 				</Col>
@@ -221,7 +221,7 @@ const RoomList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleFormSubmit}>
+					<Button key="submit" type="primary" onClick={handleFormSubmit}>
 						{selectedRoom ? "Update" : "Save"}
 					</Button>,
 				]}>

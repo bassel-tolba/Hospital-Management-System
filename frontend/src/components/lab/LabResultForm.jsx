@@ -143,7 +143,7 @@ const LabResultForm = ({ form, labTestId, onSubmit, onCancel, selectedLabResult,
 					</Button>
 				</Col>
 				<Col xs={24} sm={12}>
-					<Button type="default" block onClick={handleFormSubmit} loading={false}>
+					<Button type="primary" block onClick={handleFormSubmit} loading={false}>
 						{selectedLabResult ? "Update" : "Save"}
 					</Button>
 				</Col>

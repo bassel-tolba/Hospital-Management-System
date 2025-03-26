@@ -156,7 +156,7 @@ const BillingPage = () => {
 			render: (_, record) =>
 				canReadBilling ? (
 					<Space size="middle">
-						<Button type="link" onClick={() => handleBillClick(record.id)}>
+						<Button type="primary" onClick={() => handleBillClick(record.id)}>
 							View Bill
 						</Button>
 						<Button type="default" icon={<FileTextOutlined />} onClick={() => exportPdf(record.bill, record.id)}>
@@ -289,11 +289,11 @@ const BillingPage = () => {
 								<strong>Total Amount:</strong> ${activeBill.totalAmount.toFixed(2)}
 							</p>
 							<Space size="middle">
-								<Button type="link" onClick={() => handleBillClick(activeBill.id)}>
+								<Button type="primary" onClick={() => handleBillClick(activeBill.id)}>
 									View Bill
 								</Button>
 								<Button type="default" icon={<FileTextOutlined />} onClick={() => exportPdf(activeBill.bill, activeBill.id)}>
-									Export PDF
+									PDF
 								</Button>
 							</Space>
 						</Card>
@@ -383,7 +383,7 @@ const BillingPage = () => {
 							</Col>
 						</Row>
 						<Form.Item>
-							<Button type="default" htmlType="submit" disabled={!canCreateBilling || !canUpdateBilling}>
+							<Button type="primary" htmlType="submit" disabled={!canCreateBilling || !canUpdateBilling}>
 								Add Payment
 							</Button>
 						</Form.Item>
@@ -393,7 +393,7 @@ const BillingPage = () => {
 						icon={<FileTextOutlined />}
 						style={{ marginTop: "15px" }}
 						onClick={() => exportPdf(selectedBill.bill, selectedBill.id)}>
-						Export PDF
+						PDF
 					</Button>
 				</Modal>
 			)}

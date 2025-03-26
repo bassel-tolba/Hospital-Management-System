@@ -263,7 +263,7 @@ const UserList = () => {
 				<Space size="small" wrap>
 					{hasAuthority("UPDATE_USER") && (
 						<Button
-							type="default"
+							type="primary"
 							icon={<EditOutlined />}
 							onClick={() => showModal(record)}
 							size={window.innerWidth <= 768 ? "small" : "middle"}>
@@ -272,7 +272,8 @@ const UserList = () => {
 					)}
 					{hasAuthority("DELETE_USER") && (
 						<Button
-							type="danger"
+							type="primary"
+							danger
 							icon={<DeleteOutlined />}
 							onClick={() => handleDelete(record.id)}
 							size={window.innerWidth <= 768 ? "small" : "middle"}>
@@ -325,7 +326,7 @@ const UserList = () => {
 							))}
 						</Select>
 						{hasAuthority("CREATE_USER") && (
-							<Button type="default" onClick={() => showModal(null)} style={{ width: window.innerWidth <= 768 ? "100%" : "auto" }}>
+							<Button type="primary" onClick={() => showModal(null)} style={{ width: window.innerWidth <= 768 ? "100%" : "auto" }}>
 								Add User
 							</Button>
 						)}

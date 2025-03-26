@@ -1,8 +1,9 @@
-// models/Patient.java
+// models/Patient.java (Modified)
 package mine.profile.website.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +30,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "deleted = false") // Add this annotation
+@Where(clause = "deleted = false")
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,10 +50,9 @@ public class Patient {
 
     private String email;
 
-    // NEW: Image URL field
     private String profilePictureURL;
 
-    @Column(unique = true) // VERY IMPORTANT: Ensures uniqueness in the database
+    @Column(unique = true)
     private String medicalRecordNumber;
 
     private String bloodType;
@@ -62,7 +62,6 @@ public class Patient {
     @Lob
     private String medicalHistory;
 
-    // Change severityLevel to Integer and add validation
     @Min(value = 1, message = "Severity level must be at least 1")
     @Max(value = 5, message = "Severity level must be at most 5")
     private Integer severityLevel;
@@ -82,7 +81,10 @@ public class Patient {
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NursingCarePlan> nursingCarePlans;
 
-    private boolean deleted = false; // Add this field
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuickNote> quickNotes = new ArrayList<>(); // Initialize the list
+
+    private boolean deleted = false;
 
     public Unit getUnit() {
         return getCurrentAdmission()
@@ -94,17 +96,25 @@ public class Patient {
         return getCurrentAdmission().map(admission -> admission.getBed().getRoom()).orElse(null);
     }
 
-    // Helper method to get the *current* (active) admission
     public Optional<Admission> getCurrentAdmission() {
         if (admissions == null || admissions.isEmpty()) {
             return Optional.empty();
         }
 
-        // Find the *latest* admission that is still active
         return admissions.stream()
-                .filter(
-                        admission -> admission.getDischargeDate() == null
-                                || admission.getDischargeDate().isAfter(LocalDateTime.now()))
-                .max(Comparator.comparing(Admission::getAdmissionDate)); // Most recent, active admission
+                .filter(admission -> admission.getDischargeDate() == null
+                        || admission.getDischargeDate().isAfter(LocalDateTime.now()))
+                .max(Comparator.comparing(Admission::getAdmissionDate));
+    }
+
+    // Add helper methods for QuickNotes
+    public void addQuickNote(QuickNote quickNote) {
+        quickNotes.add(quickNote);
+        quickNote.setPatient(this); // Set the bidirectional relationship
+    }
+
+    public void removeQuickNote(QuickNote quickNote) {
+        quickNotes.remove(quickNote);
+        quickNote.setPatient(null); // Important for orphan removal
     }
 }

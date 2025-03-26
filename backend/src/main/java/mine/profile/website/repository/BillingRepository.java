@@ -1,5 +1,6 @@
 package mine.profile.website.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -26,5 +27,13 @@ public interface BillingRepository extends JpaRepository<Billing, Long> {
 
     @Query("SELECT SUM(b.totalAmount) - COALESCE((SELECT SUM(pm.amount) FROM Payment pm WHERE pm.billing = b), 0) FROM Billing b")
     Double getPendingBills();
+
+    Page<Billing> findByPatientIdOrderByBillDateDesc(Long patientId, Pageable pageable);
+
+    @Query("SELECT b FROM Billing b WHERE b.patient.id = :patientId AND b.billDate >= :admissionDate ORDER BY b.billDate DESC")
+    Page<Billing> findByPatientIdAndBillDateAfter(
+            @Param("patientId") Long patientId,
+            @Param("admissionDate") LocalDateTime admissionDate,
+            Pageable pageable);
 
 }

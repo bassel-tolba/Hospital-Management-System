@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_URL = `/api/patients`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
 
 export const usePatientStore = create((set, get) => ({
 	patients: [],

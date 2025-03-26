@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PROCEDURE_API_BASE_URL = `/api/procedures`;
+const PROCEDURE_API_BASE_URL = `http://localhost:8080/api/procedures`;
 
 export const useProcedureStore = create((set, get) => ({
 	procedures: [],

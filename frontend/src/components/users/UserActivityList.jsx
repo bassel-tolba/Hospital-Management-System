@@ -3,11 +3,13 @@ import { Card, Typography, Spin, Tag, Button, Space, Row, Col, Divider, theme } 
 import { useActivityStore } from "../../services/activity.service";
 import { useAuthStore } from "../../services/auth.service";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const UserActivityList = () => {
 	const { userActivities, loading, error, getAvailableActivitiesForUser, updateActivityState } = useActivityStore();
 	const { user } = useAuthStore();
 	const { token } = theme.useToken(); // Get the current theme tokens
+	const { t } = useTranslation();
 
 	useEffect(() => {
 		if (user) {
@@ -161,7 +163,7 @@ const UserActivityList = () => {
 	};
 
 	if (!user) {
-		return <Typography.Text type="danger">You must be logged in to view user activities</Typography.Text>;
+		return <Typography.Text type="danger">{t("login-required-message")}</Typography.Text>;
 	}
 
 	if (loading) {
@@ -173,7 +175,7 @@ const UserActivityList = () => {
 	}
 
 	if (error) {
-		return <Typography.Text type="danger">Error: {error}</Typography.Text>;
+		return <Typography.Text type="danger">{t("error-message", { error })}</Typography.Text>;
 	}
 
 	const groupedActivities = groupActivitiesByPatient(userActivities);
@@ -200,10 +202,10 @@ const UserActivityList = () => {
 										height: "100%",
 									}}
 									hoverable>
-									<Typography.Title level={5}>{activity.activityType.replace(/_/g, " ")}</Typography.Title>
+									<Typography.Title level={5}>{t(activity.activityType.toLowerCase().replace(/_/g, "-"))}</Typography.Title>
 									<Typography.Paragraph>{activity.description}</Typography.Paragraph>
 									<Space direction="vertical" size="small" style={{ width: "100%" }}>
-										<Typography.Text strong>Time: </Typography.Text>
+										<Typography.Text strong>{t("time-label")}: </Typography.Text>
 										<Typography.Text>{new Date(activity.timestamp).toLocaleString()}</Typography.Text>
 										<Space direction="vertical" size="small" style={{ width: "100%", marginTop: 8 }}>
 											<Tag
@@ -214,7 +216,7 @@ const UserActivityList = () => {
 														? "processing"
 														: "default"
 												}>
-												{activity.state}
+												{t(activity.state.toLowerCase())}
 											</Tag>
 											{(activity.state === "pending" || activity.state === "inprogress") && (
 												<Space>
@@ -223,14 +225,14 @@ const UserActivityList = () => {
 															size="small"
 															type="default"
 															onClick={() => handleActivityStateChange(activity.id, "inprogress")}>
-															In Progress
+															{t("in-progress-button")}
 														</Button>
 													)}
 													<Button
 														size="small"
 														type="primary"
 														onClick={() => handleActivityStateChange(activity.id, "completed")}>
-														Complete
+														{t("complete-button")}
 													</Button>
 												</Space>
 											)}

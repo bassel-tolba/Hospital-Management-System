@@ -5,10 +5,12 @@ import { useLabStore } from "../../services/lab.service";
 import moment from "moment";
 import html2pdf from "html2pdf.js";
 import { LoadingOutlined, DownloadOutlined } from "@ant-design/icons"; // Import icons
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography;
 
 const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
+	const { t } = useTranslation();
 	const { fetchLabTests, labTests, loading, error } = useLabStore();
 	const [labTestDetails, setLabTestDetails] = useState(null);
 	const [tableData, setTableData] = useState({ columns: [], dataSource: [] });
@@ -39,11 +41,11 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 					}
 				} else {
 					setLabTestDetails(null);
-					message.error("Lab test not found.");
+					message.error(t("lab-test-not-found"));
 				}
 			} catch (err) {
 				console.error("Error fetching lab test details", err);
-				message.error("Error fetching lab test details: " + err.message);
+				message.error(t("error-fetching-lab-test-details") + err.message);
 				setLabTestDetails(null);
 			}
 		};
@@ -87,7 +89,7 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 
 	const generatePDF = async () => {
 		if (!labTestDetails || !labResult) {
-			message.error("No lab result or test details available.");
+			message.error(t("no-lab-result-or-test-details"));
 			return;
 		}
 
@@ -98,15 +100,17 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 		// Create the HTML content for the PDF (using template literals for cleaner code)
 		const htmlContent = `
             <div style="padding: 20px;">
-                <h1 style="color: #333; text-align: center;">Hospital Name</h1>
+                <h1 style="color: #333; text-align: center;">${t("hospital-name")}</h1>
                 <p style="text-align: center; color: #666;">${moment().format("YYYY-MM-DD HH:mm")}</p>
-                <h2 style="color: #444; margin-top: 20px;">Lab Result Details</h2>
-                <p><strong>Test Name:</strong> ${testName || "Not Available"}</p>
-                <p><strong>Test Description:</strong> ${description || "Not Available"}</p>
-                <p><strong>Result Date:</strong> ${resultDateTime ? moment(resultDateTime).format("YYYY-MM-DD HH:mm") : "Not Available"}</p>
-                <p><strong>Notes:</strong> ${notes || "Not Available"}</p>
+                <h2 style="color: #444; margin-top: 20px;">${t("lab-result-details")}</h2>
+                <p><strong>${t("test-name")}:</strong> ${testName || t("not-available")}</p>
+                <p><strong>${t("test-description")}:</strong> ${description || t("not-available")}</p>
+                <p><strong>${t("result-date")}:</strong> ${
+			resultDateTime ? moment(resultDateTime).format("YYYY-MM-DD HH:mm") : t("not-available")
+		}</p>
+                <p><strong>${t("notes")}:</strong> ${notes || t("not-available")}</p>
                  ${generateTableHTML(columns, dataSource)}
-                <p style="font-size: 10px; color: #999; margin-top: 20px;">This document is electronically generated and valid without signature.</p>
+                <p style="font-size: 10px; color: #999; margin-top: 20px;">${t("document-electronically-generated")}</p>
             </div>
         `;
 
@@ -120,15 +124,15 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 
 		try {
 			await html2pdf().from(htmlContent).set(options).save();
-			message.success("PDF generated successfully!");
+			message.success(t("pdf-generated-successfully"));
 		} catch (error) {
 			console.error("Error generating PDF:", error);
-			message.error("Failed to generate PDF: " + error.message);
+			message.error(t("failed-to-generate-pdf") + error.message);
 		}
 	};
 	const generateTableHTML = (columns, dataSource) => {
 		if (!columns || columns.length === 0 || !dataSource || dataSource.length === 0) {
-			return "<p>No results available.</p>";
+			return `<p>${t("no-results-available")}</p>`;
 		}
 
 		let tableHTML = `
@@ -158,7 +162,7 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 
 	if (loading || !labResult) {
 		return (
-			<Modal title={<Title level={4}>Lab Result Details</Title>} open={isOpen} onCancel={onClose} footer={null} centered>
+			<Modal title={<Title level={4}>{t("lab-result-details")}</Title>} open={isOpen} onCancel={onClose} footer={null} centered>
 				<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100px" }}>
 					<Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
 				</div>
@@ -168,9 +172,11 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 
 	if (error) {
 		return (
-			<Modal title={<Title level={4}>Lab Result Details</Title>} open={isOpen} onCancel={onClose} footer={null} centered>
+			<Modal title={<Title level={4}>{t("lab-result-details")}</Title>} open={isOpen} onCancel={onClose} footer={null} centered>
 				<Card style={{ borderColor: "red" }}>
-					<p style={{ color: "red" }}>Error: {error}</p>
+					<p style={{ color: "red" }}>
+						{t("error")}: {error}
+					</p>
 				</Card>
 			</Modal>
 		);
@@ -179,7 +185,7 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 	// --- Render ---
 	return (
 		<Modal
-			title={<Title level={4}>Lab Result Details</Title>}
+			title={<Title level={4}>{t("lab-result-details")}</Title>}
 			open={isOpen}
 			onCancel={onClose}
 			footer={null}
@@ -189,26 +195,26 @@ const LabResultDetailsModal = ({ isOpen, onClose, labResult }) => {
 			<Card>
 				<div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
 					<Button icon={<DownloadOutlined />} onClick={generatePDF}>
-						Download PDF
+						{t("download-pdf")}
 					</Button>
 				</div>
 				{labTestDetails && (
 					<div style={{ marginBottom: "15px" }}>
-						<Text strong>Test Name:</Text> {labTestDetails.testName || "Not Available"}
+						<Text strong>{t("test-name")}:</Text> {labTestDetails.testName || t("not-available")}
 						<br />
-						<Text strong>Test Description:</Text> {labTestDetails.description || "Not Available"}
+						<Text strong>{t("test-description")}:</Text> {labTestDetails.description || t("not-available")}
 						<br />
 					</div>
 				)}
-				<Text strong>Result Date Time:</Text>{" "}
-				{labResult.resultDateTime ? moment(labResult.resultDateTime).format("YYYY-MM-DD HH:mm") : "Not Available"}
+				<Text strong>{t("result-date-time")}:</Text>{" "}
+				{labResult.resultDateTime ? moment(labResult.resultDateTime).format("YYYY-MM-DD HH:mm") : t("not-available")}
 				<br />
-				<Text strong>Notes:</Text> {labResult.notes || "Not Available"}
+				<Text strong>{t("notes")}:</Text> {labResult.notes || t("not-available")}
 				<br />
 				{tableData.columns.length > 0 ? (
 					<Table columns={tableData.columns} dataSource={tableData.dataSource} pagination={false} size="small" bordered />
 				) : (
-					<Text>No results available for this lab.</Text>
+					<Text>{t("no-results-lab")}</Text>
 				)}
 			</Card>
 		</Modal>

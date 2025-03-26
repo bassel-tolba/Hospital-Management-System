@@ -15,6 +15,8 @@ import {
 import ProductHistory from "./ProductHistory";
 import AllProductHistory from "./AllProductHistory";
 
+import { color } from "framer-motion";
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -209,23 +211,24 @@ const ProductList = () => {
 		{
 			title: "Actions",
 			key: "actions",
+
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record, "increase")}>
-						Increase Stock
-					</Button>
-					<Button type="default" icon={<MinusOutlined />} onClick={() => showStockModal(record, "decrease")}>
-						Decrease Stock
-					</Button>
-					<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)}>
-						History
-					</Button>
-					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-						Delete
-					</Button>
+					<Tooltip title="Edit">
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)} />
+					</Tooltip>
+					<Tooltip title="Increase Stock">
+						<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record, "increase")} />
+					</Tooltip>
+					<Tooltip title="Decrease Stock">
+						<Button type="default" icon={<MinusOutlined />} onClick={() => showStockModal(record, "decrease")} />
+					</Tooltip>
+					<Tooltip title="History">
+						<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)} />
+					</Tooltip>
+					<Tooltip title="Delete">
+						<Button type="primary" danger styles={color} icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+					</Tooltip>
 				</Space>
 			),
 		},
@@ -310,7 +313,7 @@ const ProductList = () => {
 					<Input.Search placeholder="Search by code, name, description..." onSearch={handleSearch} style={{ width: "100%" }} />
 				</Col>
 				<Col xs={24} sm={6}>
-					<Button type="default" block onClick={() => showModal(null)}>
+					<Button type="primary" block onClick={() => showModal(null)}>
 						Add New Product
 					</Button>
 				</Col>
@@ -344,7 +347,7 @@ const ProductList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleFormSubmit}>
+					<Button key="submit" type="primary" onClick={handleFormSubmit}>
 						{selectedProduct ? "Update" : "Save"}
 					</Button>,
 				]}
@@ -379,6 +382,7 @@ const ProductList = () => {
 									<Option value="DEVICE">Device</Option>
 									<Option value="CONSUMABLE">Consumable</Option>
 									<Option value="SERVICE">Service</Option>
+									<Option value="APPOINTMENT">Appointment</Option>
 								</Select>
 							</Form.Item>
 						</Col>
@@ -451,7 +455,7 @@ const ProductList = () => {
 					<Button key="cancel" onClick={handleStockModalCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleStockChangeSubmit}>
+					<Button key="submit" type="primary" onClick={handleStockChangeSubmit}>
 						{stockChangeType === "increase" ? "Increase" : "Decrease"}
 					</Button>,
 				]}

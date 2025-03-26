@@ -1,4 +1,4 @@
-// PaymentService.java
+// PaymentService.java (Revised)
 package mine.profile.website.service;
 
 import java.math.BigDecimal;
@@ -88,59 +88,33 @@ public class PaymentService {
             throw new ValidationException("Payment date cannot be in the future.");
         }
 
-        // Check for ongoing admission. This logic is good.
-        Admission latestAdmission = admissionRepository.findByPatientId(patient.getId()).stream()
-                .max((a1, a2) -> a1.getAdmissionDate().compareTo(a2.getAdmissionDate()))
-                .orElse(null);
-        if (latestAdmission != null) {
-            LocalDateTime dischargeDate = latestAdmission.getDischargeDate();
-            if (dischargeDate == null || dischargeDate.isAfter(LocalDateTime.now())) {
-                throw new IllegalStateException(
-                        "Cannot process payment while admission is ongoing or has a future discharge date.");
-            }
-        }
-
-        String statisticsJson = createStatistics(billing);
+        String statisticsJson = createStatistics(billing); // Calculate statistics *here*
         paymentDTO.setStatistics(statisticsJson);
 
         Payment payment = paymentDTO.toEntity(billing);
         Payment savedPayment = paymentRepository.save(payment);
 
-        // Check if fully paid *after* saving the payment.
-        if (isBillFullyPaid(billing)) {
-            billing.setPaid(true);
-            billingRepository.save(billing); // Save the updated billing status
-            createRecurringBilling(billing.getPatient());
-        }
+        // REMOVED: Fully paid check and related logic.
 
         return PaymentDTO.toDto(savedPayment);
     }
 
-    private boolean isBillFullyPaid(Billing billing) {
-        double totalPayments = paymentRepository.findByBillingId(billing.getId()).stream()
-                .mapToDouble(Payment::getAmount)
-                .sum();
-        return totalPayments >= billing.getTotalAmount();
-    }
+    public boolean isBillFullyPaid(Billing billing) {
 
-    private void createRecurringBilling(Patient patient) {
-        BillingDTO newBillingDTO = new BillingDTO();
-        newBillingDTO.setPatientId(patient.getId());
-        newBillingDTO.setBillDate(LocalDateTime.now());
-        billingService.createBilling(newBillingDTO);
+        return BillingDTO.toDto(billing, paymentRepository, procedureLogRepository, patientProductUsageRepository,
+                labResultRepository, imageReportRepository, productRepository, procedureRepository, admissionRepository,
+                patientRepository, medicationAdministrationRepository, bedRepository).calculatePendingAmount() <= 0;
     }
 
     private String createStatistics(Billing billing) {
         BillingDTO billingDTO = BillingDTO.toDto(billing, paymentRepository, procedureLogRepository,
                 patientProductUsageRepository, labResultRepository, imageReportRepository, productRepository,
                 procedureRepository, admissionRepository, patientRepository, medicationAdministrationRepository,
-                bedRepository); // Added Product and Procedure
+                bedRepository);
         Map<String, Object> statisticsMap = generateBillJson(billingDTO);
         try {
             return objectMapper.writeValueAsString(statisticsMap);
         } catch (JsonProcessingException e) {
-            // Log the exception properly! Don't just throw a generic RuntimeException.
-            // Consider a custom exception type.
             throw new RuntimeException("Error converting statistics to JSON", e);
         }
     }

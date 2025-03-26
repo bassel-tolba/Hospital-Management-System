@@ -1,8 +1,10 @@
+//BillingDTO.java
 package mine.profile.website.dtos;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +18,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mine.profile.website.models.Admission;
-import mine.profile.website.models.Bed;
 import mine.profile.website.models.Billing;
 import mine.profile.website.models.ImageReport;
 import mine.profile.website.models.LabResult;
@@ -52,6 +53,8 @@ public class BillingDTO {
     private List<Long> imageReportIds;
     private List<Long> medicationAdministrationIds;
     private String bill;
+    private String paidBillHtml; // Add the paidBillHtml field
+    private LocalDateTime paidDate;
 
     @Autowired
     @JsonIgnore
@@ -112,6 +115,8 @@ public class BillingDTO {
         billing.setBillDate(this.billDate);
         billing.setTotalAmount(this.totalAmount);
         billing.setPaid(this.isPaid);
+        billing.setPaidBillHtml(this.paidBillHtml); // Set the HTML
+        billing.setPaidDate(this.paidDate);
 
         return billing;
     }
@@ -129,6 +134,8 @@ public class BillingDTO {
         billingDTO.setBillDate(billing.getBillDate());
         billingDTO.setTotalAmount(billing.getTotalAmount());
         billingDTO.setPaid(billing.isPaid());
+        billingDTO.setPaidBillHtml(billing.getPaidBillHtml()); // Populate the DTO field
+        billingDTO.setPaidDate(billing.getPaidDate());
         if (billing.getPatient() != null) {
             billingDTO.setPatientId(billing.getPatient().getId());
         }
@@ -171,7 +178,13 @@ public class BillingDTO {
         billingDTO.patientRepository = patientRepository;
         billingDTO.medicationAdministrationRepository = medicationAdministrationRepository;
         billingDTO.bedRepository = bedRepository;
-        billingDTO.setBill(billingDTO.generateBillHtml());
+        if (billingDTO.isPaid()) {
+            billingDTO.setBill(billingDTO.getPaidBillHtml()); // Use stored HTML if paid
+
+        } else {
+            billingDTO.setBill(billingDTO.generateBillHtml()); // Otherwise, generate dynamically
+
+        }
 
         return billingDTO;
     }
@@ -182,44 +195,39 @@ public class BillingDTO {
         if (isPaid() == true) {
             return 0;
         }
+        // --- Admission Calculation ---
         if (patientId != null) {
             List<Admission> admissions = admissionRepository.findByPatientId(patientId);
             if (admissions != null && !admissions.isEmpty()) {
-                for (Admission admission : admissions) {
-                    if (admission.getAdmissionDate() != null) {
-                        LocalDateTime admissionTime = admission.getAdmissionDate();
-                        LocalDateTime dischargeTime = admission.getDischargeDate();
-                        double admissionTypePrice = 0;
+                // Find the latest admission *before* the bill date
+                Admission relevantAdmission = admissions.stream()
+                        .filter(admission -> admission.getAdmissionDate().isBefore(this.billDate))
+                        .max(Comparator.comparing(Admission::getAdmissionDate))
+                        .orElse(null); // Handle the case where no admission exists before the bill date
 
-                        if (admission.getAdmissionType() != null) {
-                            admissionTypePrice = admission.getAdmissionType().getPrice();
+                if (relevantAdmission != null) {
+                    LocalDateTime admissionTime = relevantAdmission.getAdmissionDate();
+                    double admissionTypePrice = relevantAdmission.getAdmissionType() != null
+                            ? relevantAdmission.getAdmissionType().getPrice()
+                            : 0;
 
-                        }
-                        if (dischargeTime == null || dischargeTime.isAfter(this.billDate)) {
-                            // Use billDate here to compare with admission dates
-                            LocalDateTime currentTime = this.billDate;
-                            long days = Duration.between(admissionTime, currentTime).toDays();
-                            days = days == 0 ? 1 : days; // always at least one day.
-                            totalBill += days * admissionTypePrice;
-
-                        } else if (dischargeTime.isBefore(this.billDate)) {
-                            // Free the bed if the admission is completed (discharge date is in the past)
-                            if (admission.getBed() != null) {
-                                Bed bed = bedRepository.findById(admission.getBed().getId()).orElse(null);
-                                if (bed != null && bed.isOccupied()) {
-                                    bed.setOccupied(false);
-                                    bedRepository.save(bed);
-                                    // Set the bedId in the admission record to null
-                                    admission.setBed(null);
-                                    admissionRepository.save(admission);
-                                }
-                            }
-                        }
+                    // Calculate days up to the billDate, but only if the bill date is within the
+                    // admission.
+                    LocalDateTime endTime = this.billDate;
+                    if (relevantAdmission.getDischargeDate() != null
+                            && relevantAdmission.getDischargeDate().isBefore(endTime)) {
+                        endTime = relevantAdmission.getDischargeDate(); // Use discharge date if it's before the bill
+                                                                        // date
                     }
+
+                    long days = Duration.between(admissionTime, endTime).toDays();
+                    days = days == 0 ? 1 : days; // Always at least one day.
+                    totalBill += days * admissionTypePrice;
                 }
             }
         }
 
+        // --- (Rest of the calculatePendingAmount method remains the same) ---
         if (procedureLogIds != null && !procedureLogIds.isEmpty()) {
             Map<Long, Long> procedureCountMap = procedureLogIds.stream()
                     .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
@@ -248,8 +256,8 @@ public class BillingDTO {
             for (PatientProductUsage usage : patientProductUsages) {
                 if (usage != null && usage.getProduct() != null) {
                     BigDecimal usagePrice = usage.getPrice();
-                    BigDecimal quantity = usage.getQuantity() != null ? usage.getQuantity() : BigDecimal.ONE;
-                    totalBill += usagePrice.multiply(quantity).doubleValue();
+
+                    totalBill += usagePrice.doubleValue(); // CORRECT - usage.getPrice() is already the total
                 }
             }
 
@@ -463,63 +471,53 @@ public class BillingDTO {
         billHtml.append("<hr/>");
 
         // Admission Section
-        billHtml.append("<h3 class=\"section-title\">Admission</h3>"); // Use section-title
+        billHtml.append("<h3 class=\"section-title\">Admission</h3>");
         billHtml.append("<ul>");
-        double admissionCost = 0;
         if (patientId != null) {
             List<Admission> admissions = admissionRepository.findByPatientId(patientId);
             if (admissions != null && !admissions.isEmpty()) {
-                for (Admission admission : admissions) {
-                    if (admission.getAdmissionDate() != null) {
-                        LocalDateTime admissionTime = admission.getAdmissionDate();
-                        LocalDateTime dischargeTime = admission.getDischargeDate();
-                        double admissionTypePrice = 0;
-                        String admissionTypeName = "";
+                // Find the latest admission *before* the bill date
+                Admission relevantAdmission = admissions.stream()
+                        .filter(admission -> admission.getAdmissionDate().isBefore(this.billDate))
+                        .max(Comparator.comparing(Admission::getAdmissionDate))
+                        .orElse(null);
 
-                        if (admission.getAdmissionType() != null) {
-                            admissionTypePrice = admission.getAdmissionType().getPrice();
-                            admissionTypeName = admission.getAdmissionType().getName();
-                        }
+                if (relevantAdmission != null) {
+                    LocalDateTime admissionTime = relevantAdmission.getAdmissionDate();
+                    double admissionTypePrice = relevantAdmission.getAdmissionType() != null
+                            ? relevantAdmission.getAdmissionType().getPrice()
+                            : 0;
+                    String admissionTypeName = relevantAdmission.getAdmissionType() != null
+                            ? relevantAdmission.getAdmissionType().getName()
+                            : "Unknown";
 
-                        long days;
-                        String daysLeftText = "";
-                        if (dischargeTime == null || dischargeTime.isAfter(billDate)) {
-
-                            days = Math.round(Duration.between(admissionTime, billDate).toDays());
-                            days = days <= 0 ? 1 : days;
-                            admissionCost = days * admissionTypePrice;
-                            if (dischargeTime != null) {
-                                long daysLeft = Math.round(Duration.between(now, dischargeTime).toDays());
-
-                                daysLeftText = " (" + daysLeft + " days left)";
-
-                            }
-                            billHtml.append("<li>");
-                            billHtml.append("<span>" + admissionTypeName + " Stay (" + days + " days)" + daysLeftText
-                                    + "</span>");
-                            billHtml.append("<span>$" + String.format("%.2f", admissionCost) + "</span>");
-                            billHtml.append("</li>");
-                            totalBill += admissionCost;
-
-                        } else if (dischargeTime != null && dischargeTime.isBefore(this.billDate)) {
-                            // Free the bed if the admission is completed (discharge date is in the past).
-                            if (admission.getBed() != null) {
-                                Bed bed = bedRepository.findById(admission.getBed().getId()).orElse(null);
-                                if (bed != null && bed.isOccupied()) {
-                                    bed.setOccupied(false);
-                                    bedRepository.save(bed);
-                                    // Set the bedId in the admission record to null
-                                    admission.setBed(null);
-                                    admissionRepository.save(admission);
-                                }
-                            }
-                        }
+                    // Calculate days up to the billDate, but only if the bill date is within the
+                    // admission.
+                    LocalDateTime endTime = this.billDate;
+                    if (relevantAdmission.getDischargeDate() != null
+                            && relevantAdmission.getDischargeDate().isBefore(endTime)) {
+                        endTime = relevantAdmission.getDischargeDate(); // Use discharge date if it's before bill date
                     }
+
+                    long days = Duration.between(admissionTime, endTime).toDays();
+                    days = days <= 0 ? 1 : days; // Ensure at least 1 day.
+                    double admissionCost = days * admissionTypePrice;
+
+                    // Remove days left.
+                    billHtml.append("<li>");
+                    billHtml.append(
+                            "<span>" + admissionTypeName + " Stay (" + days + " days)" + "</span>");
+                    billHtml.append("<span>$" + String.format("%.2f", admissionCost) + "</span>");
+                    billHtml.append("</li>");
+                    totalBill += admissionCost;
+
                 }
             }
         }
         billHtml.append("</ul>");
 
+        // --- (Rest of the generateBillHtml method remains largely the same, except
+        // where noted below) ---
         // Procedure Logs Section
         billHtml.append("<h3 class=\"section-title\">Procedures</h3>"); // Use section-title
         billHtml.append("<ul>");
@@ -566,7 +564,9 @@ public class BillingDTO {
                 if (usage != null && usage.getProduct() != null) {
                     BigDecimal usagePrice = usage.getPrice();
                     BigDecimal quantity = usage.getQuantity() != null ? usage.getQuantity() : BigDecimal.ONE;
-                    double totalPriceForUsage = usagePrice.multiply(quantity).doubleValue();
+                    // double totalPriceForUsage = usagePrice.multiply(quantity).doubleValue(); //
+                    // INCORRECT - Double multiplication
+                    double totalPriceForUsage = usagePrice.doubleValue(); // CORRECT - usage.getPrice() is already total
 
                     billHtml.append("<li>");
                     billHtml.append("<span>" + usage.getProduct().getName() + " (" + quantity
@@ -703,5 +703,10 @@ public class BillingDTO {
         billHtml.append("</body>");
         billHtml.append("</html>");
         return billHtml.toString();
+    }
+
+    public String getBill() {
+        // Return stored HTML if available, otherwise generate dynamically
+        return this.isPaid ? this.paidBillHtml : generateBillHtml();
     }
 }

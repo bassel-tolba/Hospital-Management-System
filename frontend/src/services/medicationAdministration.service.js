@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const MEDICATION_ADMINISTRATION_API_BASE_URL = `/api/medication-administrations`;
+const MEDICATION_ADMINISTRATION_API_BASE_URL = `http://localhost:8080/api/medication-administrations`;
 
 export const useMedicationAdministrationStore = create((set, get) => ({
 	medicationAdministrations: [],

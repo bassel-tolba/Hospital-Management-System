@@ -11,7 +11,7 @@ import { notification } from "antd";
 
 const { Title } = Typography;
 const { Option } = Select;
-const PROCEDURE_LOG_API_BASE_URL = `/api/procedure-logs`;
+const PROCEDURE_LOG_API_BASE_URL = `http://localhost:8080/api/procedure-logs`;
 const formatRelativeTime = (localDateTime) => {
 	if (!localDateTime) return "N/A";
 
@@ -417,7 +417,7 @@ const ProcedureLogList = () => {
 						</Button>
 					)}
 					{canDeleteProcedureLog && (
-						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+						<Button type="primary" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
 							Delete
 						</Button>
 					)}
@@ -440,7 +440,7 @@ const ProcedureLogList = () => {
 				/>
 				<Button onClick={clearSearch}>Clear Search</Button> {/* Clear Search Button */}
 				{canCreateProcedureLog && (
-					<Button type="default" onClick={() => showModal(null)}>
+					<Button type="primary" onClick={() => showModal(null)}>
 						Add New Log
 					</Button>
 				)}

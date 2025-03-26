@@ -26,7 +26,7 @@ import mine.profile.website.util.FileHandler;
 public class FileServingController {
 
     // @Value("${file.upload.directory}")
-    private String fileUploadDirectory = "/api/uploads";
+    private String fileUploadDirectory = "/api/uploads";// ="/api/uploads"
 
     private final FileHandler fileHandler;
 

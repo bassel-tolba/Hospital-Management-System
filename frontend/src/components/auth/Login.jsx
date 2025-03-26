@@ -2,13 +2,15 @@ import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Typography, Alert, Space, Card } from "antd";
 import { useAuthStore } from "../../services/auth.service";
 import { LockOutlined, UserOutlined, LoginOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 
 const { Title } = Typography;
 
 const Login = () => {
-	const [username, setUsername] = useState("");
-	const [password, setPassword] = useState("");
+	// No longer need useState for username and password here
 	const { status, error, login, clearError } = useAuthStore();
+	const { t } = useTranslation();
+	const [form] = Form.useForm(); // Use Ant Design's Form.useForm hook
 
 	useEffect(() => {
 		return () => {
@@ -16,13 +18,12 @@ const Login = () => {
 		};
 	}, []);
 
-	const handleSubmit = async () => {
+	const handleSubmit = async (values) => {
+		// Receive form values directly
 		try {
-			await login(username, password);
-			// No need to call clearError here; it's handled in the store
+			await login(values.username, values.password); // Use values.username, values.password
 		} catch (error) {
-			// Error handling is now primarily in the auth service
-			console.error("Login component error:", error); // More specific error logging
+			console.error("Login component error:", error);
 		}
 	};
 
@@ -40,40 +41,35 @@ const Login = () => {
 					<Title level={2} style={{ textAlign: "center" }}>
 						<Space>
 							<LoginOutlined />
-							Login
+							{t("login")}
 						</Space>
 					</Title>
-					{status === "loading" && <Alert message="Loading..." type="info" showIcon />}
-					{status === "success" && <Alert message="Login Successful!" type="success" showIcon={<CheckCircleOutlined />} />}{" "}
-					{/* Success Alert */}
-					{status === "failed" && error && <Alert message={`Login Failed: ${error}`} type="error" showIcon />}{" "}
-					{/* Improved error display */}
-					<Form onFinish={handleSubmit}>
-						<Form.Item
-							name="username" // Add name attributes for antd form to work correct
-							rules={[{ required: true, message: "Please enter your username!" }]}>
+					{status === "loading" && <Alert message={t("loading")} type="info" showIcon />}
+					{status === "success" && <Alert message={t("login-successful")} type="success" showIcon={<CheckCircleOutlined />} />}
+					{status === "failed" && error && <Alert message={`${t("login-failed")}: ${error}`} type="error" showIcon />}
+
+					<Form form={form} onFinish={handleSubmit}>
+						{" "}
+						{/* Pass the form instance */}
+						<Form.Item name="username" rules={[{ required: true, message: t("please-enter-username") }]}>
 							<Input
 								prefix={<UserOutlined />}
 								type="text"
-								value={username}
-								onChange={(e) => setUsername(e.target.value)}
-								placeholder="Username"
+								// Remove value and onChange
+								placeholder={t("username")}
 							/>
 						</Form.Item>
-
-						<Form.Item name="password" rules={[{ required: true, message: "Please enter your password!" }]}>
+						<Form.Item name="password" rules={[{ required: true, message: t("please-enter-password") }]}>
 							<Input
 								prefix={<LockOutlined />}
 								type="password"
-								value={password}
-								placeholder="Password"
-								onChange={(e) => setPassword(e.target.value)}
+								// Remove value and onChange
+								placeholder={t("password")}
 							/>
 						</Form.Item>
-
 						<Form.Item style={{ display: "flex", justifyContent: "center" }}>
 							<Button type="primary" htmlType="submit" disabled={status === "loading"} style={{ width: "200px" }}>
-								<LoginOutlined /> Login
+								<LoginOutlined /> {t("login")}
 							</Button>
 						</Form.Item>
 					</Form>

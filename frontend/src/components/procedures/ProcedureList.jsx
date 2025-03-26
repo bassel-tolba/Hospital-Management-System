@@ -112,8 +112,8 @@ const ProcedureList = () => {
 			align: "right",
 			render: (_, procedure) => (
 				<Space size="small">
-					<Button icon={<EditOutlined />} onClick={() => showModal(procedure)} type="default" />
-					<Button icon={<DeleteOutlined />} onClick={() => handleDelete(procedure.id)} type="default" danger />
+					<Button icon={<EditOutlined />} onClick={() => showModal(procedure)} type="primary" />
+					<Button icon={<DeleteOutlined />} onClick={() => handleDelete(procedure.id)} type="primary" danger />
 				</Space>
 			),
 		},
@@ -129,7 +129,7 @@ const ProcedureList = () => {
 					onChange={handleSearch}
 					style={{ width: "300px" }}
 				/>
-				<Button type="default" onClick={() => showModal(null)}>
+				<Button type="primary" onClick={() => showModal(null)}>
 					Add New Procedure
 				</Button>
 			</div>
@@ -173,7 +173,7 @@ const ProcedureList = () => {
 							<Button onClick={handleCancel} style={{ marginRight: 8 }}>
 								Cancel
 							</Button>
-							<Button type="default" htmlType="submit">
+							<Button type="primary" htmlType="submit">
 								{selectedProcedure ? "Update" : "Save"}
 							</Button>
 						</div>
