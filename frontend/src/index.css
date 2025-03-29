@@ -224,197 +224,12 @@
 
 .ant-breadcrumb-separator::before {
 }
-/* From Uiverse.io by augustin_4687 */
-/* button.css (or your chosen file) */
-
-/* 1. Shorter Custom CSS Variables (Fallback Values) */
-:root {
-	--s-c: #ffffff; /* Star color */
-	--s-o: 0.1; /* Star opacity */
-	--s-oh: 1; /* Star opacity - hover */
-	--h-c: #facc15; /* Highlight color */
-	--b-r: 1rem; /* Border radius */
-	--f-f: "Rubik", sans-serif; /* Font family */
-	--sh-c1: #292524; /* Shadow color 1 */
-	--sh-c2: #fafaf9; /* Shadow color 2 */
-}
-
-/* 2. Target Your Custom .button Class */
-.button {
-	/* --- Inherit (if applicable) and Set Basics --- */
-	font-family: var(--f-f, inherit);
-	border-radius: var(--b-r, 4px); /* Fallback to a reasonable default */
-	line-height: 1;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: bold;
-	position: relative;
-	cursor: pointer; /* Add cursor pointer */
-
-	/* --- Focus & Active (Combined with potential Ant Design) --- */
-	&:focus-visible,
-	&:active {
-		outline: 2px dashed var(--h-c, var(--ant-primary-color, blue));
-		outline-offset: 6px;
-		/* Remove potentially conflicting Ant Design box-shadow */
-		box-shadow: none !important;
-	}
-
-	/* --- Star (::before) --- */
-	&::before {
-		content: "";
-		position: absolute;
-		z-index: 0;
-		height: 200%;
-		max-height: 100px;
-		aspect-ratio: 1;
-		margin: auto;
-		background: var(--s-c);
-		clip-path: polygon(
-			/* Your polygon - no change here */ 100% 50%,
-			91.48% 56.57%,
-			97.55% 65.45%,
-			87.42% 69.07%,
-			90.45% 79.39%,
-			79.7% 79.7%,
-			79.39% 90.45%,
-			69.07% 87.42%,
-			65.45% 97.55%,
-			56.57% 91.48%,
-			50% 100%,
-			43.43% 91.48%,
-			34.55% 97.55%,
-			30.93% 87.42%,
-			20.61% 90.45%,
-			20.3% 79.7%,
-			9.55% 79.39%,
-			12.58% 69.07%,
-			2.45% 65.45%,
-			8.52% 56.57%,
-			0% 50%,
-			8.52% 43.43%,
-			2.45% 34.55%,
-			12.58% 30.93%,
-			9.55% 20.61%,
-			20.3% 20.3%,
-			20.61% 9.55%,
-			30.93% 12.58%,
-			34.55% 2.45%,
-			43.43% 8.52%,
-			50% 0%,
-			56.57% 8.52%,
-			65.45% 2.45%,
-			69.07% 12.58%,
-			79.39% 9.55%,
-			79.7% 20.3%,
-			90.45% 20.61%,
-			87.42% 30.93%,
-			97.55% 34.55%,
-			91.48% 43.43%
-		);
-		animation: star-rotate 4s linear infinite;
-		opacity: var(--s-o);
-		transition: opacity 0.3s ease;
-	}
-
-	&:hover::before {
-		opacity: var(--s-oh);
-	}
-
-	/* --- Nested Structure (Shadow, Padding) --- */
-	& > * {
-		padding: 2px;
-		border-radius: var(--b-r, 4px);
-		background-color: var(--h-c, var(--ant-primary-color, blue));
-		transform: translate(-4px, -4px);
-		transition: all 150ms ease;
-
-		/* Complex Shadow - Use Short Variables */
-		box-shadow: 0.5px 0.5px 0 0 var(--h-c, var(--ant-primary-color, blue)), 1px 1px 0 0 var(--h-c, var(--ant-primary-color, blue)),
-			1.5px 1.5px 0 0 var(--h-c, var(--ant-primary-color, blue)), 2px 2px 0 0 var(--h-c, var(--ant-primary-color, blue)),
-			2.5px 2.5px 0 0 var(--h-c, var(--ant-primary-color, blue)), 3px 3px 0 0 var(--h-c, var(--ant-primary-color, blue)), 0 0 0 2px var(--sh-c1),
-			0.5px 0.5px 0 2px var(--sh-c1), 1px 1px 0 2px var(--sh-c1), 1.5px 1.5px 0 2px var(--sh-c1), 2px 2px 0 2px var(--sh-c1),
-			2.5px 2.5px 0 2px var(--sh-c1), 3px 3px 0 2px var(--sh-c1), 3.5px 3.5px 0 2px var(--sh-c1), 4px 4px 0 2px var(--sh-c1),
-			0 0 0 4px var(--sh-c2), 0.5px 0.5px 0 4px var(--sh-c2), 1px 1px 0 4px var(--sh-c2), 1.5px 1.5px 0 4px var(--sh-c2),
-			2px 2px 0 4px var(--sh-c2), 2.5px 2.5px 0 4px var(--sh-c2), 3px 3px 0 4px var(--sh-c2), 3.5px 3.5px 0 4px var(--sh-c2),
-			4px 4px 0 4px var(--sh-c2);
-
-		.button:hover & {
-			transform: translate(0, 0);
-			box-shadow: 0 0 0 0 var(--h-c, var(--ant-primary-color, blue)), 0 0 0 0 var(--h-c, var(--ant-primary-color, blue)),
-				0 0 0 0 var(--h-c, var(--ant-primary-color, blue)), 0 0 0 0 var(--h-c, var(--ant-primary-color, blue)),
-				0 0 0 0 var(--h-c, var(--ant-primary-color, blue)), 0 0 0 0 var(--h-c, var(--ant-primary-color, blue)), 0 0 0 2px var(--sh-c1),
-				0 0 0 2px var(--sh-c1), 0 0 0 2px var(--sh-c1), 0 0 0 2px var(--sh-c1), 0 0 0 2px var(--sh-c1), 0 0 0 2px var(--sh-c1),
-				0 0 0 2px var(--sh-c1), 0 0 0 2px var(--sh-c1), 0 0 0 2px var(--sh-c1), 0 0 0 4px var(--sh-c2), 0 0 0 4px var(--sh-c2),
-				0 0 0 4px var(--sh-c2), 0 0 0 4px var(--sh-c2), 0 0 0 4px var(--sh-c2), 0 0 0 4px var(--sh-c2), 0 0 0 4px var(--sh-c2),
-				0 0 0 4px var(--sh-c2), 0 0 0 4px var(--sh-c2);
-		}
-
-		& > * {
-			position: relative;
-			pointer-events: none;
-			border-radius: calc(var(--b-r, 4px) - 2px);
-			background-color: var(--ant-btn-default-bg, transparent); /*  Ant Design default, or transparent */
-			&::before {
-				content: "";
-				position: absolute;
-				inset: 0;
-				border-radius: var(--b-r, 4px);
-				opacity: 0.1;
-				background-image: radial-gradient(rgb(255 255 255 / 80%) 20%, transparent 20%),
-					radial-gradient(rgb(255 255 255 / 100%) 20%, transparent 20%);
-				background-position: 0 0, 4px 4px;
-				background-size: 8px 8px;
-				mix-blend-mode: hard-light;
-				box-shadow: inset 0 0 0 1px var(--sh-c1);
-				animation: dots 0.4s infinite linear;
-				transition: opacity 150ms ease;
-			}
-
-			& > * {
-				position: relative;
-				display: flex;
-				align-items: center;
-				padding: 0.75rem 1.25rem;
-				gap: 0.25rem;
-				filter: drop-shadow(0 -1px 0 var(--sh-c1));
-				&:hover {
-					filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, 0.1));
-				}
-
-				&:active {
-					transform: translateY(2px);
-				}
-			}
-		}
-	}
-}
-
-/* --- Keyframes (No change) --- */
-@keyframes star-rotate {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-@keyframes dots {
-	0% {
-		background-position: 0 0, 4px 4px;
-	}
-	100% {
-		background-position: 8px 0, 12px 4px;
-	}
-}
 
 .ant-btn {
+	/* duplicated declarations */
 }
 
-.ant-btn:hover,
-.ant-btn:focus-visible {
+.ant-btn::hover {
 }
 
 .ant-btn::after {
@@ -428,8 +243,7 @@
 
 .ant-btn:active {
 }
-.ant-btn {
-}
+
 .ant-btn-primary,
 .ant-btn-default,
 .ant-btn-dashed,
@@ -900,6 +714,9 @@
 .ant-transfer-list-content-item:hover {
 }
 
+.ant-spin-dot {
+}
+
 .ant-spin-dot-item {
 }
 
@@ -1213,10 +1030,22 @@
 }
 .ant-space-align-baseline {
 }
-.ant-spin {
+/* Works on Firefox */
+html {
+	scrollbar-width: thin;
+	scrollbar-color: blue rgb(255, 255, 255);
 }
-.container {
-	background: linear-gradient(135deg, #ffffff33 0%, #0000003f 100%);
+
+/* Works on Chrome, Edge, and Safari */
+body::-webkit-scrollbar {
+	width: 12px;
 }
-.ant-menu {
+body::-webkit-scrollbar-track {
+	background: orange;
+}
+
+body::-webkit-scrollbar-thumb {
+	background-color: blue;
+	border-radius: 20px;
+	border: 3px solid orange;
 }

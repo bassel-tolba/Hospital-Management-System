@@ -75,7 +75,7 @@ const transformImageUrl = (url) => {
 	if (fileUrl.startsWith(".")) {
 		fileUrl = fileUrl.substring(1);
 	}
-	return `/${fileUrl}`;
+	return `${fileUrl}`;
 };
 const Profile = () => {
 	const { user, logout, status, error, clearError } = useAuthStore();

@@ -509,7 +509,7 @@ const NavigationMenu = React.memo(({ onClose, isMobile, collapsed }) => {
 			// Modified logic to show login/register only when not authenticated
 			if (isPublic) {
 				if (["/login", "/register"].includes(path)) {
-					show = !user; // Show only when user is not logged in
+					show = true; // Show only when user is not logged in
 				} else {
 					show = true;
 				}
