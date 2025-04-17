@@ -1,3 +1,5 @@
+// src/components/admissions/AdmissionList.js
+
 import React, { useState, useEffect } from "react";
 import {
 	Table,
@@ -13,7 +15,8 @@ import {
 	notification,
 	List,
 	Grid,
-	InputNumber, // Import InputNumber
+	InputNumber,
+	Result, // Import Result for permission denied message
 } from "antd";
 import { useAdmissionStore } from "../../services/admission.service";
 import { usePatientStore } from "../../services/patient.service";
@@ -21,29 +24,30 @@ import { useBedStore } from "../../services/bed.service";
 import { useRoomStore } from "../../services/room.service";
 import { useUnitStore } from "../../services/unit.service";
 import { useAuthStore } from "../../services/auth.service";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { QuestionCircleOutlined, LockOutlined } from "@ant-design/icons"; // Import LockOutlined
 import moment from "moment";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import admissionDocsContent from "../../docs/admission";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const { Title } = Typography;
 const { Option } = Select;
-const { useBreakpoint } = Grid; // Use the useBreakpoint hook
+const { useBreakpoint } = Grid;
 
 const AdmissionList = () => {
+	const { t } = useTranslation(); // Instantiate useTranslation
 	const {
 		admissions,
 		admissionTypes,
 		loading,
-		error,
+		error, // Keep error state from store if needed elsewhere
 		total,
 		searchAdmissions,
 		deleteAdmission,
 		createAdmission,
 		updateAdmission,
 		setLoading,
-		setAdmissions,
 		fetchAllAdmissionTypes,
 		createAdmissionType,
 		updateAdmissionType,
@@ -72,54 +76,59 @@ const AdmissionList = () => {
 	const [selectedAdmissionType, setSelectedAdmissionType] = useState(null);
 	const [typeForm] = Form.useForm();
 
-	const canCreateAdmission = hasAuthority("CREATE_ADMISSION");
-	const canReadAdmission = hasAuthority("READ_ADMISSION");
-	const canUpdateAdmission = hasAuthority("UPDATE_ADMISSION");
-	const canDeleteAdmission = hasAuthority("DELETE_ADMISSION");
+	// --- Permission Checks ---
+	const canReadAdmission = user && hasAuthority("READ_ADMISSION");
+	const canCreateAdmission = user && hasAuthority("CREATE_ADMISSION");
+	const canUpdateAdmission = user && hasAuthority("UPDATE_ADMISSION");
+	const canDeleteAdmission = user && hasAuthority("DELETE_ADMISSION");
+	const canManageAdmissionTypes = user && hasAuthority("MANAGE_ADMISSION_TYPES"); // Assuming a new permission
+	// --- End Permission Checks ---
 
 	const [showDocs, setShowDocs] = useState(false);
 
-	const screens = useBreakpoint(); // Get current breakpoints
+	const screens = useBreakpoint();
 
-	// Helper functions for responsive styles
 	const getResponsivePadding = () => (screens.xs ? "8px" : screens.sm ? "12px" : "24px");
 	const getResponsiveMargin = () => (screens.xs ? "8px 0" : screens.sm ? "12px 0" : "24px 16px");
 
 	useEffect(() => {
-		fetchAllAdmissionTypes();
-	}, [fetchAllAdmissionTypes]);
+		if (canManageAdmissionTypes || canCreateAdmission || canUpdateAdmission) {
+			fetchAllAdmissionTypes();
+		}
+	}, [fetchAllAdmissionTypes, canManageAdmissionTypes, canCreateAdmission, canUpdateAdmission]);
 
 	useEffect(() => {
-		fetchAllUnits();
-	}, [fetchAllUnits]);
+		if (canReadAdmission || canCreateAdmission || canUpdateAdmission) {
+			fetchAllUnits();
+			fetchAllRooms();
+			const fetchAllBeds = async () => {
+				try {
+					await searchBeds({ size: 1000 });
+				} catch (err) {
+					// Changed variable name
+					console.error(t("admission.error.fetchBedsMount"), err); // Use translated console error
+				}
+			};
+			fetchAllBeds();
+		}
+	}, [fetchAllUnits, fetchAllRooms, searchBeds, canReadAdmission, canCreateAdmission, canUpdateAdmission, t]); // Added t dependency
 
 	useEffect(() => {
-		fetchAllRooms();
-	}, [fetchAllRooms]);
-	useEffect(() => {
-		const fetchAllBeds = async () => {
-			try {
-				const response = await searchBeds({ size: 1000 });
-			} catch (error) {
-				console.error("Error fetching all beds on mount:", error);
-			}
-		};
-		fetchAllBeds();
-	}, [searchBeds]);
-
-	useEffect(() => {
-		fetchAdmissions();
-	}, [page, size, searchParams]);
+		if (canReadAdmission) {
+			fetchAdmissions();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [page, size, searchParams, canReadAdmission]); // Add canReadAdmission dependency
 
 	const fetchAdmissions = async () => {
-		// Removed the unnecessary check for patientId here.  It's OK to search with no patientId.
+		if (!canReadAdmission) return;
 		setLoading(true);
 		try {
 			await searchAdmissions({ ...searchParams, page, size });
-		} catch (error) {
+		} catch (err) {
 			notification.error({
-				message: "Error",
-				description: `Failed to fetch admissions: ${error.message}`,
+				message: t("error"), // Use existing translation
+				description: `${t("admission.notification.fetchFailedPrefix")} ${err.message}`, // Translate prefix
 			});
 		} finally {
 			setLoading(false);
@@ -127,30 +136,54 @@ const AdmissionList = () => {
 	};
 
 	const showModal = (admission) => {
+		if (admission && !canUpdateAdmission) {
+			notification.warning({
+				message: t("admission.notification.permissionDeniedTitle"),
+				description: t("admission.notification.permissionDeniedEdit"),
+			});
+			return;
+		}
+		if (!admission && !canCreateAdmission) {
+			notification.warning({
+				message: t("admission.notification.permissionDeniedTitle"),
+				description: t("admission.notification.permissionDeniedAdd"),
+			});
+			return;
+		}
+
 		setSelectedAdmission(admission);
 		if (admission) {
 			const bed = beds?.find((bed) => bed.id === admission.bedId);
 			const room = rooms?.content?.find((room) => room.id === bed?.roomId);
-			setSelectedUnit(room?.unitId);
+			const unitId = room?.unitId;
+			setSelectedUnit(unitId);
 			setSelectedRoom(bed?.roomId);
 			setSelectedPatientId(admission.patientId);
 
-			if (room?.unitId) {
-				fetchFilteredBeds(room?.unitId, bed?.roomId);
-			}
-			if (room?.unitId) {
-				setFilteredRooms(rooms?.content?.filter((room) => room.unitId === room?.unitId));
+			if (unitId) {
+				fetchFilteredBeds(unitId, bed?.roomId);
+				setFilteredRooms(rooms?.content?.filter((r) => r.unitId === unitId));
+			} else {
+				setFilteredRooms([]);
+				setFilteredBeds([]);
 			}
 
 			form.setFieldsValue({
 				...admission,
 				admissionDate: admission.admissionDate ? moment(admission.admissionDate) : null,
-				unitId: room?.unitId,
+				unitId: unitId,
 				roomId: bed?.roomId,
 				bedId: bed?.id,
 				patientId: admission.patientId,
 				admissionTypeId: admission.admissionTypeId,
 			});
+			if (admission.patientId && admission.patientName) {
+				setPatientOptions([{ label: admission.patientName, value: admission.patientId }]);
+				setPatientSearchTerm(admission.patientName);
+			} else {
+				setPatientOptions([]);
+				setPatientSearchTerm("");
+			}
 		} else {
 			form.resetFields();
 			setSelectedUnit(null);
@@ -158,13 +191,20 @@ const AdmissionList = () => {
 			setFilteredRooms([]);
 			setFilteredBeds([]);
 			setSelectedPatientId(null);
+			setPatientSearchTerm("");
+			setPatientOptions([]);
 		}
 		setIsModalVisible(true);
-		setPatientSearchTerm("");
-		setPatientOptions([]);
 	};
 
 	const showTypeModal = (admissionType) => {
+		if (!canManageAdmissionTypes) {
+			notification.warning({
+				message: t("admission.notification.permissionDeniedTitle"),
+				description: t("admission.notification.permissionDeniedManageTypes"),
+			});
+			return;
+		}
 		setSelectedAdmissionType(admissionType);
 		if (admissionType) {
 			typeForm.setFieldsValue(admissionType);
@@ -208,8 +248,8 @@ const AdmissionList = () => {
 						value: patient.id,
 					})) || []
 				);
-			} catch (error) {
-				console.error("Failed to search patients:", error);
+			} catch (err) {
+				console.error(t("admission.error.patientSearchFailed"), err); // Translate console error
 				setPatientOptions([]);
 			}
 		} else {
@@ -217,16 +257,25 @@ const AdmissionList = () => {
 		}
 	};
 
-	const handlePatientSelect = (patientId) => {
+	const handlePatientSelect = (patientId, option) => {
 		setSelectedPatientId(patientId);
+		if (option) {
+			setPatientSearchTerm(option.label);
+		}
 	};
 
 	const fetchFilteredBeds = async (unitId, roomId) => {
 		try {
-			const response = await searchBeds({ unitId, roomId });
-			setFilteredBeds(response?.content || []);
-		} catch (error) {
-			console.error("Failed to fetch filtered beds:", error);
+			const response = await searchBeds({ unitId, roomId, isOccupied: false, size: 1000 }); // Also fetch available beds
+			// Combine with the current bed if editing and it was occupied
+			const currentBed = selectedAdmission && selectedAdmission.bedId ? beds?.find((b) => b.id === selectedAdmission.bedId) : null;
+			let allFilteredBeds = response?.content || [];
+			if (currentBed && !allFilteredBeds.some((b) => b.id === currentBed.id)) {
+				allFilteredBeds = [currentBed, ...allFilteredBeds]; // Add current bed if not already present
+			}
+			setFilteredBeds(allFilteredBeds);
+		} catch (err) {
+			console.error(t("admission.error.fetchFilteredBedsFailed"), err); // Translate console error
 			setFilteredBeds([]);
 		}
 	};
@@ -244,123 +293,186 @@ const AdmissionList = () => {
 	const handleRoomChangeModal = async (roomId) => {
 		setSelectedRoom(roomId);
 		form.setFieldsValue({ ...form.getFieldsValue(), bedId: null });
-
 		if (selectedUnit && roomId) {
 			fetchFilteredBeds(selectedUnit, roomId);
+		} else {
+			setFilteredBeds([]);
 		}
 	};
 
 	const handleTypeFormSubmit = async () => {
+		if (!canManageAdmissionTypes) return;
 		try {
 			const values = await typeForm.validateFields();
+			setLoading(true);
 			if (selectedAdmissionType) {
 				await updateAdmissionType(selectedAdmissionType.id, values);
+				notification.success({
+					message: t("success"), // Use existing translation
+					description: t("admission.notification.typeUpdated"),
+				});
 			} else {
 				await createAdmissionType(values);
+				notification.success({
+					message: t("success"),
+					description: t("admission.notification.typeCreated"),
+				});
 			}
 			setIsTypeModalVisible(false);
 			typeForm.resetFields();
 			setSelectedAdmissionType(null);
-			fetchAllAdmissionTypes(); // Refresh
-		} catch (error) {
-			console.error("Failed to save admission type:", error);
+			fetchAllAdmissionTypes();
+		} catch (err) {
+			notification.error({
+				message: t("error"),
+				description: `${t("admission.notification.typeSaveFailedPrefix")} ${err?.message || t("common.unknownError")}`, // Use translated unknownError
+			});
+			console.error(t("admission.error.saveTypeFailed"), err); // Translate console error
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	const handleTypeDelete = async (admissionTypeId) => {
+		if (!canManageAdmissionTypes) return;
 		try {
+			setLoading(true);
 			await deleteAdmissionType(admissionTypeId);
-			fetchAllAdmissionTypes(); // Refresh
-		} catch (error) {
-			console.error("Failed to delete admission type:", error);
+			notification.success({
+				message: t("success"),
+				description: t("admission.notification.typeDeleted"),
+			});
+			fetchAllAdmissionTypes();
+		} catch (err) {
+			notification.error({
+				message: t("error"),
+				description: `${t("admission.notification.typeDeleteFailedPrefix")} ${err?.message || t("common.unknownError")}`,
+			});
+			console.error(t("admission.error.deleteTypeFailed"), err); // Translate console error
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	const handleFormSubmit = async () => {
+		if ((selectedAdmission && !canUpdateAdmission) || (!selectedAdmission && !canCreateAdmission)) {
+			notification.error({
+				message: t("admission.notification.permissionDeniedTitle"),
+				description: t("admission.notification.permissionDeniedAction"),
+			});
+			return;
+		}
 		try {
 			const values = await form.validateFields();
-			const formattedAdmissionDate = values.admissionDate ? values.admissionDate.format("YYYY-MM-DDTHH:mm:ss") : null;
+			const formattedAdmissionDate = values.admissionDate ? values.admissionDate.toISOString() : null;
 
 			const admissionData = {
-				...values,
-				admissionDate: formattedAdmissionDate,
 				patientId: selectedPatientId,
+				admissionTypeId: values.admissionTypeId,
+				bedId: values.bedId,
+				admissionDate: formattedAdmissionDate,
 			};
+			setLoading(true);
 			if (selectedAdmission) {
 				await updateAdmission(selectedAdmission.id, admissionData);
+				notification.success({
+					message: t("success"),
+					description: t("admission.notification.updated"),
+				});
 			} else {
 				await createAdmission(admissionData);
+				notification.success({
+					message: t("success"),
+					description: t("admission.notification.created"),
+				});
 			}
 
-			await freeAllExpiredBeds();
+			await freeAllExpiredBeds(); // Should ideally have its own permission check in the store/backend
 			fetchAdmissions();
 			setIsModalVisible(false);
-			form.resetFields();
-			setSelectedAdmission(null);
-			setPatientSearchTerm("");
-			setPatientOptions([]);
-			setSelectedUnit(null);
-			setSelectedRoom(null);
-			setFilteredRooms([]);
-			setFilteredBeds([]);
-			setSelectedPatientId(null);
-		} catch (error) {
-			console.error("Failed to save admission:", error);
+			handleCancel();
+		} catch (err) {
+			notification.error({
+				message: t("error"),
+				description: `${t("admission.notification.saveFailedPrefix")} ${err?.message || t("common.unknownError")}`,
+			});
+			console.error(t("admission.error.saveFailed"), err); // Translate console error
+		} finally {
+			setLoading(false);
 		}
 	};
+
 	const handleEndAdmission = async (admission) => {
+		if (!canUpdateAdmission) {
+			notification.warning({
+				message: t("admission.notification.permissionDeniedTitle"),
+				description: t("admission.notification.permissionDeniedUpdate"),
+			});
+			return;
+		}
 		try {
-			const dischargeDate = moment().format("YYYY-MM-DDTHH:mm:ss");
+			setLoading(true);
+			const dischargeDate = moment().toISOString();
 			const updatedAdmissionData = {
-				...admission,
 				dischargeDate: dischargeDate,
+				patientId: admission.patientId,
+				admissionTypeId: admission.admissionTypeId,
+				bedId: admission.bedId,
+				admissionDate: admission.admissionDate,
 			};
 
 			await updateAdmission(admission.id, updatedAdmissionData);
 			notification.success({
-				message: "Success",
-				description: "Admission ended successfully",
+				message: t("success"),
+				description: t("admission.notification.ended"),
 			});
 
 			await freeAllExpiredBeds();
 			fetchAdmissions();
-		} catch (error) {
+		} catch (err) {
 			notification.error({
-				message: "Error",
-				description: `Failed to end admission: ${error.message}`,
+				message: t("error"),
+				description: `${t("admission.notification.endFailedPrefix")} ${err.message}`,
 			});
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	const handleDelete = async (admissionId) => {
-		try {
-			await deleteAdmission(admissionId);
-			fetchAdmissions();
-		} catch (error) {
-			console.error("Error deleting admission:", error);
+		if (!canDeleteAdmission) {
+			notification.warning({
+				message: t("admission.notification.permissionDeniedTitle"),
+				description: t("admission.notification.permissionDeniedDelete"),
+			});
+			return;
 		}
-	};
-
-	const handleSearchUnitFilter = (unitId) => {
-		setSearchParams({
-			...searchParams,
-			unitId: unitId,
-			roomId: undefined,
-			bedId: undefined,
+		Modal.confirm({
+			title: t("admission.confirm.deleteTitle"),
+			content: t("admission.confirm.deleteContent"),
+			okText: t("admission.confirm.deleteOk"),
+			okType: "danger",
+			cancelText: t("admission.confirm.deleteCancel"), // Use existing "no" translation? Let's make specific
+			onOk: async () => {
+				try {
+					setLoading(true);
+					await deleteAdmission(admissionId);
+					notification.success({
+						message: t("success"),
+						description: t("admission.notification.deleted"),
+					});
+					fetchAdmissions();
+				} catch (err) {
+					notification.error({
+						message: t("error"),
+						description: `${t("admission.notification.deleteFailedPrefix")} ${err?.message || t("common.unknownError")}`,
+					});
+					console.error(t("admission.error.deleteFailed"), err); // Translate console error
+				} finally {
+					setLoading(false);
+				}
+			},
 		});
-		setPage(0);
-		setSelectedUnit(unitId);
-	};
-
-	const handleSearchRoomFilter = (roomId) => {
-		setSearchParams({ ...searchParams, roomId: roomId, bedId: undefined });
-		setPage(0);
-		setSelectedRoom(roomId);
-	};
-
-	const handleSearchBedFilter = (bedId) => {
-		setSearchParams({ ...searchParams, bedId: bedId });
-		setPage(0);
 	};
 
 	const handleSearchPatientFilter = (value) => {
@@ -376,100 +488,122 @@ const AdmissionList = () => {
 	const toggleDocs = () => {
 		setShowDocs(!showDocs);
 	};
+
 	const getActionColumn = () => {
-		const actions = [];
-		if (canUpdateAdmission) {
-			actions.push(
-				<Button key="edit" type="primary" onClick={() => showModal(record)}>
-					Edit
-				</Button>
-			);
+		if (!canUpdateAdmission && !canDeleteAdmission) {
+			return null;
 		}
-		if (canDeleteAdmission) {
-			actions.push(
-				<Button key="delete" type="danger" onClick={() => handleDelete(record.id)}>
-					Delete
-				</Button>
-			);
-		}
-		actions.push(
-			<Button key="end" type="default" onClick={() => handleEndAdmission(record)}>
-				End
-			</Button>
-		);
 
 		return {
-			title: "Actions",
+			title: t("admission.table.actions"), // Translate
 			key: "actions",
-			render: (text, record) => <Space size="middle">{actions}</Space>,
+			render: (text, record) => (
+				<Space size="middle">
+					{canUpdateAdmission && (
+						<Button key="edit" type="link" onClick={() => showModal(record)} style={{ padding: 0 }}>
+							{t("common.edit")}
+						</Button>
+					)}
+					{canUpdateAdmission &&
+						record.dischargeDate === null && ( // Only show 'End' if not already discharged
+							<Button key="end" type="link" onClick={() => handleEndAdmission(record)} style={{ padding: 0 }}>
+								{t("admission.action.end")}
+							</Button>
+						)}
+					{canDeleteAdmission && (
+						<Button key="delete" type="link" danger onClick={() => handleDelete(record.id)} style={{ padding: 0 }}>
+							{t("common.delete")}
+						</Button>
+					)}
+				</Space>
+			),
 		};
 	};
 
 	const columns = [
 		{
-			title: "Admission Date",
+			title: t("admission.table.admissionDate"), // Translate
 			dataIndex: "admissionDate",
 			key: "admissionDate",
 			render: (text) => moment(text).format("YYYY-MM-DD HH:mm:ss"),
 		},
 		{
-			title: "Discharge Date",
+			title: t("admission.table.dischargeDate"), // Translate
 			dataIndex: "dischargeDate",
 			key: "dischargeDate",
-			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm:ss") : "Open"),
+			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm:ss") : t("admission.table.statusOpen")), // Translate 'Open'
 		},
-		{ title: "Patient", dataIndex: "patientName", key: "patientName" },
-		{ title: "Admission Type", dataIndex: "admissionTypeName", key: "admissionTypeName" },
+		{ title: t("admission.table.patient"), dataIndex: "patientName", key: "patientName" }, // Translate
+		{ title: t("admission.table.admissionType"), dataIndex: "admissionTypeName", key: "admissionTypeName" }, // Translate
 		{
-			title: "Bed",
+			title: t("admission.table.bed"), // Translate
 			dataIndex: "bedId",
 			key: "bedId",
 			render: (bedId) => {
-				const bed = beds?.find((bed) => bed.id === bedId);
-				return bed ? bed.bedNumber : "N/A";
+				const bed = beds?.find((b) => b.id === bedId);
+				return bed ? bed.bedNumber : t("common.notAvailable"); // Translate 'N/A'
 			},
 		},
 		getActionColumn(),
 	].filter(Boolean);
 
+	// --- Render Section ---
+
+	if (!canReadAdmission) {
+		return (
+			<div style={{ padding: getResponsivePadding(), textAlign: "center" }}>
+				<Result
+					status="403"
+					title={t("common.permissionDenied403Title")} // Translate
+					subTitle={t("common.permissionDenied403Subtitle")} // Translate
+					icon={<LockOutlined />}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div style={{ padding: getResponsivePadding() }}>
 			<Title level={2} style={{ margin: getResponsiveMargin() }}>
-				Admission List
-				<Button type="link" icon={<QuestionCircleOutlined />} onClick={toggleDocs} />
+				{t("admission.list.title")} {/* Translate */}
+				<Button type="link" icon={<QuestionCircleOutlined />} onClick={toggleDocs} aria-label={t("common.viewDocumentation")} />{" "}
+				{/* Add aria-label */}
 			</Title>
 
 			<Modal
-				title="Admission Page Documentation"
+				title={t("admission.docs.title")} // Translate
 				open={showDocs}
 				onCancel={toggleDocs}
 				footer={[
 					<Button key="close" onClick={toggleDocs}>
-						Close
+						{t("common.close")} {/* Translate */}
 					</Button>,
 				]}
 				width="80%">
 				<ReactMarkdown remarkPlugins={[remarkGfm]}>{admissionDocsContent}</ReactMarkdown>
 			</Modal>
-			<Space style={{ marginBottom: 16 }} direction={screens.xs ? "vertical" : "horizontal"} size="middle">
+
+			<Space style={{ marginBottom: 16 }} direction={screens.xs ? "vertical" : "horizontal"} wrap size="middle">
 				<AutoComplete
 					style={{ width: screens.xs ? "100%" : "300px" }}
 					options={patientOptions}
 					onSearch={handlePatientSearch}
-					placeholder="Search for a patient"
+					placeholder={t("admission.search.patientPlaceholder")} // Translate
 					filterOption={false}
 					onSelect={handleSearchPatientFilter}
+					allowClear
 				/>
-				<Space>
+				<Space wrap>
 					{canCreateAdmission && (
 						<Button type="primary" onClick={() => showModal(null)}>
-							Add New Admission
+							{t("admission.action.addNew")} {/* Translate */}
 						</Button>
 					)}
-					{/* Button to manage admission types */}
-					<Button type="primary" onClick={() => showTypeModal(null)}>
-						Manage Admission Types
-					</Button>
+					{canManageAdmissionTypes && (
+						<Button type="default" onClick={() => showTypeModal(null)}>
+							{t("admission.action.manageTypes")} {/* Translate */}
+						</Button>
+					)}
 				</Space>
 			</Space>
 
@@ -482,56 +616,61 @@ const AdmissionList = () => {
 					current: page + 1,
 					pageSize: size,
 					total: total,
-					showSizeChanger: true, // Add this line
-
-					onChange: (page, pageSize) => {
-						setPage(page - 1);
-						setSize(pageSize);
-					},
+					showSizeChanger: true,
+					pageSizeOptions: ["10", "20", "50", "100"],
+					showTotal: (total, range) => t("common.pagination.totalItems", { range0: range[0], range1: range[1], total: total }), // Translate
 				}}
-				scroll={{ x: "max-content" }} // Add horizontal scrolling for tables
+				onChange={handleTableChange}
+				scroll={{ x: "max-content" }}
 			/>
 
-			{/* Modal for Adding/Editing Admissions */}
 			<Modal
-				title={selectedAdmission ? "Edit Admission" : "Add Admission"}
+				title={selectedAdmission ? t("admission.modal.editTitle") : t("admission.modal.addTitle")} // Translate
 				open={isModalVisible}
 				onCancel={handleCancel}
+				okButtonProps={{
+					disabled: loading || (selectedAdmission ? !canUpdateAdmission : !canCreateAdmission),
+					loading: loading,
+				}}
+				okText={selectedAdmission ? t("common.update") : t("common.save")} // Use common translations
+				cancelText={t("common.cancel")} // Use common translation
 				onOk={handleFormSubmit}
-				width={screens.xs ? "95%" : "80%"} // Responsive width
-				style={{ maxWidth: screens.xs ? "95vw" : "900px" }} // Max-width
-				bodyStyle={{ padding: getResponsivePadding() }} // Responsive padding
-			>
-				<Form form={form} layout={screens.xs ? "vertical" : "horizontal"}>
-					{/* Patient and Admission Type */}
+				width={screens.xs ? "95%" : "80%"}
+				style={{ maxWidth: screens.xs ? "95vw" : "900px" }}
+				bodyStyle={{ padding: getResponsivePadding() }}
+				destroyOnClose>
+				<Form form={form} layout={screens.xs ? "vertical" : "horizontal"} name="admission_form">
 					<Form.Item
 						labelCol={!screens.xs ? { span: 6 } : {}}
 						wrapperCol={!screens.xs ? { span: 18 } : {}}
-						label="Patient"
+						label={t("admission.form.patientLabel")} // Translate
 						name="patientId"
-						rules={[{ required: true, message: "Please select a patient" }]}
-						style={{ width: "100%" }} // Important for responsiveness within the Form.Item
-					>
+						rules={[{ required: true, message: t("admission.validation.patientRequired") }]} // Translate
+						initialValue={selectedPatientId}
+						style={{ width: "100%" }}>
 						<AutoComplete
-							style={{ width: "100%" }} // Full width on all screens
+							style={{ width: "100%" }}
 							options={patientOptions}
 							onSearch={handlePatientSearch}
-							placeholder="Search for a patient"
+							placeholder={t("admission.form.patientPlaceholder")} // Translate
 							filterOption={false}
-							onSelect={(patientId) => {
-								setSelectedPatientId(patientId);
-								form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId });
-							}}
+							onSelect={handlePatientSelect}
+							value={patientSearchTerm}
+							onChange={(data) => setPatientSearchTerm(data)}
+							allowClear
 						/>
 					</Form.Item>
 					<Form.Item
 						labelCol={!screens.xs ? { span: 6 } : {}}
 						wrapperCol={!screens.xs ? { span: 18 } : {}}
-						label="Admission Type"
+						label={t("admission.form.admissionTypeLabel")} // Translate
 						name="admissionTypeId"
-						rules={[{ required: true, message: "Please select an admission type" }]}
+						rules={[{ required: true, message: t("admission.validation.admissionTypeRequired") }]} // Translate
 						style={{ width: "100%" }}>
-						<Select placeholder="Select an Admission Type" style={{ width: "100%" }}>
+						<Select
+							placeholder={t("admission.form.admissionTypePlaceholder")} // Translate
+							style={{ width: "100%" }}
+							loading={loading && !admissionTypes?.length}>
 							{admissionTypes?.map((type) => (
 								<Option key={type.id} value={type.id}>
 									{type.name}
@@ -540,15 +679,19 @@ const AdmissionList = () => {
 						</Select>
 					</Form.Item>
 
-					{/* Unit */}
 					<Form.Item
 						labelCol={!screens.xs ? { span: 6 } : {}}
 						wrapperCol={!screens.xs ? { span: 18 } : {}}
-						label="Unit"
+						label={t("admission.form.unitLabel")} // Translate
 						name="unitId"
-						rules={[{ required: true, message: "Please select a unit" }]}
+						rules={[{ required: true, message: t("admission.validation.unitRequired") }]} // Translate
 						style={{ width: "100%" }}>
-						<Select placeholder="Select a Unit" onChange={handleUnitChangeModal} value={selectedUnit} style={{ width: "100%" }}>
+						<Select
+							placeholder={t("admission.form.unitPlaceholder")} // Translate
+							onChange={handleUnitChangeModal}
+							value={selectedUnit}
+							style={{ width: "100%" }}
+							loading={loading && !units?.length}>
 							{units?.map((unit) => (
 								<Option key={unit.id} value={unit.id}>
 									{unit.name}
@@ -557,20 +700,20 @@ const AdmissionList = () => {
 						</Select>
 					</Form.Item>
 
-					{/* Room and Bed */}
 					<Form.Item
 						labelCol={!screens.xs ? { span: 6 } : {}}
 						wrapperCol={!screens.xs ? { span: 18 } : {}}
-						label="Room"
+						label={t("admission.form.roomLabel")} // Translate
 						name="roomId"
-						rules={[{ required: true, message: "Please select a room" }]}
+						rules={[{ required: true, message: t("admission.validation.roomRequired") }]} // Translate
 						style={{ width: "100%" }}>
 						<Select
-							placeholder="Select a Room"
+							placeholder={t("admission.form.roomPlaceholder")} // Translate
 							onChange={handleRoomChangeModal}
 							disabled={!selectedUnit}
 							value={selectedRoom}
-							style={{ width: "100%" }}>
+							style={{ width: "100%" }}
+							loading={loading && selectedUnit && !filteredRooms?.length}>
 							{filteredRooms?.map((room) => (
 								<Option key={room.id} value={room.id}>
 									{room.roomNumber}
@@ -581,72 +724,111 @@ const AdmissionList = () => {
 					<Form.Item
 						labelCol={!screens.xs ? { span: 6 } : {}}
 						wrapperCol={!screens.xs ? { span: 18 } : {}}
-						label="Bed"
+						label={t("admission.form.bedLabel")} // Translate
 						name="bedId"
-						rules={[{ required: true, message: "Please select a bed" }]}
+						rules={[{ required: true, message: t("admission.validation.bedRequired") }]} // Translate
 						style={{ width: "100%" }}>
-						<Select placeholder="Select a Bed" disabled={!selectedRoom} style={{ width: "100%" }}>
+						<Select
+							placeholder={t("admission.form.bedPlaceholder")} // Translate
+							disabled={!selectedRoom}
+							style={{ width: "100%" }}
+							loading={loading && selectedRoom && !filteredBeds?.length}>
 							{filteredBeds?.map((bed) => (
-								<Option key={bed.id} value={bed.id} disabled={bed.occupied}>
-									{bed.bedNumber} {bed.occupied ? "(Occupied)" : ""}
+								<Option key={bed.id} value={bed.id} disabled={bed.occupied && bed.id !== selectedAdmission?.bedId}>
+									{bed.bedNumber}{" "}
+									{bed.occupied && bed.id !== selectedAdmission?.bedId ? `(${t("admission.form.bedOccupied")})` : ""}{" "}
+									{/* Translate */}
 								</Option>
 							))}
 						</Select>
 					</Form.Item>
 
-					{/* Admission Date */}
 					<Form.Item
 						labelCol={!screens.xs ? { span: 6 } : {}}
 						wrapperCol={!screens.xs ? { span: 18 } : {}}
-						label="Admission Date"
+						label={t("admission.form.admissionDateLabel")} // Translate
 						name="admissionDate"
-						rules={[{ required: true, message: "Please select an admission date" }]}
+						rules={[{ required: true, message: t("admission.validation.admissionDateRequired") }]} // Translate
 						style={{ width: "100%" }}>
-						<DatePicker showTime style={{ width: "100%" }} />
+						<DatePicker showTime style={{ width: "100%" }} format="YYYY-MM-DD HH:mm:ss" />
 					</Form.Item>
 				</Form>
 			</Modal>
 
-			{/* Modal for Managing Admission Types */}
-			<Modal
-				title={selectedAdmissionType ? "Edit Admission Type" : "Add Admission Type"}
-				open={isTypeModalVisible}
-				onCancel={handleTypeCancel}
-				onOk={handleTypeFormSubmit}
-				okButtonProps={{ loading: loading }}
-				width={screens.xs ? "95%" : "80%"} // Responsive width
-				style={{ maxWidth: screens.xs ? "95vw" : "600px" }} // Max-width
-				bodyStyle={{ padding: getResponsivePadding() }} // Responsive padding
-			>
-				<Form form={typeForm} layout="vertical">
-					<Form.Item label="Name" name="name" rules={[{ required: true, message: "Please enter the admission type name" }]}>
-						<Input />
-					</Form.Item>
-					<Form.Item label="Price" name="price" rules={[{ required: true, message: "Please enter the price" }]}>
-						<InputNumber style={{ width: "100%" }} />
-					</Form.Item>
-				</Form>
-
-				{/* List of Admission Types */}
-				<List
-					itemLayout="horizontal"
-					dataSource={admissionTypes}
-					style={{ marginTop: "20px" }}
-					renderItem={(item) => (
-						<List.Item
-							actions={[
-								<Button type="link" onClick={() => showTypeModal(item)}>
-									Edit
-								</Button>,
-								<Button type="link" danger onClick={() => handleTypeDelete(item.id)}>
-									Delete
-								</Button>,
+			{canManageAdmissionTypes && (
+				<Modal
+					title={selectedAdmissionType ? t("admission.typeModal.editTitle") : t("admission.typeModal.addTitle")} // Translate
+					open={isTypeModalVisible}
+					onCancel={handleTypeCancel}
+					okButtonProps={{
+						disabled: loading || !canManageAdmissionTypes,
+						loading: loading,
+					}}
+					okText={selectedAdmissionType ? t("common.update") : t("common.save")} // Use common translations
+					cancelText={t("common.cancel")} // Use common translation
+					onOk={handleTypeFormSubmit}
+					width={screens.xs ? "95%" : "80%"}
+					style={{ maxWidth: screens.xs ? "95vw" : "600px" }}
+					bodyStyle={{ padding: getResponsivePadding() }}
+					destroyOnClose>
+					<Form form={typeForm} layout="vertical" name="admission_type_form">
+						<Form.Item
+							label={t("admission.typeForm.nameLabel")} // Translate
+							name="name"
+							rules={[{ required: true, message: t("admission.validation.typeNameRequired") }]}>
+							{" "}
+							{/* Translate */}
+							<Input />
+						</Form.Item>
+						<Form.Item
+							label={t("admission.typeForm.priceLabel")} // Translate
+							name="price"
+							rules={[
+								{ required: true, message: t("admission.validation.typePriceRequired") }, // Translate
+								{ type: "number", message: t("admission.validation.typePriceNumber") }, // Translate
 							]}>
-							<List.Item.Meta title={item.name} description={`Price: ${item.price}`} />
-						</List.Item>
-					)}
-				/>
-			</Modal>
+							<InputNumber style={{ width: "100%" }} min={0} precision={2} />
+						</Form.Item>
+					</Form>
+
+					<Title level={5} style={{ marginTop: "20px" }}>
+						{t("admission.typeModal.existingTypesTitle")} {/* Translate */}
+					</Title>
+					<List
+						itemLayout="horizontal"
+						dataSource={admissionTypes}
+						loading={loading}
+						style={{ marginTop: "10px" }}
+						renderItem={(item) => (
+							<List.Item
+								actions={
+									canManageAdmissionTypes
+										? [
+												<Button type="link" key="edit-type" onClick={() => showTypeModal(item)} disabled={loading}>
+													{t("common.edit")} {/* Use common translation */}
+												</Button>,
+												<Button
+													type="link"
+													key="delete-type"
+													danger
+													onClick={() => handleTypeDelete(item.id)}
+													disabled={loading}>
+													{t("common.delete")} {/* Use common translation */}
+												</Button>,
+										  ]
+										: []
+								}>
+								<List.Item.Meta
+									title={item.name}
+									description={t("admission.typeModal.priceDescription", {
+										price: item.price?.toFixed(2) ?? t("common.notAvailable"),
+									})} // Translate with interpolation
+								/>
+							</List.Item>
+						)}
+					/>
+				</Modal>
+			)}
 		</div>
 	);
 };

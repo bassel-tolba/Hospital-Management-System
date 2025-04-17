@@ -1,94 +1,117 @@
-// frontend/src/components/appointments/AppointmentsList.js (Modified)
-
 import React from "react";
 import { Table, Button, Space, Popconfirm, Typography, Badge } from "antd";
 import { EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { useAuthStore } from "../../services/auth.service";
+import { useTranslation } from "react-i18next"; // Import useTranslation
+
 const { Text } = Typography;
+
 const AppointmentsList = ({ appointments, loading, onEdit, onDelete, onView, pagination, onTableChange }) => {
+	const { t } = useTranslation(); // Initialize useTranslation
 	const { hasAuthority } = useAuthStore();
+
+	// Helper function to get translated status text
+	const getStatusText = (status) => {
+		switch (status) {
+			case "SCHEDULED":
+				return t("appointments.status.scheduled");
+			case "COMPLETED":
+				return t("appointments.status.completed");
+			case "MISSED":
+				return t("appointments.status.missed");
+			case "CANCELLED": // Assuming CANCELLED is a possible status
+				return t("appointments.status.cancelled");
+			default:
+				return status; // Fallback to original status if no translation key matches
+		}
+	};
+
 	const columns = [
 		{
-			title: "Date and Time",
+			title: t("appointments.list.table.dateTime"), // Translate
 			dataIndex: "appointmentDateTime",
 			key: "appointmentDateTime",
 			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm:ss") : null),
-			sorter: true, // Enable sorting
+			sorter: true,
 		},
 		{
-			title: "Start Time",
+			title: t("appointments.list.table.startTime"), // Translate
 			dataIndex: "startTime",
 			key: "startTime",
 			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm:ss") : null),
 		},
 		{
-			title: "End Time",
+			title: t("appointments.list.table.endTime"), // Translate
 			dataIndex: "endTime",
 			key: "endTime",
 			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm:ss") : null),
 		},
 		{
-			title: "Patient",
+			title: t("appointments.list.table.patient"), // Translate
 			dataIndex: "patient",
 			key: "patient",
 			render: (text, record) => `${record.patientFirstName} ${record.patientLastName}`,
 		},
 		{
-			title: "Doctor/Nurse",
+			title: t("appointments.list.table.user"), // Translate
 			dataIndex: "user",
 			key: "user",
 			render: (text, record) => `${record.userFirstName} ${record.userLastName}`,
 		},
 		{
-			title: "Appointment Type",
-			dataIndex: "productName", // Assuming you have this in your DTO
+			title: t("appointments.list.table.appointmentType"), // Translate
+			dataIndex: "productName",
 			key: "productName",
 		},
 		{
-			title: "Status",
+			title: t("appointments.list.table.status"), // Translate
 			dataIndex: "status",
 			key: "status",
 			render: (status) => {
-				let color = "default"; // Default color (e.g., for cancelled)
+				let color = "default";
 				switch (status) {
 					case "SCHEDULED":
-						color = "blue"; // Or 'processing'
+						color = "processing"; // Use 'processing' for blue
 						break;
 					case "COMPLETED":
-						color = "green"; // Or 'success'
+						color = "success"; // Use 'success' for green
 						break;
 					case "MISSED":
-						color = "gold"; // Or 'warning'
+						color = "warning"; // Use 'warning' for gold/yellow
 						break;
-					// 'CANCELLED' will use default color
+					case "CANCELLED": // Assuming CANCELLED maps to error/red or default
+						color = "error"; // Or keep 'default'
+						break;
 				}
-				return <Badge status={color} text={status} />;
+				return <Badge status={color} text={getStatusText(status)} />; // Translate text
 			},
 		},
 		{
-			title: "Actions",
+			title: t("common.actions"), // Translate (using common key)
 			key: "actions",
 			render: (text, record) => (
 				<Space>
 					{hasAuthority("READ_APPOINTMENT") && (
 						<Button type="primary" icon={<EyeOutlined />} onClick={() => onView(record)} size="small">
-							View
+							{t("common.view")} {/* Translate */}
 						</Button>
 					)}
 					{hasAuthority("UPDATE_APPOINTMENT") && (
 						<Button type="primary" icon={<EditOutlined />} onClick={() => onEdit(record)} size="small">
-							Edit
+							{t("common.edit")} {/* Translate (using common key) */}
 						</Button>
 					)}
 					{hasAuthority("DELETE_APPOINTMENT") && (
 						<Popconfirm
-							title="Are you sure you want to delete this appointment?"
+							title={t("appointments.list.confirm.deleteTitle")} // Translate
 							onConfirm={() => onDelete(record.id)}
-							okText="Yes"
-							cancelText="No">
+							okText={t("common.yes")} // Translate (using common key)
+							cancelText={t("common.no")}>
+							{" "}
+							{/* Translate (using common key) */}
 							<Button type="primary" danger icon={<DeleteOutlined />} size="small">
-								Delete
+								{t("common.delete")} {/* Translate (using common key) */}
 							</Button>
 						</Popconfirm>
 					)}
@@ -97,16 +120,7 @@ const AppointmentsList = ({ appointments, loading, onEdit, onDelete, onView, pag
 		},
 	];
 
-	return (
-		<Table
-			columns={columns}
-			dataSource={appointments}
-			loading={loading}
-			rowKey="id"
-			pagination={pagination}
-			onChange={onTableChange} // Handle pagination, sorting, filtering
-		/>
-	);
+	return <Table columns={columns} dataSource={appointments} loading={loading} rowKey="id" pagination={pagination} onChange={onTableChange} />;
 };
 
 export default AppointmentsList;

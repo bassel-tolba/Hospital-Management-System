@@ -507,5 +507,439 @@
 	"all-activities": "جميع الأنشطة",
 	"user-activities": "أنشطة المستخدم",
 	"settings": "الاعدادات",
-	"user-appointments": "مواعيد المستخدم"
+	"user-appointments": "مواعيد المستخدم",
+	"general": "عام",
+	"diagnostics-labs-docs": "ملفات و نتائج التحاليل",
+	"inventory-billing": "المنتجات و المحاسبه",
+	"medication-orders": "الادويه و الوصفات الطبيه",
+	"authentication": "التسجيل",
+
+	"//=========================================================================== AdmissionList Page": 0,
+	"admission.list.title": "قائمة القبول",
+	"admission.docs.title": "توثيق صفحة القبول",
+	"admission.search.patientPlaceholder": "ابحث عن مريض",
+	"admission.action.addNew": "إضافة قبول جديد",
+	"admission.action.manageTypes": "إدارة أنواع القبول",
+	"admission.action.end": "إنهاء",
+	"admission.table.admissionDate": "تاريخ القبول",
+	"admission.table.dischargeDate": "تاريخ الخروج",
+	"admission.table.patient": "المريض",
+	"admission.table.admissionType": "نوع القبول",
+	"admission.table.bed": "السرير",
+	"admission.table.actions": "الإجراءات",
+	"admission.table.statusOpen": "مفتوح",
+	"admission.modal.editTitle": "تعديل القبول",
+	"admission.modal.addTitle": "إضافة قبول",
+	"admission.form.patientLabel": "المريض",
+	"admission.form.patientPlaceholder": "ابحث واختر مريضًا",
+	"admission.form.admissionTypeLabel": "نوع القبول",
+	"admission.form.admissionTypePlaceholder": "اختر نوع القبول",
+	"admission.form.unitLabel": "الوحدة",
+	"admission.form.unitPlaceholder": "اختر وحدة",
+	"admission.form.roomLabel": "الغرفة",
+	"admission.form.roomPlaceholder": "اختر غرفة",
+	"admission.form.bedLabel": "السرير",
+	"admission.form.bedPlaceholder": "اختر سريرًا",
+	"admission.form.bedOccupied": "مشغول",
+	"admission.form.admissionDateLabel": "تاريخ القبول",
+	"admission.typeModal.editTitle": "تعديل نوع القبول",
+	"admission.typeModal.addTitle": "إضافة نوع القبول",
+	"admission.typeModal.existingTypesTitle": "الأنواع الحالية",
+	"admission.typeModal.priceDescription": "السعر: {{price}}",
+	"admission.typeForm.nameLabel": "الاسم",
+	"admission.typeForm.priceLabel": "السعر",
+	"admission.validation.patientRequired": "الرجاء اختيار مريض",
+	"admission.validation.admissionTypeRequired": "الرجاء اختيار نوع القبول",
+	"admission.validation.unitRequired": "الرجاء اختيار وحدة",
+	"admission.validation.roomRequired": "الرجاء اختيار غرفة",
+	"admission.validation.bedRequired": "الرجاء اختيار سرير",
+	"admission.validation.admissionDateRequired": "الرجاء اختيار تاريخ القبول",
+	"admission.validation.typeNameRequired": "الرجاء إدخال اسم نوع القبول",
+	"admission.validation.typePriceRequired": "الرجاء إدخال السعر",
+	"admission.validation.typePriceNumber": "يجب أن يكون السعر رقمًا",
+	"admission.notification.fetchFailedPrefix": "فشل جلب القبول:",
+	"admission.notification.permissionDeniedTitle": "الأذن مرفوض",
+	"admission.notification.permissionDeniedEdit": "ليس لديك إذن لتعديل القبول.",
+	"admission.notification.permissionDeniedAdd": "ليس لديك إذن لإضافة القبول.",
+	"admission.notification.permissionDeniedManageTypes": "ليس لديك إذن لإدارة أنواع القبول.",
+	"admission.notification.permissionDeniedAction": "ليس لديك إذن لتنفيذ هذا الإجراء.",
+	"admission.notification.permissionDeniedUpdate": "ليس لديك إذن لتحديث القبول.",
+	"admission.notification.permissionDeniedDelete": "ليس لديك إذن لحذف القبول.",
+	"admission.notification.typeUpdated": "تم تحديث نوع القبول بنجاح.",
+	"admission.notification.typeCreated": "تم إنشاء نوع القبول بنجاح.",
+	"admission.notification.typeSaveFailedPrefix": "فشل حفظ نوع القبول:",
+	"admission.notification.typeDeleted": "تم حذف نوع القبول بنجاح.",
+	"admission.notification.typeDeleteFailedPrefix": "فشل حذف نوع القبول:",
+	"admission.notification.updated": "تم تحديث القبول بنجاح.",
+	"admission.notification.created": "تم إنشاء القبول بنجاح.",
+	"admission.notification.saveFailedPrefix": "فشل حفظ القبول:",
+	"admission.notification.ended": "تم إنهاء القبول بنجاح.",
+	"admission.notification.endFailedPrefix": "فشل إنهاء القبول:",
+	"admission.notification.deleted": "تم حذف القبول بنجاح.",
+	"admission.notification.deleteFailedPrefix": "فشل حذف القبول:",
+	"admission.confirm.deleteTitle": "هل أنت متأكد أنك تريد حذف هذا القبول؟",
+	"admission.confirm.deleteContent": "لا يمكن التراجع عن هذا الإجراء.",
+	"admission.confirm.deleteOk": "نعم، حذف",
+	"admission.confirm.deleteCancel": "لا",
+	"admission.error.fetchBedsMount": "خطأ في جلب الأسرة عند التحميل:",
+	"admission.error.patientSearchFailed": "فشل البحث عن المرضى:",
+	"admission.error.fetchFilteredBedsFailed": "فشل جلب الأسرة المصفاة:",
+	"admission.error.saveTypeFailed": "فشل حفظ نوع القبول:",
+	"admission.error.deleteTypeFailed": "فشل حذف نوع القبول:",
+	"admission.error.saveFailed": "فشل حفظ القبول:",
+	"admission.error.deleteFailed": "خطأ في حذف القبول:",
+
+	"common.edit": "تعديل",
+	"common.delete": "حذف",
+	"common.save": "حفظ",
+	"common.update": "تحديث",
+	"common.cancel": "إلغاء",
+	"common.close": "إغلاق",
+	"common.notAvailable": "غير متاح",
+	"common.unknownError": "خطأ غير معروف",
+	"common.permissionDenied403Title": "403 - ممنوع",
+	"common.permissionDenied403Subtitle": "عذراً، أنت غير مصرح لك بالوصول إلى هذه الصفحة.",
+	"common.pagination.totalItems": "{{range0}}-{{range1}} من {{total}} عنصر",
+	"common.viewDocumentation": "عرض التوثيق",
+	"// === AppointmentsList ===": 0,
+	"appointments.list.table.dateTime": "التاريخ والوقت",
+	"appointments.list.table.startTime": "وقت البدء",
+	"appointments.list.table.endTime": "وقت الانتهاء",
+	"appointments.list.table.patient": "المريض",
+	"appointments.list.table.user": "الطبيب/الممرض",
+	"appointments.list.table.appointmentType": "نوع الموعد",
+	"appointments.list.table.status": "الحالة",
+	"appointments.list.confirm.deleteTitle": "هل أنت متأكد أنك تريد حذف هذا الموعد؟",
+
+	"// === Appointment Statuses (Shared) ===": 0,
+	"appointments.status.scheduled": "مجدول",
+	"appointments.status.completed": "مكتمل",
+	"appointments.status.missed": "لم يحضر",
+	"appointments.status.cancelled": "ملغى",
+	"appointments.status.unknown": "حالة غير معروفة",
+
+	"// === AppointmentFormModal ===": 0,
+	"appointments.formModal.title.add": "إنشاء موعد",
+	"appointments.formModal.title.edit": "تعديل موعد",
+	"appointments.formModal.label.dateTime": "تاريخ ووقت الموعد",
+	"appointments.formModal.label.startTime": "وقت البدء",
+	"appointments.formModal.label.endTime": "وقت الانتهاء",
+	"appointments.formModal.label.patient": "المريض",
+	"appointments.formModal.label.user": "الطبيب/الممرض",
+	"appointments.formModal.label.appointmentType": "نوع الموعد",
+	"appointments.formModal.validation.dateTimeRequired": "الرجاء تحديد تاريخ ووقت",
+	"appointments.formModal.validation.startTimeRequired": "الرجاء إدخال وقت البدء",
+	"appointments.formModal.validation.endTimeRequired": "الرجاء إدخال وقت الانتهاء",
+	"appointments.formModal.validation.patientRequired": "الرجاء اختيار مريض",
+	"appointments.formModal.validation.userRequired": "الرجاء اختيار مستخدم",
+	"appointments.formModal.validation.appointmentTypeRequired": "الرجاء اختيار نوع الموعد",
+	"appointments.formModal.placeholder.searchPatient": "ابحث عن مريض",
+	"appointments.formModal.placeholder.searchUser": "ابحث عن مستخدم",
+	"appointments.formModal.placeholder.selectAppointmentType": "اختر نوع الموعد",
+	"appointments.formModal.error.validationFailed": "يرجى ملء جميع الحقول المطلوبة بشكل صحيح.",
+
+	"// === UserAppointmentList (Calendar & Modal) ===": 0,
+	"appointments.userList.calendar.statusCompleted": "مكتمل: {{patientName}}",
+	"appointments.userList.calendar.statusMissed": "لم يحضر: {{patientName}}",
+	"appointments.userList.calendar.statusCancelled": "ملغى: {{patientName}}",
+	"appointments.userList.calendar.statusOverdue": "متأخر: {{patientName}}",
+	"appointments.userList.calendar.statusScheduled": "{{patientName}} - {{time}}",
+	"appointments.userList.calendar.statusUnknown": "غير معروف: {{patientName}}",
+	"appointments.userList.modal.title": "تفاصيل الموعد",
+	"appointments.userList.modal.labelUser": "الطبيب/الممرض",
+	"appointments.userList.modal.labelStartTime": "وقت البدء",
+	"appointments.userList.modal.labelEndTime": "وقت الانتهاء",
+	"appointments.userList.modal.labelType": "النوع",
+	"appointments.userList.modal.labelStatus": "الحالة",
+	"appointments.userList.modal.actionEnd": "إنهاء الموعد",
+
+	"// === New Common Keys ===": 0,
+	"common.view": "عرض",
+	"common.yes": "نعم",
+	"common.no": "لا",
+	"common.actions": "الإجراءات",
+
+	"// === AppointmentsPage ===": 0,
+	"appointments.page.title": "المواعيد",
+	"appointments.page.action.create": "إنشاء موعد",
+	"appointments.page.filter.searchPlaceholder": "ابحث باسم المريض أو المستخدم",
+	"appointments.page.filter.patientPlaceholder": "تصفية حسب المريض",
+	"appointments.page.filter.userPlaceholder": "تصفية حسب المستخدم",
+
+	"// === (Optional) Appointment Notifications (add if implementing user feedback) ===": 0,
+	"appointments.notification.updated": "تم تحديث الموعد بنجاح.",
+	"appointments.notification.created": "تم إنشاء الموعد بنجاح.",
+	"appointments.notification.deleted": "تم حذف الموعد بنجاح.",
+	"appointments.notification.saveFailed": "فشل حفظ الموعد.",
+	"appointments.notification.deleteFailed": "فشل حذف الموعد.",
+	"appointments.notification.fetchFailed": "فشل جلب المواعيد.",
+	"common": {
+		"id": "المعرف",
+		"error": "خطأ",
+		"success": "نجاح",
+		"permissionDenied": "الإذن مرفوض",
+		"noMatch": "لا يوجد تطابق",
+		"delete": "حذف",
+		"cancel": "إلغاء",
+		"notAvailable": "غير متوفر",
+		"notAvailableShort": "-",
+		"unknownPatient": "مريض_غير_معروف"
+	},
+	"common.id": "المعرف",
+	"assessmentList": {
+		"title": "تقييمات المرضى",
+		"showingFor": "عرض التقييمات لـ: {{name}} (المعرف: {{id}})",
+		"selectPatientPrompt": "اختر مريضًا لعرض أو إضافة التقييمات.",
+		"viewPermissionDenied": "ليس لديك إذن لعرض التقييمات.",
+		"filter": {
+			"label": "تصفية حسب المريض:",
+			"placeholder": "الاسم أو المعرف (حرفان على الأقل)",
+			"readPermissionPlaceholder": "إذن القراءة مطلوب"
+		},
+		"addAssessment": {
+			"selectPatientTooltip": "اختر مريضًا أولاً لتمكين الإضافة",
+			"addTooltip": "إضافة تقييم جديد للمريض المحدد",
+			"button": "إضافة تقييم"
+		},
+		"table": {
+			"header": {
+				"dateTime": "التاريخ والوقت",
+				"notesPreview": "معاينة الملاحظات",
+				"actions": "إجراءات"
+			},
+			"notesPreview": {
+				"empty": "(فارغ)",
+				"tooltip": "عرض الملاحظات كاملة في وضع التعديل",
+				"noText": "(لا يوجد محتوى نصي)"
+			},
+			"actions": {
+				"editTooltip": "تعديل التقييم",
+				"deleteTooltip": "حذف التقييم",
+				"exportDisabledTooltip": "لا يمكن تصدير الملاحظات الفارغة",
+				"exportTooltip": "تصدير كملف PDF"
+			},
+			"empty": {
+				"noPermission": "ليس لديك إذن لعرض التقييمات.",
+				"noDataFound": "لم يتم العثور على تقييمات لهذا المريض.",
+				"noPatientSelected": "يرجى تحديد مريض باستخدام الفلتر أعلاه."
+			}
+		},
+		"deleteConfirm": {
+			"title": "هل تريد حذف التقييم؟",
+			"description": "هل تريد حذف التقييم من {{dateTime}}؟ هذا الإجراء لا يمكن التراجع عنه.",
+			"okText": "حذف",
+			"cancelText": "إلغاء"
+		},
+		"modal": {
+			"editTitle": "تعديل التقييم",
+			"addTitle": "إضافة تقييم جديد"
+		},
+		"notifications": {
+			"fetchError": "تعذر تحميل التقييمات: {{error}}",
+			"patientSearchError": "فشل البحث عن المرضى للفلتر.",
+			"editPermissionDenied": "ليس لديك إذن لتعديل التقييمات.",
+			"addPermissionDenied": "ليس لديك إذن لإضافة التقييمات.",
+			"deletePermissionDenied": "ليس لديك إذن لحذف التقييمات.",
+			"deletedSuccess": "تم حذف التقييم بنجاح.",
+			"deleteError": "خطأ في حذف التقييم: {{error}}",
+			"exportPermissionDenied": "ليس لديك إذن لتصدير التقييمات.",
+			"exportEmptyTitle": "لا يمكن التصدير",
+			"exportEmptyDesc": "هذا التقييم لا يحتوي على محتوى لتصديره.",
+			"exportStartedTitle": "بدأ التصدير",
+			"exportStartedDesc": "يجب أن يبدأ تنزيل \"{{filename}}\" قريبًا.",
+			"exportErrorTitle": "خطأ في تصدير PDF",
+			"exportErrorDesc": "فشل إنشاء ملف PDF: {{error}}. تحقق من وحدة التحكم للحصول على التفاصيل."
+		},
+		"pdf": {
+			"browserTitle": "تصدير التقييم",
+			"title": "ملاحظات التقييم",
+			"patientLabel": "المريض:",
+			"dateLabel": "التاريخ:"
+		}
+	},
+	"common": {
+		"validationError": "خطأ في التحقق",
+		"unknownError": "خطأ غير معروف",
+		"save": "حفظ",
+		"update": "تحديث"
+	},
+	"assessmentForm": {
+		"patientIdLabel": "معرف المريض: {{id}}",
+		"noLabel": "بدون تسمية",
+		"patient": {
+			"label": "المريض",
+			"helpSelected": "المحدد: {{patientInfo}}",
+			"helpSearch": "ابحث بالاسم أو المعرف (حرفان على الأقل)",
+			"placeholder": "ابحث واختر مريضًا...",
+			"notFound": "لم يتم العثور على مرضى"
+		},
+		"dateTime": {
+			"label": "تاريخ ووقت التقييم",
+			"validation": "يرجى تحديد التاريخ والوقت"
+		},
+		"template": {
+			"label": "اختر القالب",
+			"loadingTip": "جار تحميل القوالب...",
+			"placeholder": "اختر قالبًا لتحميل المحتوى...",
+			"notFound": "لا توجد قوالب متاحة"
+		},
+		"aiVoice": {
+			"label": "إدخال صوتي بالذكاء الاصطناعي (اختياري)",
+			"popoverTitle": "نصائح للتسجيل بالذكاء الاصطناعي",
+			"startButton": "استخدام الصوت بالذكاء الاصطناعي",
+			"stopButton": "إيقاف التسجيل"
+		},
+		"notes": {
+			"label": "الملاحظات",
+			"validation": "لا يمكن أن تكون الملاحظات فارغة",
+			"loadingTip": "جار تحميل القالب...",
+			"loadingContent": "جار تحميل محتوى القالب...",
+			"initializingEditor": "جار تهيئة المحرر..."
+		},
+		"updateButton": "تحديث التقييم",
+		"saveButton": "حفظ التقييم",
+		"notifications": {
+			"patientSearchError": "فشل البحث عن المرضى.",
+			"templateLoadError": "تعذر تحميل قوالب التقييم. يرجى محاولة التحديث.",
+			"templateContentLoadError": "تعذر تحميل محتوى القالب: {{templateName}}. {{error}}",
+			"saveErrorGeneric": "حدث خطأ غير متوقع أثناء الحفظ.",
+			"saveErrorSpecific": "فشل الحفظ: {{error}}",
+			"saveErrorNetwork": "فشل الحفظ: لا يوجد رد من الخادم. تحقق من اتصال الشبكة.",
+			"saveErrorOther": "فشل الحفظ: {{error}}",
+			"updateSuccess": "تم تحديث التقييم بنجاح.",
+			"createSuccess": "تم إنشاء التقييم بنجاح.",
+			"editorNotReadyTitle": "المحرر غير جاهز",
+			"editorNotReadyDesc": "يرجى الانتظار حتى يتم تحميل محرر الملاحظات بالكامل.",
+			"templateRequiredTitle": "القالب مطلوب",
+			"templateRequiredDesc": "يرجى تحديد قالب تقييم قبل التسجيل.",
+			"patientRequiredTitle": "المريض مطلوب",
+			"patientRequiredDesc": "يرجى تحديد مريض قبل التسجيل.",
+			"readOnlyTitle": "للقراءة فقط",
+			"readOnlyRecordDesc": "لا يمكن التسجيل في وضع القراءة فقط.",
+			"readOnlyTranscribeDesc": "لا يمكن ملء الملاحظات في وضع القراءة فقط.",
+			"recordingIssueTitle": "مشكلة في التسجيل",
+			"recordingIssueDesc": "لم يتم تسجيل أي بيانات صوتية. تحقق من أذونات الميكروفون وتأكد من أنك تحدثت.",
+			"editorIssueTitle": "مشكلة في المحرر",
+			"editorIssueDesc": "أصبح المحرر غير متاح. سيبدأ النسخ إذا أصبح جاهزًا مرة أخرى.",
+			"recordingErrorTitle": "خطأ في التسجيل",
+			"recordingErrorDesc": "حدث خطأ أثناء التسجيل: {{error}}",
+			"micErrorTitle": "خطأ في الميكروفون",
+			"micErrorGeneric": "تعذر الوصول إلى الميكروفون: {{error}}",
+			"micErrorNotAllowed": "تم رفض الوصول إلى الميكروفون. يرجى السماح بالوصول إلى الميكروفون في إعدادات المتصفح.",
+			"micErrorNotFound": "لم يتم العثور على ميكروفون. يرجى التأكد من توصيل ميكروفون وتمكينه.",
+			"micErrorSecurity": "تم رفض الوصول إلى الميكروفون بسبب إعدادات الأمان (مثل اتصال غير HTTPS).",
+			"transcriptionPrereqError": "لا يمكن بدء النسخ. القالب أو المريض مفقود، أو المحرر غير جاهز.",
+			"transcriptionSuccess": "تم ملء ملاحظات التقييم بنجاح!",
+			"transcriptionUnexpectedResponse": "اكتمل النسخ ولكن تنسيق الاستجابة كان غير متوقع (الحالة: {{status}}).",
+			"transcriptionErrorGeneric": "فشل نسخ وملء الملاحظات.",
+			"transcriptionErrorTimeout": "انتهت مهلة طلب النسخ (أطول من 3 دقائق). حاول تسجيلات أقصر أو تحقق من سجلات الخادم.",
+			"transcriptionErrorSpecific": "فشل النسخ: {{error}}",
+			"transcriptionErrorOther": "فشل النسخ: {{error}}",
+			"transcriptionErrorTitle": "خطأ في النسخ"
+		},
+		"validation": {
+			"selectPatient": "يرجى تحديد مريض.",
+			"notesNotEmpty": "لا يمكن أن تكون الملاحظات فارغة.",
+			"checkFields": "يرجى التحقق من الحقول المطلوبة."
+		},
+		"aiTips": {
+			"speakClearly": {
+				"title": "تحدث بوضوح:",
+				"desc": "انطق الكلمات بشكل واضح ومميز."
+			},
+			"usePlaceholders": {
+				"title": "استخدم العناصر النائبة:",
+				"desc": "اذكر اسم الحقل/العنصر النائب قبل القيمة (مثل، \"اسم المريض هو جون دو\"، \"الشكوى الرئيسية هي ألم في الصدر\")."
+			},
+			"followOrder": {
+				"title": "اتبع الترتيب:",
+				"desc": "حاول إملاء المعلومات بترتيب القالب تقريبًا."
+			},
+			"beSpecific": {
+				"title": "كن محددًا:",
+				"desc": "تجنب الغموض (مثل، \"درجة الحرارة 38.5 درجة مئوية\")."
+			},
+			"pauseBriefly": {
+				"title": "توقف قليلًا:",
+				"desc": "التوقف القصير بين الحقول/الأقسام المختلفة يساعد."
+			},
+			"checkPermissions": {
+				"title": "تحقق من الأذونات:",
+				"desc": "تأكد من السماح بالوصول إلى ميكروفون المتصفح (يُطلب عادةً عند الاستخدام الأول)."
+			},
+			"note": "ملاحظة: تتم معالجة الذكاء الاصطناعي بعد إيقاف التسجيل."
+		},
+		"progress": {
+			"transcribing": "جار النسخ...",
+			"processing": "جار المعالجة...",
+			"populating": "جار الملء..."
+		},
+		"common": {},
+		"assessmentTypeForm": {
+			"spinTipUpdate": "جار تحديث القالب...",
+			"spinTipCreate": "جار إنشاء القالب...",
+			"displayName": {
+				"label": "اسم العرض",
+				"required": "اسم العرض مطلوب.",
+				"placeholder": "مثال: تقييم الأطفال"
+			},
+			"technicalName": {
+				"label": "الاسم التقني (المعرف)",
+				"required": "الاسم التقني مطلوب.",
+				"pattern": "استخدم الأحرف والأرقام والشرطات السفلية فقط.",
+				"placeholder": "مثال: childAssessment"
+			},
+			"htmlAlert": {
+				"message": "أدخل بنية HTML للقالب الخاص بك. استخدم الأقواس المربعة للعناصر النائبة، على سبيل المثال، [اسم المريض]، [جدول العلامات الحيوية]."
+			},
+			"templateContent": {
+				"label": "محتوى القالب (HTML مع العناصر النائبة)",
+				"required": "لا يمكن أن يكون محتوى القالب فارغًا.",
+				"placeholder": "أدخل HTML القالب هنا..."
+			},
+			"updateButton": "تحديث القالب",
+			"createButton": "إنشاء قالب"
+		}
+	},
+	"common": {
+		"loading": "جار التحميل...",
+		"deleteConfirmYes": "نعم، حذف",
+		"no": "لا"
+	},
+	"assessmentTypeManagement": {
+		"title": "إدارة قوالب التقييم",
+		"addButton": "إضافة قالب جديد",
+		"permissionDeniedMessage": "ليس لديك إذن لإدارة قوالب التقييم.",
+		"notifications": {
+			"addPermissionDenied": "ليس لديك إذن لإضافة القوالب.",
+			"editPermissionDenied": "ليس لديك إذن لتعديل القوالب.",
+			"deletePermissionDenied": "ليس لديك إذن لحذف القوالب.",
+			"loadFailedTitle": "فشل التحميل",
+			"loadFailedDesc": "تعذر تحميل تفاصيل القالب {{name}}."
+		},
+		"table": {
+			"header": {
+				"displayName": "اسم العرض",
+				"technicalName": "الاسم التقني (المعرف)",
+				"actions": "إجراءات"
+			},
+			"actions": {
+				"editTooltip": "تعديل القالب",
+				"deleteTooltip": "حذف القالب"
+			},
+			"empty": {
+				"noDataOrPermission": "لم يتم العثور على قوالب أو الإذن مرفوض."
+			}
+		},
+		"deleteConfirm": {
+			"title": "هل تريد حذف القالب؟",
+			"description": "هل تريد حذف القالب \"{{name}}\"؟"
+		},
+		"modal": {
+			"editTitle": "تعديل القالب: {{name}}",
+			"addTitle": "إضافة قالب تقييم جديد",
+			"loadingDetailsTip": "جار تحميل تفاصيل القالب..."
+		}
+	},
+	"common.noMatch": "لا نتائج"
 }

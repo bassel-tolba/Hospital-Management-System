@@ -15,8 +15,8 @@ import {
 	Divider,
 	Tooltip,
 	Steps,
-	Menu, // Import Menu
-	Popover, // Import Popover
+	Menu,
+	Popover,
 } from "antd";
 import {
 	SearchOutlined,
@@ -28,22 +28,26 @@ import {
 	EditTwoTone,
 	DeleteTwoTone,
 	InfoCircleOutlined,
+	LockOutlined, // Import LockOutlined for access denied
 } from "@ant-design/icons";
 import MedicationHistory from "./MedicationHistory";
 import AllMedicationHistory from "./AllMedicationHistory";
-import { useMedicationStore } from "../../services/medication.service"; //  <--  MAKE SURE THIS PATH IS CORRECT!
+import { useMedicationStore } from "../../services/medication.service";
+import { useAuthStore } from "../../services/auth.service"; // <-- Added Auth Store import
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { Step } = Steps;
 
 const MedicationList = () => {
-	// ... (rest of your component state and functions -  EXACTLY as in the previous, complete example) ...
+	const { user, hasAuthority } = useAuthStore(); // <-- Get user and hasAuthority
+
 	const {
 		medications,
 		loading,
 		total,
 		searchMedications,
-		deleteMedication,
+		// deleteMedication, // Not directly used by the delete button logic currently
 		createMedication,
 		updateMedication,
 		setLoading,
@@ -74,17 +78,38 @@ const MedicationList = () => {
 	const [isEditBatchModalVisible, setIsEditBatchModalVisible] = useState(false);
 	// const [isInfoModalVisible, setIsInfoModalVisible] = useState(false); // Removed Info Modal State
 
+	// Derived permission flags for cleaner JSX
+	const canReadMedication = user && hasAuthority("READ_MEDICATION");
+	const canCreateMedication = user && hasAuthority("CREATE_MEDICATION");
+	const canUpdateMedication = user && hasAuthority("UPDATE_MEDICATION");
+	const canDeleteMedication = user && hasAuthority("DELETE_MEDICATION");
+	const canUpdateStock = user && hasAuthority("UPDATE_MEDICATION_STOCK");
+	const canReadHistory = user && hasAuthority("READ_MEDICATION_HISTORY");
+	const canDeleteBatchPerm = user && (hasAuthority("UPDATE_MEDICATION_STOCK") || hasAuthority("DELETE_MEDICATION"));
+
 	useEffect(() => {
-		fetchMedications();
-	}, [page, size, searchParams]);
+		// Fetch only if user has permission to read
+		if (canReadMedication) {
+			fetchMedications();
+		} else {
+			// Optionally clear data or set loading state appropriately
+			// medications = []; // Reset data if needed
+			setLoading(false);
+		}
+	}, [page, size, searchParams, canReadMedication]); // Add canReadMedication dependency
 
 	const fetchMedications = async () => {
 		setLoading(true);
+		// No need for inner check here, already handled by useEffect guard
 		await searchMedications({ ...searchParams, page, size });
 		setLoading(false);
 	};
 
 	const showModal = (medication) => {
+		// Check permission before showing modal for editing/creating
+		if (medication && !canUpdateMedication) return; // Don't show edit modal if no update permission
+		if (!medication && !canCreateMedication) return; // Don't show add modal if no create permission
+
 		setSelectedMedication(medication);
 		if (medication) {
 			form.setFieldsValue(medication);
@@ -101,12 +126,18 @@ const MedicationList = () => {
 	};
 
 	const showStockModal = (medication) => {
+		// Check permission before showing stock modal
+		if (!canUpdateStock) return;
+
 		setSelectedMedication(medication);
 		setStockChangeQuantity(0);
 		setPurchasePrice(0);
 		setIsStockModalVisible(true);
 	};
 	const showBatchesModal = async (medication) => {
+		// Check permission before fetching/showing batches
+		if (!canReadMedication) return;
+
 		setSelectedMedication(medication);
 		setIsBatchModalVisible(true);
 
@@ -143,41 +174,58 @@ const MedicationList = () => {
 	};
 
 	const handleFormSubmit = async () => {
+		// Permissions checked via button disabled state below
 		try {
 			const values = await form.validateFields();
 			if (selectedMedication) {
+				// Check UPDATE_MEDICATION again just in case state changed
+				if (!canUpdateMedication) throw new Error("Permission denied");
 				await updateMedication(selectedMedication.id, values);
 			} else {
+				// Check CREATE_MEDICATION again just in case state changed
+				if (!canCreateMedication) throw new Error("Permission denied");
 				await createMedication(values);
 			}
-			fetchMedications();
+			fetchMedications(); // Re-fetch if possible
 			setIsModalVisible(false);
 			setSelectedMedication(null);
 			form.resetFields();
 			setMessage("");
 		} catch (error) {
 			console.log("Error submitting form:", error);
+			// TODO: Show user-friendly error message
 		}
 	};
 
 	const handleStockChangeSubmit = async () => {
+		// Permission checked via button disabled state below
 		try {
+			// Check UPDATE_MEDICATION_STOCK again
+			if (!canUpdateStock) throw new Error("Permission denied");
 			const batchData = {
 				quantity: stockChangeQuantity,
 				purchasePrice: purchasePrice,
 			};
 			await addBatch(selectedMedication.id, batchData);
-			fetchMedications();
+			fetchMedications(); // Re-fetch if possible
 			setIsStockModalVisible(false);
 			setSelectedMedication(null);
 			setStockChangeQuantity(0);
 			setPurchasePrice(0);
 		} catch (error) {
 			console.error("Error adding batch:", error);
+			// TODO: Show user-friendly error message
 		}
 	};
 
 	const handleDelete = (medicationId) => {
+		// Check DELETE_MEDICATION before showing the warning (reflects intent)
+		if (!canDeleteMedication) {
+			Modal.error({ title: "Permission Denied", content: "You do not have permission to delete medications." });
+			return;
+		}
+
+		// Original warning logic
 		Modal.warning({
 			title: "Deletion Not Allowed",
 			content: (
@@ -204,14 +252,19 @@ const MedicationList = () => {
 			),
 			okText: "OK",
 		});
+		// Original code did not call deleteMedication(medicationId);
 	};
 
 	const handleSearch = (value) => {
+		// Search only possible if user can read
+		if (!canReadMedication) return;
 		setSearchParams({ ...searchParams, searchTerm: value });
 		setPage(0);
 	};
 
 	const handleTableChange = (pagination) => {
+		// Pagination only relevant if user can read
+		if (!canReadMedication) return;
 		setPage(pagination.current - 1);
 		setSize(pagination.pageSize);
 	};
@@ -251,6 +304,8 @@ const MedicationList = () => {
 	};
 
 	const showHistoryModal = (medication) => {
+		// Check permission before showing history
+		if (!canReadHistory) return;
 		setSelectedMedication(medication);
 		setIsHistoryModalVisible(true);
 	};
@@ -261,6 +316,8 @@ const MedicationList = () => {
 	};
 
 	const showAllHistory = () => {
+		// Check permission before showing all history
+		if (!canReadHistory) return;
 		setIsAllHistoryVisible(true);
 	};
 
@@ -268,22 +325,31 @@ const MedicationList = () => {
 		setIsAllHistoryVisible(false);
 	};
 	const handleEditBatch = (batch) => {
+		// Check permission before showing edit batch modal
+		if (!canUpdateStock) return;
 		setSelectedBatch(batch);
 		batchForm.setFieldsValue({ purchasePrice: batch.purchasePrice });
 		setIsEditBatchModalVisible(true);
 	};
 
 	const handleDeleteBatch = async (batchId) => {
+		// Check permission before attempting delete
+		if (!canDeleteBatchPerm) {
+			Modal.error({ title: "Permission Denied", content: "You do not have permission to delete medication batches." });
+			return;
+		}
+
 		Modal.confirm({
 			title: "Confirm Delete",
-			content: "Are you sure you want to delete this batch?  This action cannot be undone.",
+			content: "Are you sure you want to delete this batch? This action cannot be undone.",
 			okText: "Delete",
 			okType: "danger",
 			cancelText: "Cancel",
 			onOk: async () => {
 				try {
 					await deleteBatch(batchId);
-					if (selectedMedication) {
+					if (selectedMedication && canReadMedication) {
+						// Check read perm before fetching again
 						const batches = await getBatchesForMedication(selectedMedication.id);
 						const mappedBatches = batches.map((batch) => ({
 							...batch,
@@ -293,18 +359,23 @@ const MedicationList = () => {
 					}
 				} catch (error) {
 					console.error("Error deleting batch:", error);
+					// TODO: Show user-friendly error message
 				}
 			},
 		});
 	};
 
 	const handleUpdateBatch = async () => {
+		// Permission checked via button disabled state below
 		try {
+			// Check UPDATE_MEDICATION_STOCK again
+			if (!canUpdateStock) throw new Error("Permission denied");
 			const values = await batchForm.validateFields();
 			await updateBatch(selectedBatch.id, {
 				purchasePrice: values.purchasePrice,
 			});
-			if (selectedMedication) {
+			if (selectedMedication && canReadMedication) {
+				// Check read perm before fetching again
 				const batches = await getBatchesForMedication(selectedMedication.id);
 				const mappedBatches = batches.map((batch) => ({
 					...batch,
@@ -317,6 +388,7 @@ const MedicationList = () => {
 			batchForm.resetFields();
 		} catch (error) {
 			console.error("Error updating batch:", error);
+			// TODO: Show user-friendly error message
 		}
 	};
 
@@ -350,35 +422,51 @@ const MedicationList = () => {
 		{
 			title: "Batches",
 			key: "batches",
-			render: (text, record) => (
-				<Button type="default" onClick={() => showBatchesModal(record)}>
-					View Batches
-				</Button>
-			),
+			// Conditionally render based on READ_MEDICATION
+			render: (text, record) =>
+				canReadMedication ? (
+					<Button type="default" onClick={() => showBatchesModal(record)}>
+						View Batches
+					</Button>
+				) : (
+					<Text disabled>N/A</Text> // Or null if you prefer to hide completely
+				),
 		},
 		{
 			title: "Actions",
 			key: "actions",
+			// Conditionally render actions based on permissions
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record)}>
-						Add Batch
-					</Button>
-					<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)}>
-						History
-					</Button>
-					<Button
-						type="dashed"
-						danger
-						icon={<DeleteOutlined />}
-						onClick={() => handleDelete(record.id)}
-						title="Medications cannot be deleted directly.  Click for more information."
-						style={{ opacity: 0.9 }}>
-						Delete
-					</Button>
+					{canUpdateMedication && (
+						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
+							Edit
+						</Button>
+					)}
+					{canUpdateStock && (
+						<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record)}>
+							Add Batch
+						</Button>
+					)}
+					{canReadHistory && (
+						<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)}>
+							History
+						</Button>
+					)}
+					{canDeleteMedication && (
+						<Button
+							type="dashed"
+							danger
+							icon={<DeleteOutlined />}
+							onClick={() => handleDelete(record.id)}
+							title="Medications cannot be deleted directly. Click for more information."
+							// style={{ opacity: 0.9 }} // Opacity might not be needed if hidden based on permission
+						>
+							Delete
+						</Button>
+					)}
+					{/* Show placeholder if no actions are available */}
+					{!canUpdateMedication && !canUpdateStock && !canReadHistory && !canDeleteMedication && <Text disabled>No Actions Permitted</Text>}
 				</Space>
 			),
 		},
@@ -409,15 +497,21 @@ const MedicationList = () => {
 		{
 			title: "Actions",
 			key: "actions",
+			// Conditionally render batch actions
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="primary" icon={<EditTwoTone />} onClick={() => handleEditBatch(record)} size="small" />
-					<Button type="primary" icon={<DeleteTwoTone />} onClick={() => handleDeleteBatch(record.id)} size="small" danger />
+					{canUpdateStock && <Button type="primary" icon={<EditTwoTone />} onClick={() => handleEditBatch(record)} size="small" />}
+					{canDeleteBatchPerm && (
+						<Button type="primary" icon={<DeleteTwoTone />} onClick={() => handleDeleteBatch(record.id)} size="small" danger />
+					)}
+					{/* Show placeholder if no actions are available */}
+					{!canUpdateStock && !canDeleteBatchPerm && <Text disabled>N/A</Text>}
 				</Space>
 			),
 		},
 	];
 	const helpContent = (
+		// ... (help content remains unchanged) ...
 		<Steps direction="vertical" current={-1} style={{ maxHeight: "600px", overflowY: "auto", paddingRight: "20px" }}>
 			{" "}
 			{/* Added padding */}
@@ -604,6 +698,22 @@ const MedicationList = () => {
 		</Steps>
 	);
 
+	// Top-level check: If user cannot read medications, show access denied message
+	if (!canReadMedication && !loading) {
+		// Check !loading to avoid flicker during initial auth check
+		return (
+			<div style={{ padding: 20, textAlign: "center" }}>
+				<Alert
+					message="Access Denied"
+					description="You do not have permission to view medications."
+					type="error"
+					showIcon
+					icon={<LockOutlined />}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="main-container" style={{ padding: 20 }}>
 			<Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -611,6 +721,7 @@ const MedicationList = () => {
 					<Title level={2}>Medication List</Title>
 				</Col>
 				<Col>
+					{/* Help button is always visible */}
 					<Popover content={helpContent} title="Medication Page Help" trigger="click">
 						<Button type="default" icon={<InfoCircleOutlined />}>
 							Help
@@ -619,26 +730,33 @@ const MedicationList = () => {
 				</Col>
 			</Row>
 
-			{/* ... (rest of your component layout - EXACTLY as in the previous example) ... */}
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={18}>
+					{/* Search bar requires READ_MEDICATION (implicitly handled by top-level check) */}
 					<Input.Search placeholder="Search by name..." onSearch={handleSearch} style={{ width: "100%" }} />
 				</Col>
 				<Col xs={24} sm={6}>
-					<Button type="primary" block onClick={() => showModal(null)}>
-						Add New Medication
-					</Button>
+					{/* Conditionally render Add button */}
+					{canCreateMedication && (
+						<Button type="primary" block onClick={() => showModal(null)}>
+							Add New Medication
+						</Button>
+					)}
 				</Col>
 			</Row>
 			<Row justify="end" style={{ marginBottom: 16 }}>
-				<Button type="default" icon={<UnorderedListOutlined />} onClick={showAllHistory}>
-					View All History
-				</Button>
+				{/* Conditionally render View All History button */}
+				{canReadHistory && (
+					<Button type="default" icon={<UnorderedListOutlined />} onClick={showAllHistory}>
+						View All History
+					</Button>
+				)}
 			</Row>
 
 			<div style={{ overflowX: "auto", margin: "0 -16px" }}>
+				{/* Table rendering is implicitly handled by top-level check */}
 				<Table
-					columns={columns}
+					columns={columns} // Columns now have internal permission checks
 					dataSource={medications}
 					loading={loading}
 					rowKey="id"
@@ -651,6 +769,7 @@ const MedicationList = () => {
 				/>
 			</div>
 
+			{/* Add/Edit Modal */}
 			<Modal
 				title={selectedMedication ? "Edit Medication" : "Add Medication"}
 				visible={isModalVisible}
@@ -659,12 +778,18 @@ const MedicationList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="primary" onClick={handleFormSubmit}>
+					<Button
+						key="submit"
+						type="primary"
+						onClick={handleFormSubmit}
+						// Disable button based on permission and mode (add vs edit)
+						disabled={!user || (selectedMedication ? !canUpdateMedication : !canCreateMedication)}>
 						{selectedMedication ? "Update" : "Save"}
 					</Button>,
 				]}
 				width="70%">
 				<Form form={form} layout="vertical">
+					{/* Form fields are implicitly enabled/disabled by modal visibility & button state */}
 					<Row gutter={16}>
 						<Col xs={24} sm={12}>
 							<Form.Item label="Name" name="name" rules={[{ required: true, message: "Please input name" }]}>
@@ -737,6 +862,7 @@ const MedicationList = () => {
 				</Form>
 			</Modal>
 
+			{/* Add Batch Modal */}
 			<Modal
 				title="Add Batch"
 				visible={isStockModalVisible}
@@ -745,7 +871,12 @@ const MedicationList = () => {
 					<Button key="cancel" onClick={handleStockModalCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="default" onClick={handleStockChangeSubmit}>
+					<Button
+						key="submit"
+						type="default"
+						onClick={handleStockChangeSubmit}
+						// Disable button based on permission
+						disabled={!canUpdateStock}>
 						Add Batch
 					</Button>,
 				]}>
@@ -772,15 +903,18 @@ const MedicationList = () => {
 					</Row>
 				</Form>
 			</Modal>
+
+			{/* View Batches Modal */}
 			<Modal
 				title={`Batches for ${selectedMedication?.name}`}
 				visible={isBatchModalVisible}
 				onCancel={handleBatchesModalClose}
-				footer={null}
+				footer={null} // Actions are in the table now
 				width="70%">
 				<Table columns={batchColumns} dataSource={medicationBatches} rowKey="id" pagination={false} />
 			</Modal>
 
+			{/* Edit Batch Modal */}
 			<Modal
 				title="Edit Batch"
 				visible={isEditBatchModalVisible}
@@ -790,6 +924,8 @@ const MedicationList = () => {
 					batchForm.resetFields();
 				}}
 				onOk={handleUpdateBatch}
+				// Disable OK button based on permission
+				okButtonProps={{ disabled: !canUpdateStock }}
 				okText="Update"
 				cancelText="Cancel">
 				<Form form={batchForm} layout="vertical">
@@ -798,6 +934,8 @@ const MedicationList = () => {
 					</Form.Item>
 				</Form>
 			</Modal>
+
+			{/* History Modals are conditionally opened based on permission checks */}
 			<MedicationHistory
 				medicationId={selectedMedication?.id}
 				medicationName={selectedMedication?.name}

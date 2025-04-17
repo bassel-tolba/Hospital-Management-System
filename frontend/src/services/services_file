@@ -1,0 +1,6380 @@
+.
+│   ├── room.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Import useAuthStore
+
+const ROOM_API_BASE_URL = ` http://localhost:8080/api/rooms`;
+
+export const useRoomStore = create((set, get) => ({
+	rooms: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setRooms: (rooms) => set({ rooms }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createRoom: async (roomData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(ROOM_API_BASE_URL, roomData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Room created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create room: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getRoomById: async (roomId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${ROOM_API_BASE_URL}/${roomId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get room: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllRooms: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(ROOM_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ rooms: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get rooms: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateRoom: async (roomId, roomData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${ROOM_API_BASE_URL}/${roomId}`, roomData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Room updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update room: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteRoom: async (roomId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${ROOM_API_BASE_URL}/${roomId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Room deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete room: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchRooms: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { searchTerm, unitId, page = 0, size = 10 } = searchParams;
+			let url = `${ROOM_API_BASE_URL}?page=${page}&size=${size}`;
+
+			if (searchTerm) {
+				url += `&searchTerm=${searchTerm}`;
+			}
+
+			if (unitId) {
+				url += `&unitId=${unitId}`;
+			}
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			set({
+				loading: false,
+				rooms: response.data,
+				total: response.data.totalElements, // Use totalElements from the response
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search rooms: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── medicationAdministration.service.js:```
+// src/services/medicationAdministration.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Import useAuthStore
+
+const MEDICATION_ADMINISTRATION_API_BASE_URL = `http://localhost:8080/api/medication-administrations`;
+
+export const useMedicationAdministrationStore = create((set, get) => ({
+	medicationAdministrations: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setMedicationAdministrations: (medicationAdministrations) => set({ medicationAdministrations }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createMedicationAdministration: async (medicationAdministrationData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(MEDICATION_ADMINISTRATION_API_BASE_URL, medicationAdministrationData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication administration created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create medication administration: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getMedicationAdministrationById: async (medicationAdministrationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${MEDICATION_ADMINISTRATION_API_BASE_URL}/${medicationAdministrationId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get medication administration: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllMedicationAdministrations: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(MEDICATION_ADMINISTRATION_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ medicationAdministrations: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get medication administrations: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteMedicationAdministration: async (medicationAdministrationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${MEDICATION_ADMINISTRATION_API_BASE_URL}/${medicationAdministrationId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication administration deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete medication administration: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchMedicationAdministrations: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { page = 0, size = 10, patientId } = searchParams;
+			let url = `${MEDICATION_ADMINISTRATION_API_BASE_URL}?page=${page}&size=${size}`;
+
+			if (patientId) {
+				url += `&patientId=${patientId}`;
+			}
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				medicationAdministrations: response.data.content, // Access the content
+				total: response.data.totalElements, // Access the totalElements
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search medication administrations: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── patientProductUsage.service.js:```
+// src/services/patientProductUsage.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const PATIENT_PRODUCT_USAGE_API_BASE_URL = `http://localhost:8080/api/product-usage`;
+
+export const usePatientProductUsageStore = create((set, get) => ({
+	patientProductUsages: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setPatientProductUsages: (patientProductUsages) => set({ patientProductUsages }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createPatientProductUsage: async (patientProductUsageData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(PATIENT_PRODUCT_USAGE_API_BASE_URL, patientProductUsageData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Product usage recorded successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to record product usage: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getPatientProductUsageById: async (patientProductUsageId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_PRODUCT_USAGE_API_BASE_URL}/${patientProductUsageId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get product usage: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllPatientProductUsages: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(PATIENT_PRODUCT_USAGE_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ patientProductUsages: response.data.content });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get product usages: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deletePatientProductUsage: async (patientProductUsageId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PATIENT_PRODUCT_USAGE_API_BASE_URL}/${patientProductUsageId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Product usage deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete product usage: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchPatientProductUsages: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { page = 0, size = 10, patientId } = searchParams;
+
+			let url = `${PATIENT_PRODUCT_USAGE_API_BASE_URL}?page=${page}&size=${size}`;
+			if (patientId) {
+				url += `&patientId=${patientId}`;
+			}
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				patientProductUsages: response.data.content,
+				total: response.data.totalElements,
+			});
+
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search product usages: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── imageReport.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
+import { notification } from "antd";
+
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
+
+export const useImageReportStore = create((set, get) => ({
+	imageReports: [],
+	loading: false,
+	totalElements: 0,
+	error: null,
+	patients: [],
+	users: [],
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	fetchPatients: async (searchTerm = "") => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_URL}`, {
+				params: { searchTerm },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				patients: response.data.content,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch patients: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchUsers: async (searchTerm = "") => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${USER_API_BASE_URL}`, {
+				params: { searchTerm },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				users: response.data.content,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch users: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchImageReports: async (page, size, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			let url = IMAGE_REPORT_API_BASE_URL;
+			if (patientId) {
+				url = `${IMAGE_REPORT_API_BASE_URL}/patient/${patientId}`;
+			}
+			const response = await axios.get(url, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+
+			set({
+				imageReports: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch image reports: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	createImageReport: async (imageReportData, imageFiles) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"imageReportDTO",
+				new Blob([JSON.stringify(imageReportData)], {
+					type: "application/json",
+				})
+			);
+			if (imageFiles) {
+				imageFiles.forEach((file) => formData.append("imageFiles", file));
+			}
+
+			await axios.post(IMAGE_REPORT_API_BASE_URL, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Image Report Created Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create image report: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	updateImageReport: async (id, imageReportData, imageFiles) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+
+			const formData = new FormData();
+			//we remove the imageUrls property from imageReportData so it does not get added to the backend
+			const { imageUrls, ...newImageReportData } = imageReportData;
+
+			formData.append(
+				"imageReportDTO",
+				new Blob([JSON.stringify(newImageReportData)], {
+					type: "application/json",
+				})
+			);
+			if (imageFiles) {
+				imageFiles.forEach((file) => formData.append("imageFiles", file));
+			}
+
+			await axios.put(`${IMAGE_REPORT_API_BASE_URL}/${id}`, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Image Report Updated Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update image report: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	deleteImageReport: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${IMAGE_REPORT_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Image Report Deleted Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete image report: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+}));
+
+```
+│   ├── appointment.service.js:```
+// frontend/src/services/appointment.service.js (Add endAppointment)
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const APPOINTMENT_API_BASE_URL = `http://localhost:8080/api/appointments`;
+
+export const useAppointmentStore = create((set, get) => ({
+	appointments: [],
+	userAppointments: [], // New state for user-specific appointments
+	loading: false,
+	error: null,
+	total: 0,
+	page: 0,
+	size: 10,
+
+	setAppointments: (appointments) => set({ appointments }),
+	setUserAppointments: (userAppointments) => set({ userAppointments }), // Setter for userAppointments
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	setPage: (page) => set({ page }),
+	setSize: (size) => set({ size }),
+	clearError: () => set({ error: null }),
+
+	createAppointment: async (appointmentData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(APPOINTMENT_API_BASE_URL, appointmentData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Appointment created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create appointment: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw to allow component to handle
+		}
+	},
+
+	getAllAppointments: async (page = get().page, size = get().size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}?page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				appointments: response.data.content,
+				total: response.data.totalElements,
+				page: response.data.number,
+				size: response.data.size,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get appointments: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getAppointmentsByPatientId: async (patientId, page, size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/patient/${patientId}?page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				appointments: response.data.content,
+				total: response.data.totalElements,
+				page: response.data.number,
+				size: response.data.size,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get appointments: ${error.message}`,
+			});
+			throw error; // Re-throw for component handling
+		}
+	},
+	getAppointmentsByPatientIdAndNotDeleted: async (patientId, page, size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/patient/not-deleted/${patientId}?page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				appointments: response.data.content,
+				total: response.data.totalElements,
+				page: response.data.number,
+				size: response.data.size,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get appointments: ${error.message}`,
+			});
+			throw error; // Re-throw for component handling
+		}
+	},
+
+	getAppointmentsByUserId: async (userId, page, size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/user/${userId}?page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				appointments: response.data.content,
+				total: response.data.totalElements,
+				page: response.data.number,
+				size: response.data.size,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get appointments: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getAppointmentsByPatientIdAndUserId: async (patientId, userId, page, size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/patient/${patientId}/user/${userId}?page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				appointments: response.data.content,
+				total: response.data.totalElements,
+				page: response.data.number,
+				size: response.data.size,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get appointments: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	searchAppointments: async (searchTerm, page, size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/search?searchTerm=${searchTerm}&page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				appointments: response.data.content,
+				total: response.data.totalElements,
+				page: response.data.number,
+				size: response.data.size,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search appointments: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getAppointmentById: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/${id}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get appointment: ${error.message}`,
+			});
+			throw error; // Re-throw for component handling
+		}
+	},
+	// --- New Function: Get Appointments for Current User ---
+	getUserAppointments: async (userId, page = 0, size = 10) => {
+		// Added pagination
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(
+				`${APPOINTMENT_API_BASE_URL}/user/${userId}?page=${page}&size=${size}`, // Use correct endpoint
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({
+				loading: false,
+				userAppointments: response.data.content, // Use the new state
+				total: response.data.totalElements, // Update total if needed for pagination
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get user appointments: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	endAppointment: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.patch(
+				`${APPOINTMENT_API_BASE_URL}/${id}/end`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Appointment ended successfully.",
+			});
+			return response.data; // Return updated appointment
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message;
+			notification.error({
+				message: "Error",
+				description: `Failed to end appointment: ${errorMessage}`,
+			});
+			throw error; // Re-throw for component handling
+		}
+	},
+
+	deleteAppointment: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${APPOINTMENT_API_BASE_URL}/${id}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Appointment deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete appointment: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── user.service.js:```
+// frontend/src/services/user.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
+
+export const useUserStore = create((set, get) => ({
+	users: [],
+	loading: false,
+	error: null,
+	total: 0,
+	currentUser: null,
+	clearError: () => set({ error: null }),
+
+	getCurrentUser: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${USER_API_BASE_URL}/me`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false, currentUser: response.data });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get current user";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+	createUser: async (userData, profilePicture) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"user",
+				new Blob([JSON.stringify(userData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+
+			const response = await axios.post(USER_API_BASE_URL, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "User created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to create user";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	getUserById: async (userId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${USER_API_BASE_URL}/${userId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get user";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	getAllUsers: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${USER_API_BASE_URL}/all`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get users";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+	getUsersByRole: async (roleId) => {
+		// Changed parameter to roleId
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${USER_API_BASE_URL}/byrole/${roleId}`, {
+				// Corrected endpoint
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false, users: response.data });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get users by role";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	updateUser: async (userId, userData, profilePicture, removedProfilePictureUrl) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"user",
+				new Blob([JSON.stringify(userData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+			if (removedProfilePictureUrl) {
+				formData.append("removedProfilePictureUrls", new Blob([JSON.stringify([removedProfilePictureUrl])], { type: "application/json" }));
+			}
+			const response = await axios.put(`${USER_API_BASE_URL}/${userId}`, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "User updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	deleteUser: async (userId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${USER_API_BASE_URL}/${userId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "User deleted successfully.",
+			});
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to delete user";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	searchUsers: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const params = new URLSearchParams(searchParams).toString();
+			const response = await axios.get(`${USER_API_BASE_URL}/search?${params}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			if (response.status === 401) {
+				//handle logout
+				console.log("user needs to log out");
+				useAuthStore.getState().logout();
+				return;
+			}
+			set({
+				loading: false,
+				users: response.data.content,
+				total: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to search users";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+	updateUserUnits: async (userId, unitIds) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(
+				`${USER_API_BASE_URL}/updateunits/${userId}`,
+				unitIds, // Send the array directly as the request body
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+						"Content-Type": "application/json", // Explicitly set content type
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "User updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user units";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+	updateUserRooms: async (userId, roomIds) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${USER_API_BASE_URL}/updaterooms/${userId}`, roomIds, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "User updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user rooms";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+	updateUserPatients: async (userId, patientIds) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${USER_API_BASE_URL}/updatepatients/${userId}`, patientIds, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "User updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update user patients";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── document.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service";
+import { notification } from "antd";
+
+const DOCUMENT_API_BASE_URL = `http://localhost:8080/api/documents`;
+const DOCUMENT_TYPE_API_BASE_URL = `http://localhost:8080/api/documenttypes`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
+
+export const useDocumentStore = create((set, get) => ({
+	documents: [],
+	loading: false,
+	totalElements: 0,
+	error: null,
+	documentTypes: [],
+	patients: [],
+	users: [],
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+	fetchPatients: async ({ searchTerm = "", page = 0, size = 10 }) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_URL}`, {
+				params: { searchTerm, page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				patients: response.data.content,
+				loading: false,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch patients: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchUsers: async ({ searchTerm = "", page = 0, size = 10 }) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			// If you can't fetch users with a GET and a search term, you may need to change this
+			const response = await axios.get(`${USER_API_BASE_URL}`, {
+				params: { searchTerm, page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				users: response.data.content,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch users: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchDocumentTypes: async (page = 0, size = 10) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(DOCUMENT_TYPE_API_BASE_URL, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				documentTypes: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch document types: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchDocuments: async (page = 0, size = 10, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			let url = DOCUMENT_API_BASE_URL;
+			if (patientId) {
+				url = `${DOCUMENT_API_BASE_URL}/patient/${patientId}`;
+			}
+			const response = await axios.get(url, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+
+			set({
+				documents: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch documents: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	createDocument: async (documentData, file) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"documentDTO",
+				new Blob([JSON.stringify(documentData)], {
+					type: "application/json",
+				})
+			);
+			if (file) {
+				formData.append("file", file);
+			}
+
+			await axios.post(DOCUMENT_API_BASE_URL, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Document Created Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create document: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	updateDocument: async (id, documentData, file) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+
+			const formData = new FormData();
+			formData.append(
+				"documentDTO",
+				new Blob([JSON.stringify(documentData)], {
+					type: "application/json",
+				})
+			);
+			if (file) {
+				formData.append("file", file);
+			}
+
+			await axios.put(`${DOCUMENT_API_BASE_URL}/${id}`, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Document Updated Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update document: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	deleteDocument: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${DOCUMENT_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Document Deleted Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete document: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+}));
+
+```
+│   ├── bed.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const BED_API_BASE_URL = `http://localhost:8080/api/beds`;
+
+export const useBedStore = create((set, get) => ({
+	beds: [],
+	loading: false,
+	error: null,
+	totalElements: 0,
+	setBeds: (beds) => set({ beds }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotalElements: (totalElements) => set({ totalElements }),
+	clearError: () => set({ error: null }),
+
+	createBed: async (bedData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(BED_API_BASE_URL, bedData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Bed created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create bed: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getBedById: async (bedId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${BED_API_BASE_URL}/${bedId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get bed: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllBeds: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(BED_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ beds: response.data.content });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get beds: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	updateBed: async (bedId, bedData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${BED_API_BASE_URL}/${bedId}`, bedData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Bed updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update bed: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteBed: async (bedId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${BED_API_BASE_URL}/${bedId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Bed deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete bed: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchBeds: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { searchTerm, roomId, unitId, page = 0, size = 10 } = searchParams;
+			let url = `${BED_API_BASE_URL}?page=${page}&size=${size}`;
+
+			if (searchTerm) {
+				url += `&searchTerm=${searchTerm}`;
+			}
+
+			if (roomId) {
+				url += `&roomId=${roomId}`;
+			}
+			if (unitId) {
+				url += `&unitId=${unitId}`;
+			}
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				beds: response.data.content,
+				totalElements: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search beds: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	freeAllExpiredBeds: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(
+				`${BED_API_BASE_URL}/free-expired`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Expired beds freed successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ loading: false, error: error.message });
+			notification.error({
+				message: "Error",
+				description: `Failed to free expired beds: ${error?.response?.data?.message || error.message}`,
+			});
+		}
+	},
+}));
+
+```
+│   ├── nurse.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const NURSE_API_BASE_URL = `http://localhost:8080/api/nurses`;
+
+export const useNurseStore = create((set, get) => ({
+	nurses: [],
+	loading: false,
+	error: null,
+	setNurses: (nurses) => set({ nurses }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	createNurse: async (nurseData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(NURSE_API_BASE_URL, nurseData, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create nurse: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getNurseWithDetails: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const nurse = await get().getNurseById(nurseId);
+			const assignedPatients = await get().getAssignedPatients(nurseId);
+			const assignedUnits = await get().getAssignedUnits(nurseId);
+			const assignedRooms = await get().getAssignedRooms(nurseId);
+
+			set({ loading: false });
+			return { nurse, assignedPatients, assignedUnits, assignedRooms };
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			throw error;
+		}
+	},
+	getNurseByUserId: async (userId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/user/${userId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get nurse by user id: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getNurseById: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get nurse: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getAllNurses: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(NURSE_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({
+				nurses: response.data.content,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get nurses: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateNurse: async (nurseId, nurseData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${NURSE_API_BASE_URL}/${nurseId}`, nurseData, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update nurse: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteNurse: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${NURSE_API_BASE_URL}/${nurseId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete nurse: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	assignNurseToPatient: async (nurseId, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.post(
+				`${NURSE_API_BASE_URL}/${nurseId}/patients/${patientId}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse assigned to patient successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to assign nurse to patient: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	removeNurseFromPatient: async (nurseId, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${NURSE_API_BASE_URL}/${nurseId}/patients/${patientId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse removed from patient successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to remove nurse from patient: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	assignNurseToUnit: async (nurseId, unitId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.post(
+				`${NURSE_API_BASE_URL}/${nurseId}/units/${unitId}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse assigned to unit successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to assign nurse to unit: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	removeNurseFromUnit: async (nurseId, unitId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${NURSE_API_BASE_URL}/${nurseId}/units/${unitId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse removed from unit successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to remove nurse from unit: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	assignNurseToRoom: async (nurseId, roomId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.post(
+				`${NURSE_API_BASE_URL}/${nurseId}/rooms/${roomId}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse assigned to room successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to assign nurse to room: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	removeNurseFromRoom: async (nurseId, roomId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${NURSE_API_BASE_URL}/${nurseId}/rooms/${roomId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse removed from room successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to remove nurse from room: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getAssignedPatients: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}/patients`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get assigned patients: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getPatientSchedules: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}/schedules`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get patient schedules: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getPatientDetails: async (nurseId, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}/patients/${patientId}`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get patient details: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	// New methods to fetch rooms and units associated with a nurse
+	getAssignedUnits: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}/units`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get assigned units: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getAssignedRooms: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}/rooms`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get assigned rooms: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	getPatientsByUnit: async (nurseId, unitId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_API_BASE_URL}/${nurseId}/units/${unitId}/patients`, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (e) {
+			set({ error: e.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get patients by unit: ${e.message}`,
+			});
+			throw e;
+		}
+	},
+}));
+
+```
+│   ├── prescribedMedication.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Import useAuthStore
+
+const PRESCRIBED_MEDICATION_API_BASE_URL = `http://localhost:8080/api/prescribed-medications`;
+
+export const usePrescribedMedicationStore = create((set, get) => ({
+	prescribedMedications: [],
+	loading: false,
+	error: null,
+	setPrescribedMedications: (prescribedMedications) => set({ prescribedMedications }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	createPrescribedMedication: async (prescribedMedicationData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(PRESCRIBED_MEDICATION_API_BASE_URL, prescribedMedicationData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "PrescribedMedication created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create PrescribedMedication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	getPrescribedMedicationById: async (prescribedMedicationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PRESCRIBED_MEDICATION_API_BASE_URL}/${prescribedMedicationId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get PrescribedMedication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchAllPrescribedMedications: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(PRESCRIBED_MEDICATION_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ prescribedMedications: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch PrescribedMedications: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deletePrescribedMedication: async (prescribedMedicationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PRESCRIBED_MEDICATION_API_BASE_URL}/${prescribedMedicationId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "PrescribedMedication deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete PrescribedMedication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── patientDetail.service.js:```
+// patientDetail.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const PATIENT_API_BASE_DATA_URL = `http://localhost:8080/api/patients-data`;
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
+
+export const usePatientDetailStore = create((set, get) => ({
+	loading: false,
+	error: null,
+	patient: null,
+	admissions: [],
+	appointments: [],
+	assessments: [],
+	billings: [],
+	carePlans: [],
+	prescriptions: [],
+	vitalSigns: [],
+	productUsages: [],
+	medicationAdministrations: [],
+	imageReports: [],
+	labResults: [],
+	documents: [],
+	quickNotes: [],
+	procedureLogs: [],
+	totalCounts: {},
+	// NEW:  Store filter states for each data type
+	filters: {
+		appointments: false,
+		assessments: false,
+		billings: false,
+		carePlans: false,
+		prescriptions: false,
+		vitalSigns: false,
+		productUsages: false,
+		medicationAdministrations: false,
+		imageReports: false,
+		labResults: false,
+		documents: false,
+		procedureLogs: false,
+	},
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	// NEW:  Toggle filter for a specific data type
+	toggleFilter: (dataType) =>
+		set((state) => ({
+			filters: {
+				...state.filters,
+				[dataType]: !state.filters[dataType], // Toggle the boolean
+			},
+		})),
+
+	fetchPatientData: async (
+		patientId,
+		admissionsPage,
+		appointmentsPage,
+		assessmentsPage,
+		billingsPage,
+		carePlansPage,
+		prescriptionsPage,
+		vitalSignsPage,
+		productUsagesPage,
+		medicationAdministrationsPage,
+		imageReportsPage,
+		labResultsPage,
+		documentsPage,
+		quickNotesPage,
+		procedureLogsPage,
+		pageSize
+	) => {
+		set({ loading: true, error: null });
+		let patientResponse;
+		try {
+			const user = useAuthStore.getState().user;
+			const { filters } = get(); // Get current filter states
+
+			patientResponse = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			const requests = [];
+			const responses = {};
+
+			// Quick Notes (no filtering needed)
+			if (quickNotesPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: quickNotesPage - 1, size: pageSize },
+						})
+						.then((res) => {
+							responses.quickNotes = res;
+						})
+				);
+			}
+
+			// All other data types:  Include filterByAdmission parameter
+			if (procedureLogsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: procedureLogsPage - 1, size: pageSize, filterByAdmission: filters.procedureLogs }, // Pass filter
+						})
+						.then((res) => {
+							responses.procedureLogs = res;
+						})
+				);
+			}
+			if (admissionsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/admissions`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: admissionsPage - 1, size: pageSize }, // No filter for admissions
+						})
+						.then((res) => {
+							responses.admissions = res;
+						})
+				);
+			}
+			if (appointmentsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/appointments`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: appointmentsPage - 1, size: pageSize, filterByAdmission: filters.appointments }, // Pass filter
+						})
+						.then((res) => {
+							responses.appointments = res;
+						})
+				);
+			}
+			if (assessmentsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/assessments`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: assessmentsPage - 1, size: pageSize, filterByAdmission: filters.assessments }, // Pass filter
+						})
+						.then((res) => {
+							responses.assessments = res;
+						})
+				);
+			}
+			if (billingsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/billings`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: billingsPage - 1, size: pageSize, filterByAdmission: filters.billings }, // Pass filter
+						})
+						.then((res) => {
+							responses.billings = res;
+						})
+				);
+			}
+			if (carePlansPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/care-plans`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: carePlansPage - 1, size: pageSize, filterByAdmission: filters.carePlans }, // Pass filter
+						})
+						.then((res) => {
+							responses.carePlans = res;
+						})
+				);
+			}
+			if (prescriptionsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/prescriptions`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: prescriptionsPage - 1, size: pageSize, filterByAdmission: filters.prescriptions }, // Pass filter
+						})
+						.then((res) => {
+							responses.prescriptions = res;
+						})
+				);
+			}
+			if (vitalSignsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/vital-signs`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: vitalSignsPage - 1, size: pageSize, filterByAdmission: filters.vitalSigns }, // Pass filter
+						})
+						.then((res) => {
+							responses.vitalSigns = res;
+						})
+				);
+			}
+			if (productUsagesPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/product-usages`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: productUsagesPage - 1, size: pageSize, filterByAdmission: filters.productUsages }, // Pass filter
+						})
+						.then((res) => {
+							responses.productUsages = res;
+						})
+				);
+			}
+			if (medicationAdministrationsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/medication-administrations`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: {
+								page: medicationAdministrationsPage - 1,
+								size: pageSize,
+								filterByAdmission: filters.medicationAdministrations, // Pass filter
+							},
+						})
+						.then((res) => {
+							responses.medicationAdministrations = res;
+						})
+				);
+			}
+			if (imageReportsPage) {
+				requests.push(
+					axios
+						.get(`${IMAGE_REPORT_API_BASE_URL}/patient/${patientId}`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: imageReportsPage - 1, size: pageSize, filterByAdmission: filters.imageReports }, // Pass filter
+						})
+						.then((res) => {
+							responses.imageReports = res;
+						})
+				);
+			}
+
+			if (labResultsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/lab-results`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: labResultsPage - 1, size: pageSize, filterByAdmission: filters.labResults }, // Pass filter
+						})
+						.then((res) => {
+							responses.labResults = res;
+						})
+				);
+			}
+			if (documentsPage) {
+				requests.push(
+					axios
+						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/documents`, {
+							headers: { Authorization: `Bearer ${user?.token}` },
+							params: { page: documentsPage - 1, size: pageSize, filterByAdmission: filters.documents }, // Pass filter
+						})
+						.then((res) => {
+							responses.documents = res;
+						})
+				);
+			}
+
+			await Promise.all(requests);
+
+			set((state) => ({
+				...state,
+				loading: false,
+				patient: patientResponse.data,
+				admissions: responses.admissions?.data?.content || state.admissions,
+				appointments: responses.appointments?.data?.content || state.appointments,
+				assessments: responses.assessments?.data?.content || state.assessments,
+				billings: responses.billings?.data?.content || state.billings,
+				carePlans: responses.carePlans?.data?.content || state.carePlans,
+				prescriptions: responses.prescriptions?.data?.content || state.prescriptions,
+				vitalSigns: responses.vitalSigns?.data?.content || state.vitalSigns,
+				productUsages: responses.productUsages?.data?.content || state.productUsages,
+				medicationAdministrations: responses.medicationAdministrations?.data?.content || state.medicationAdministrations,
+				imageReports: responses.imageReports?.data?.content || state.imageReports,
+				labResults: responses.labResults?.data?.content || state.labResults,
+				documents: responses.documents?.data?.content || state.documents,
+				quickNotes: responses.quickNotes?.data?.content || state.quickNotes,
+				procedureLogs: responses.procedureLogs?.data?.content || state.procedureLogs,
+				totalCounts: {
+					admissions: responses.admissions?.data?.totalElements || state.totalCounts?.admissions,
+					appointments: responses.appointments?.data?.totalElements || state.totalCounts?.appointments,
+					assessments: responses.assessments?.data?.totalElements || state.totalCounts?.assessments,
+					billings: responses.billings?.data?.totalElements || state.totalCounts?.billings,
+					carePlans: responses.carePlans?.data?.totalElements || state.totalCounts?.carePlans,
+					prescriptions: responses.prescriptions?.data?.totalElements || state.totalCounts?.prescriptions,
+					vitalSigns: responses.vitalSigns?.data?.totalElements || state.totalCounts?.vitalSigns,
+					productUsages: responses.productUsages?.data?.totalElements || state.totalCounts?.productUsages,
+					medicationAdministrations:
+						responses.medicationAdministrations?.data?.totalElements || state.totalCounts?.medicationAdministrations,
+					imageReports: responses.imageReports?.data?.totalElements || state.totalCounts?.imageReports,
+					labResults: responses.labResults?.data?.totalElements || state.totalCounts?.labResults,
+					documents: responses.documents?.data?.totalElements || state.totalCounts?.documents,
+					quickNotes: responses.quickNotes?.data?.totalElements || state.totalCounts?.quickNotes,
+					procedureLogs: responses.procedureLogs?.data?.totalElements || state.totalCounts?.procedureLogs,
+				},
+			}));
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch patient data: ${error.message}`,
+			});
+			throw error; // Re-throw to be caught by caller
+		}
+	},
+
+	fetchProcedureLogs: async (patientId, page, pageSize, filterByAdmission) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+				params: { page: page - 1, size: pageSize, filterByAdmission: filterByAdmission },
+			});
+			set((state) => ({
+				...state,
+				loading: false,
+				procedureLogs: response.data.content,
+				totalCounts: { ...state.totalCounts, procedureLogs: response.data.totalElements },
+			}));
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to fetch procedure logs.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error;
+		}
+	},
+	fetchQuickNotes: async (patientId, page, pageSize) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+				params: { page: page - 1, size: pageSize },
+			});
+			set((state) => ({
+				...state,
+				loading: false,
+				quickNotes: response.data.content,
+				totalCounts: { ...state.totalCounts, quickNotes: response.data.totalElements },
+			}));
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to fetch quick notes.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; // Re-throw to be caught by caller if needed
+		}
+	},
+
+	createQuickNote: async (patientId, noteText, addedByUserId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(
+				`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`,
+				{ noteText, addedByUser: addedByUserId },
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+						"Content-Type": "application/json",
+					},
+				}
+			);
+			//  Refetch quick notes after creating (or add to state directly)
+			get().fetchQuickNotes(patientId, 1, 10); // Assuming you want page 1, size 10
+			set({ loading: false });
+			return response.data; // Return the created note data
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to create quick note.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; // Re-throw to be caught by caller
+		}
+	},
+
+	updateQuickNote: async (quickNoteId, noteText, addedByUserId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(
+				`${PATIENT_API_BASE_DATA_URL}/quick-notes/${quickNoteId}`,
+				{ noteText, addedByUser: addedByUserId },
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+						"Content-Type": "application/json",
+					},
+				}
+			);
+
+			const patientId = get().patient?.id; // Get current patient ID
+			if (patientId) {
+				get().fetchQuickNotes(patientId, 1, 10); // Refetch after update
+			}
+
+			set({ loading: false });
+			return response.data; // Return updated note data
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update quick note.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; //rethrow
+		}
+	},
+
+	deleteQuickNote: async (quickNoteId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PATIENT_API_BASE_DATA_URL}/quick-notes/${quickNoteId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+
+			const patientId = get().patient?.id;
+			if (patientId) {
+				get().fetchQuickNotes(patientId, 1, 10); // Refetch after delete
+			}
+
+			set({ loading: false });
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to delete quick note.";
+			set({ error: errorMessage, loading: false });
+			notification.error({ message: "Error", description: errorMessage });
+			throw error; // Rethrow
+		}
+	},
+}));
+
+```
+│   ├── role.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Import
+
+const ROLE_API_BASE_URL = `http://localhost:8080/api/roles`;
+
+export const useRoleStore = create((set, get) => ({
+	// Added get
+	roles: [],
+	loading: false,
+	error: null,
+
+	fetchAllRoles: async () => {
+		set({ loading: true, error: null });
+		try {
+			const response = await axios.get(ROLE_API_BASE_URL);
+			set({ roles: response.data, loading: false });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to fetch roles";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	getRoleById: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const response = await axios.get(`${ROLE_API_BASE_URL}/${id}`);
+			set({ loading: false });
+			return response.data; // Return the single role
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to get role";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	createRole: async (roleData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(ROLE_API_BASE_URL, roleData, {
+				headers: { Authorization: `Bearer ${user?.token}` }, // Add authorization header
+			});
+			set({ loading: false });
+			notification.success({ message: "Success", description: "Role created successfully." });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to create role";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	updateRole: async (id, roleData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${ROLE_API_BASE_URL}/${id}`, roleData, {
+				headers: { Authorization: `Bearer ${user?.token}` }, // Add authorization header
+			});
+			set({ loading: false });
+			notification.success({ message: "Success", description: "Role updated successfully." });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to update role";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+
+	deleteRole: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${ROLE_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` }, // Add authorization header
+			});
+			set({ loading: false });
+			notification.success({ message: "Success", description: "Role deleted successfully." });
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to delete role";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── imageReportType.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
+import { notification } from "antd";
+
+const IMAGE_REPORT_TYPE_API_BASE_URL = `http://localhost:8080/api/imagereporttypes`;
+
+export const useImageReportTypeStore = create((set, get) => ({
+	imageReportTypes: [],
+	loading: false,
+	totalElements: 0,
+	error: null,
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	fetchImageReportTypes: async (page, size) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(IMAGE_REPORT_TYPE_API_BASE_URL, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				imageReportTypes: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch image report types: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	createImageReportType: async (imageReportTypeData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.post(IMAGE_REPORT_TYPE_API_BASE_URL, imageReportTypeData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Image Report Type Created Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create image report type: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	updateImageReportType: async (id, imageReportTypeData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+
+			await axios.put(`${IMAGE_REPORT_TYPE_API_BASE_URL}/${id}`, imageReportTypeData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Image Report Type Updated Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update image report type: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	deleteImageReportType: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${IMAGE_REPORT_TYPE_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Image Report Type Deleted Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete image report type: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+}));
+
+```
+│   ├── documentType.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service"; // Corrected import
+import { notification } from "antd";
+
+const DOCUMENT_TYPE_API_BASE_URL = `http://localhost:8080/api/documenttypes`;
+
+export const useDocumentTypeStore = create((set, get) => ({
+	// Added get
+	documentTypes: [],
+	loading: false,
+	totalElements: 0,
+	error: null,
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	fetchDocumentTypes: async (page, size) => {
+		set({ loading: true, error: null });
+		try {
+			// Use get() to access the current state.
+			const token = useAuthStore.getState().user?.token; // Get the token
+
+			const response = await axios.get(DOCUMENT_TYPE_API_BASE_URL, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${token}` }, // Use the token here
+			});
+			set({
+				documentTypes: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+			return response;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch document types: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	createDocumentType: async (documentTypeData) => {
+		set({ loading: true, error: null });
+		try {
+			// Use get() to access user
+			const token = useAuthStore.getState().user?.token;
+			await axios.post(DOCUMENT_TYPE_API_BASE_URL, documentTypeData, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Document Type Created Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create document type: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	updateDocumentType: async (id, documentTypeData) => {
+		set({ loading: true, error: null });
+		try {
+			const token = useAuthStore.getState().user?.token;
+			await axios.put(`${DOCUMENT_TYPE_API_BASE_URL}/${id}`, documentTypeData, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			notification.success({
+				message: "Success",
+				description: `Document Type Updated Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update document type: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	deleteDocumentType: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const token = useAuthStore.getState().user?.token;
+			await axios.delete(`${DOCUMENT_TYPE_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Document Type Deleted Successfully`,
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete document type: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+}));
+
+```
+│   ├── assessment.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service"; // Adjust path if needed
+import { notification } from "antd";
+
+const ASSESSMENT_API_BASE_URL = `http://localhost:8080/api/assessments`;
+// PATIENT_API_BASE_URL might be needed if fetching patient details separately
+// const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
+
+// Define the store creator function
+const assessmentStoreCreator = (set, get) => ({
+	// State for assessments list
+	assessments: [],
+	loadingAssessments: false,
+	assessmentPagination: {
+		current: 1,
+		pageSize: 10,
+		total: 0,
+	},
+	assessmentError: null,
+
+	// State for assessment types
+	assessmentTypes: [],
+	loadingTypes: false,
+	typeError: null,
+
+	// State for single assessment type content (optional, if needed globally)
+	selectedTypeContent: null,
+	loadingTypeContent: false,
+	typeContentError: null,
+
+	// Actions
+	setLoadingAssessments: (loading) => set({ loadingAssessments: loading }),
+	setLoadingTypes: (loading) => set({ loadingTypes: loading }),
+	setLoadingTypeContent: (loading) => set({ loadingTypeContent: loading }),
+	clearErrors: () => set({ assessmentError: null, typeError: null, typeContentError: null }),
+
+	// Fetch Paginated Assessments for a specific patient
+	fetchAssessments: async (patientId, page, size) => {
+		if (!patientId) {
+			console.warn("fetchAssessments called without patientId");
+			set({ assessments: [], assessmentPagination: { current: 1, pageSize: size, total: 0 }, loadingAssessments: false });
+			return;
+		}
+		set({ loadingAssessments: true, assessmentError: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.get(`${ASSESSMENT_API_BASE_URL}/patient/${patientId}`, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+
+			const { content, totalElements, number, pageSize } = response.data;
+			set({
+				assessments: content || [],
+				assessmentPagination: {
+					current: number + 1, // API is 0-based
+					pageSize: pageSize,
+					total: totalElements || 0,
+				},
+				loadingAssessments: false,
+			});
+			console.log(`Fetched ${content?.length || 0} assessments for patient ${patientId}`);
+		} catch (error) {
+			const errorMsg = `Failed to fetch assessments: ${error.response?.data?.message || error.message}`;
+			set({
+				assessmentError: errorMsg,
+				loadingAssessments: false,
+				assessments: [],
+				assessmentPagination: { current: 1, pageSize: size, total: 0 },
+			});
+			notification.error({ message: "Error Fetching Assessments", description: errorMsg });
+			// Do not re-throw here, let UI handle the error state
+		}
+	},
+
+	// Fetch Assessment Types (list view - names & display names)
+	fetchAssessmentTypes: async () => {
+		set({ loadingTypes: true, typeError: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.get(TYPE_API_URL, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			set({
+				assessmentTypes: response.data || [],
+				loadingTypes: false,
+			});
+			console.log(`Fetched ${response.data?.length || 0} assessment types`);
+			return response.data;
+		} catch (error) {
+			const errorMsg = `Failed to fetch assessment types: ${error.response?.data?.message || error.message}`;
+			set({ typeError: errorMsg, loadingTypes: false, assessmentTypes: [] });
+			notification.error({ message: "Error Loading Templates", description: errorMsg });
+			// Do not re-throw
+		}
+	},
+
+	// Fetch specific assessment type content by name
+	fetchAssessmentTypeContentByName: async (name) => {
+		if (!name) {
+			set({ selectedTypeContent: null, typeContentError: null, loadingTypeContent: false });
+			return null;
+		}
+		set({ loadingTypeContent: true, typeContentError: null, selectedTypeContent: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.get(`${TYPE_API_URL}/by-name/${name}`, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			const content = response.data?.templateContent;
+			set({
+				selectedTypeContent: content,
+				loadingTypeContent: false,
+			});
+			console.log(`Fetched content for assessment type: ${name}`);
+			return content;
+		} catch (error) {
+			const errorMsg = `Failed to fetch content for type ${name}: ${error.response?.data?.message || error.message}`;
+			set({ typeContentError: errorMsg, loadingTypeContent: false, selectedTypeContent: null });
+			notification.error({ message: "Error Loading Template Content", description: errorMsg });
+			// Do not re-throw
+			return null; // Indicate failure
+		}
+	},
+
+	// Create Assessment (moved loading indicator here)
+	createAssessment: async (assessmentData) => {
+		set({ loadingAssessments: true, assessmentError: null }); // Indicate loading
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+			const response = await axios.post(ASSESSMENT_API_BASE_URL, assessmentData, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			notification.success({ message: "Success", description: "Assessment Created Successfully" });
+			// Optionally: Manually add to assessments state or refetch page
+			// get().fetchAssessments(assessmentData.patientId, 0, get().assessmentPagination.pageSize); // Refetch first page
+			return response.data; // Return created DTO
+		} catch (error) {
+			const errorMsg = `Failed to create assessment: ${error.response?.data?.message || error.message}`;
+			set({ assessmentError: errorMsg });
+			notification.error({ message: "Error Creating Assessment", description: errorMsg });
+			throw error; // Re-throw for form handling
+		} finally {
+			set({ loadingAssessments: false }); // Stop loading indicator
+		}
+	},
+
+	// Update Assessment (moved loading indicator here)
+	updateAssessment: async (id, assessmentData) => {
+		set({ loadingAssessments: true, assessmentError: null }); // Indicate loading
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+			const response = await axios.put(`${ASSESSMENT_API_BASE_URL}/${id}`, assessmentData, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			notification.success({ message: "Success", description: "Assessment Updated Successfully" });
+			// Optionally: Manually update in assessments state or refetch current page
+			// get().fetchAssessments(assessmentData.patientId, get().assessmentPagination.current - 1, get().assessmentPagination.pageSize);
+			return response.data; // Return updated DTO
+		} catch (error) {
+			const errorMsg = `Failed to update assessment: ${error.response?.data?.message || error.message}`;
+			set({ assessmentError: errorMsg });
+			notification.error({ message: "Error Updating Assessment", description: errorMsg });
+			throw error; // Re-throw for form handling
+		} finally {
+			set({ loadingAssessments: false }); // Stop loading indicator
+		}
+	},
+
+	// Delete Assessment
+	deleteAssessment: async (id, patientId) => {
+		set({ loadingAssessments: true, assessmentError: null }); // Indicate loading
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+			await axios.delete(`${ASSESSMENT_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			notification.success({ message: "Success", description: "Assessment Deleted Successfully" });
+			// Refetch the current or previous page after deletion
+			const currentPage = get().assessmentPagination.current;
+			const pageSize = get().assessmentPagination.pageSize;
+			const total = get().assessmentPagination.total;
+			const assessmentsOnCurrentPage = get().assessments.length;
+			const pageToFetch = assessmentsOnCurrentPage === 1 && currentPage > 1 ? currentPage - 2 : currentPage - 1;
+			get().fetchAssessments(patientId, Math.max(0, pageToFetch), pageSize);
+		} catch (error) {
+			const errorMsg = `Failed to delete assessment: ${error.response?.data?.message || error.message}`;
+			set({ assessmentError: errorMsg });
+			notification.error({ message: "Error Deleting Assessment", description: errorMsg });
+			throw error; // Re-throw for potential UI handling
+		} finally {
+			set({ loadingAssessments: false }); // Stop loading indicator
+		}
+	},
+
+	// AI Transcription (moved loading indicator here) - This only triggers the process
+	transcribeAndPopulate: async (formData) => {
+		set({ loadingAssessments: true, assessmentError: null }); // Use general loading/error or specific ones
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			// Log FormData contents (for debugging, be careful with sensitive data)
+			// for (let [key, value] of formData.entries()) {
+			//     console.log(`FormData AI: ${key}: ${value instanceof Blob ? `Blob size ${value.size}` : value}`);
+			// }
+
+			const response = await axios.post(`${ASSESSMENT_API_BASE_URL}/ai/transcribe-and-populate`, formData, {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+					// Content-Type is set automatically
+				},
+				timeout: 120000, // 2 minute timeout
+			});
+			notification.success({ message: "Transcription Success", description: "Assessment notes populated." });
+			return response.data; // Return { updatedHtml: "..." }
+		} catch (error) {
+			const errorMsg = `Transcription failed: ${error.response?.data?.message || error.message}`;
+			set({ assessmentError: errorMsg });
+			notification.error({ message: "Transcription Error", description: errorMsg });
+			throw error; // Re-throw for form handling
+		} finally {
+			set({ loadingAssessments: false });
+		}
+	},
+});
+
+// Create the Zustand store
+export const useAssessmentStore = create(assessmentStoreCreator);
+
+```
+│   ├── patient.service.js:```
+// services/patient.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+
+export const usePatientStore = create((set, get) => ({
+	patients: [],
+	loading: false,
+	error: null,
+	total: 0,
+
+	setPatients: (patients) => set({ patients }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createPatient: async (patientData, profilePicture) => {
+		// ... (Existing createPatient code - No changes needed here)
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"patient",
+				new Blob([JSON.stringify(patientData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+
+			const response = await axios.post(PATIENT_API_BASE_URL, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Patient created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create patient: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getPatientById: async (patientId) => {
+		// ... (Existing getPatientById code - No changes needed here)
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_URL}/${patientId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+
+			notification.error({
+				message: "Error",
+				description: `Failed to get patient: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getAllPatients: async () => {
+		// ... (Existing getAllPatients code - No changes needed here)
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(PATIENT_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get patients: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updatePatient: async (patientId, patientData, profilePicture, removedProfilePictureUrl) => {
+		// ... (Existing updatePatient code - No changes needed here)
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const formData = new FormData();
+			formData.append(
+				"patient",
+				new Blob([JSON.stringify(patientData)], {
+					type: "application/json",
+				})
+			);
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+			if (removedProfilePictureUrl) {
+				formData.append(
+					"removedProfilePictureUrls",
+					new Blob([JSON.stringify([removedProfilePictureUrl])], {
+						type: "application/json",
+					})
+				);
+			}
+			const response = await axios.put(`${PATIENT_API_BASE_URL}/${patientId}`, formData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+					"Content-Type": "multipart/form-data",
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Patient updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update patient: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deletePatient: async (patientId) => {
+		// ... (Existing deletePatient code - No changes needed here)
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PATIENT_API_BASE_URL}/${patientId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Patient deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete patient: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	searchPatients: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			let url;
+
+			// Check if any filter parameters are present
+			if (searchParams.unitId || searchParams.roomId || searchParams.bedId) {
+				// Use the /filter endpoint
+				url = `${PATIENT_API_BASE_URL}/filter?${new URLSearchParams(searchParams).toString()}`;
+			} else {
+				// Use the /search endpoint for text search
+				url = `${PATIENT_API_BASE_URL}/search?${new URLSearchParams(searchParams).toString()}`;
+			}
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			set({
+				loading: false,
+				patients: response.data.content,
+				total: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search patients: ${error.message}`,
+			});
+			throw error; // Re-throw the error so the component can handle it
+		}
+	},
+	searchPatientByFullName: async (name) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PATIENT_API_BASE_URL}/search/name?name=${name}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search patient by name: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── permission.service.js:```
+// src/services/permission.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Import the auth store
+
+const PERMISSION_API_BASE_URL = `http://localhost:8080/api/permissions`;
+
+export const usePermissionStore = create((set) => ({
+	permissions: [],
+	loading: false,
+	error: null,
+
+	fetchAllPermissions: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user; // Get the user from the auth store
+			const response = await axios.get(PERMISSION_API_BASE_URL, {
+				headers: { Authorization: `Bearer ${user?.token}` }, // Add authorization header
+			});
+			set({ permissions: response.data, loading: false });
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Failed to fetch permissions";
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: errorMessage,
+			});
+			throw error; // Re-throw the error for calling components to handle
+		}
+	},
+}));
+
+```
+│   └── history
+│   ├── product-history.service.js:```
+// src/services/history/product-history.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "../auth.service";
+
+const PRODUCT_API_BASE_URL = `http://localhost:8080/api/products`;
+
+export const useProductHistoryStore = create((set, get) => ({
+	productHistory: [],
+	loading: false,
+	error: null,
+	page: 0,
+	size: 10,
+	total: 0,
+	totalPages: 0,
+	setProductHistory: (productHistory) => set({ productHistory }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setPage: (page) => set({ page }),
+	setSize: (size) => set({ size }),
+	setTotal: (total) => set({ total }),
+	setTotalPages: (totalPages) => set({ totalPages }),
+	clearError: () => set({ error: null }),
+
+	fetchProductHistory: async (productId, startDate, endDate, page = 0, size = 10) => {
+		set({ loading: true, error: null, page, size });
+		try {
+			const user = useAuthStore.getState().user;
+			const params = { page, size };
+
+			if (productId) {
+				params.productId = productId;
+			}
+			if (startDate) {
+				params.start = startDate;
+			}
+			if (endDate) {
+				params.end = endDate;
+			}
+
+			const response = await axios.get(`${PRODUCT_API_BASE_URL}/history`, {
+				params,
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			set({
+				productHistory: response.data.history, // Access the correct data fields
+				total: response.data.totalElements,
+				totalPages: response.data.totalPages,
+				loading: false,
+			});
+
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get products history: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	clearProductHistory: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PRODUCT_API_BASE_URL}/history`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				productHistory: [],
+				total: 0,
+				loading: false,
+			});
+			notification.success({
+				message: "Success",
+				description: "Product history cleared successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to clear product history: ${error.message}`,
+			});
+			throw error; // Re-throw the error so the calling function can handle it
+		}
+	},
+}));
+
+```
+│   ├── medication-history.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "../auth.service";
+import moment from "moment";
+
+const MEDICATION_API_BASE_URL = `http://localhost:8080/api/medications`;
+
+export const useMedicationHistoryStore = create((set, get) => ({
+	medicationHistory: [],
+	loading: false,
+	error: null,
+	page: 0,
+	size: 10,
+	total: 0, // Total number of elements
+	totalPages: 0, //total Number of Pages.
+	setMedicationHistory: (medicationHistory) => set({ medicationHistory }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setPage: (page) => set({ page }),
+	setSize: (size) => set({ size }),
+	setTotal: (total) => set({ total }),
+	setTotalPages: (totalPages) => set({ totalPages }),
+	clearError: () => set({ error: null }),
+
+	fetchMedicationHistory: async (medicationId, startDate, endDate, page = 0, size = 10) => {
+		set({ loading: true, error: null, page, size });
+		try {
+			const user = useAuthStore.getState().user;
+
+			// Use axios's params object for ALL query parameters:
+			const params = {
+				page,
+				size,
+			};
+
+			if (medicationId) {
+				params.medicationId = medicationId;
+			}
+			if (startDate) {
+				params.start = startDate;
+			}
+			if (endDate) {
+				params.end = endDate;
+			}
+
+			const response = await axios.get(`${MEDICATION_API_BASE_URL}/history`, {
+				params, // Pass the params object here
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			set({
+				medicationHistory: response.data.history,
+				total: response.data.totalElements,
+				totalPages: response.data.totalPages,
+				loading: false,
+			});
+
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get medications history: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	clearMedicationHistory: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${MEDICATION_API_BASE_URL}/history`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				medicationHistory: [],
+				total: 0,
+				loading: false,
+			});
+			notification.success({
+				message: "Success",
+				description: "Medication history cleared successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to clear medication history: ${error.message}`,
+			});
+			throw error; // Re-throw the error so the calling function can handle it
+		}
+	},
+}));
+
+```
+│   ├── api.js:```
+import axios from "axios";
+import { useAuthStore } from "./auth.service";
+
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
+
+const userApi = axios.create({
+	baseURL: USER_API_BASE_URL,
+});
+
+userApi.interceptors.request.use(
+	(config) => {
+		const user = useAuthStore.getState().user;
+		if (user?.token) {
+			config.headers.Authorization = `Bearer ${user.token}`;
+		}
+		return config;
+	},
+	(error) => {
+		return Promise.reject(error);
+	}
+);
+
+export default userApi;
+
+```
+│   ├── nurseActivity.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const NURSE_ACTIVITY_API_BASE_URL = `http://localhost:8080/api/nurses`;
+
+export const useNurseActivityStore = create((set, get) => ({
+	activities: [],
+	loading: false,
+	error: null,
+	setActivities: (activities) => set({ activities }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	recordActivity: async (nurseId, activityType, patientId, notes) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(
+				`${NURSE_ACTIVITY_API_BASE_URL}/${nurseId}/activities`,
+				{},
+				{
+					params: { activityType, patientId, notes },
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse activity recorded successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to record nurse activity: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getActivityById: async (activityId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_ACTIVITY_API_BASE_URL}/activities/${activityId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get nurse activity: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getAllActivities: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_ACTIVITY_API_BASE_URL}/activities`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get all nurse activities: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getAllActivitiesByNurse: async (nurseId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${NURSE_ACTIVITY_API_BASE_URL}/${nurseId}/activities`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get nurse activities by nurse: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	deleteActivity: async (activityId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${NURSE_ACTIVITY_API_BASE_URL}/activities/${activityId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Nurse activity deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete nurse activity: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── unit.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Import useAuthStore
+
+const UNIT_API_BASE_URL = `http://localhost:8080/api/units`;
+
+export const useUnitStore = create((set, get) => ({
+	units: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setUnits: (units) => set({ units }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createUnit: async (unitData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(UNIT_API_BASE_URL, unitData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Unit created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create unit: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getUnitById: async (unitId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${UNIT_API_BASE_URL}/${unitId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get unit: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllUnits: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(UNIT_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ units: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get units: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateUnit: async (unitId, unitData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${UNIT_API_BASE_URL}/${unitId}`, unitData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Unit updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update unit: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteUnit: async (unitId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${UNIT_API_BASE_URL}/${unitId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Unit deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete unit: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchUnits: async (searchTerm) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+
+			const response = await axios.get(`${UNIT_API_BASE_URL}/search?searchTerm=${searchTerm}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			set({
+				loading: false,
+				units: response.data,
+				total: response.data.length,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search unit: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── auth.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+
+const API_URL = `http://localhost:8080/api/auth`;
+const API_VOICE_URL = `http://localhost:8080/api/analyze-voice`;
+
+export const useAuthStore = create((set, get) => ({
+	user: JSON.parse(localStorage.getItem("user")) || null,
+	status: "idle", //  'idle', 'loading', 'success', 'failed'
+	error: null,
+
+	hasAuthority: (permission) => {
+		const user = get().user;
+		if (!user || !user.authorities) {
+			return false;
+		}
+		return user.authorities.some((auth) => auth === permission); //check entire value
+	},
+
+	setUser: (user) => {
+		set({ user });
+	},
+	setStatus: (status) => {
+		set({ status });
+	},
+	setError: (error) => {
+		set({ error });
+	},
+	clearError: () => {
+		set({ error: null });
+	},
+
+	analyzeAudio: async (audioBase64) => {
+		// ... (your analyzeAudio function remains the same) ...
+		try {
+			const response = await axios.post(
+				API_VOICE_URL,
+				{
+					audio: audioBase64,
+				},
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+				}
+			);
+			return response.data.analysis;
+		} catch (error) {
+			console.error("Error analyzing audio", error);
+			return "undetermined";
+		}
+	},
+
+	login: async (username, password) => {
+		set({ status: "loading", error: null });
+		try {
+			const response = await axios.post(API_URL + "/login", {
+				username,
+				password,
+			});
+
+			if (response.data.token) {
+				localStorage.setItem("user", JSON.stringify(response.data));
+				set({ user: response.data, status: "success" }); // Set status to "success"
+				return response.data;
+			} else {
+				// Handle the case where the login was successful, but no token was returned.
+				set({ status: "success", user: response.data, error: null }); // Still success, but potentially incomplete data.
+				console.warn("Login successful, but no token received.", response.data);
+				return response.data; // Or perhaps throw new Error("No token received");
+			}
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message || "Login failed";
+			set({ error: errorMessage, status: "failed" });
+			// Don't re-throw; handled by setting status and error
+			throw new Error(errorMessage); // so it can catch the error in login
+		}
+	},
+
+	logout: () => {
+		localStorage.removeItem("user");
+		set({ user: null, status: "idle" }); // Reset status on logout
+	},
+
+	register: async (username, password, roleId, firstName, lastName, specialty, unitIds, profilePicture) => {
+		set({ status: "loading", error: null });
+		try {
+			const formData = new FormData();
+			formData.append(
+				"user",
+				new Blob(
+					[
+						JSON.stringify({
+							username,
+							password,
+							roleId,
+							firstName,
+							lastName,
+							specialty,
+							unitIds,
+						}),
+					],
+					{ type: "application/json" }
+				)
+			);
+
+			if (profilePicture) {
+				formData.append("profilePicture", profilePicture);
+			}
+
+			const response = await axios.post(API_URL + "/register", formData, {
+				headers: {
+					"Content-Type": "multipart/form-data", // Correct header!
+				},
+			});
+			console.log("Registration success, user data:", response.data);
+			set({ status: "success" }); // Set status to 'success'
+			return response.data;
+		} catch (error) {
+			console.log("Registration error:", error);
+			const errorMessage = error.response?.data?.message || error.message || "Registration failed";
+			set({ error: errorMessage, status: "failed" });
+			throw error;
+		}
+	},
+
+	getCurrentUser: () => {
+		return JSON.parse(localStorage.getItem("user"));
+	},
+}));
+
+```
+│   ├── billing.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Assuming this path
+
+const BILLING_API_BASE_URL = `http://localhost:8080/api/billings`;
+
+export const useBillingStore = create((set, get) => ({
+	billings: [],
+	loading: false,
+	error: null,
+	page: 0,
+	pageSize: 10,
+	totalElements: 0,
+	totalPages: 0,
+	activeBill: null,
+
+	setBillings: (billings) => set({ billings }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setActiveBill: (activeBill) => set({ activeBill }),
+	setPage: (page) => set({ page }),
+	clearError: () => set({ error: null }),
+	resetBillings: () => set({ billings: [], totalElements: 0 }),
+
+	fetchActiveBill: async (patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${BILLING_API_BASE_URL}/active?patientId=${patientId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+
+			set({ activeBill: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get active bill : ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchBillings: async (page = get().page, pageSize = get().pageSize, patientId = null) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			let url = `${BILLING_API_BASE_URL}?page=${page}&size=${pageSize}`;
+			if (patientId) {
+				url += `&patientId=${patientId}`;
+			}
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ billings: response.data.content });
+			set({ totalPages: response.data.totalPages });
+			set({ totalElements: response.data.totalElements });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get billings : ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchBillingById: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${BILLING_API_BASE_URL}/${id}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get billing : ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	createPayment: async (billingId, paymentData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(`${BILLING_API_BASE_URL}/${billingId}/payments`, paymentData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Payment added successfully!",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create payment : ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	updateBilling: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(
+				`${BILLING_API_BASE_URL}/${id}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update billing : ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── medication.service.js:```
+// medication.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const MEDICATION_API_BASE_URL = `http://localhost:8080/api/medications`;
+
+export const useMedicationStore = create((set, get) => ({
+	// ... (other store properties and functions) ...
+	medications: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setMedications: (medications) => set({ medications }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createMedication: async (medicationData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(MEDICATION_API_BASE_URL, medicationData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create medication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateMedication: async (medicationId, medicationData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${MEDICATION_API_BASE_URL}/${medicationId}`, medicationData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update medication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getMedicationById: async (medicationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${MEDICATION_API_BASE_URL}/${medicationId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get medication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllMedications: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(MEDICATION_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			const medicationsWithStock = response.data.map((med) => ({
+				...med,
+				stock: med.stock, // The backend already calculates this
+			}));
+			set({ medications: medicationsWithStock });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get medications: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteMedication: async (medicationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${MEDICATION_API_BASE_URL}/${medicationId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete medication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	// Replace increaseStock and decreaseStock with addBatch
+	addBatch: async (medicationId, batchData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(`${MEDICATION_API_BASE_URL}/${medicationId}/add-batch`, batchData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication batch added successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to add medication batch: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	updateBatch: async (batchId, batchData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${MEDICATION_API_BASE_URL}/batches/${batchId}`, batchData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication batch updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update medication batch: ${error.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw to be handled by caller
+		}
+	},
+
+	deleteBatch: async (batchId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${MEDICATION_API_BASE_URL}/batches/${batchId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Medication batch deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete medication batch: ${error.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw for consistent error handling
+		}
+	},
+
+	searchMedications: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { searchTerm, page = 0, size = 10 } = searchParams;
+			let url = `${MEDICATION_API_BASE_URL}/search?page=${page}&size=${size}`;
+
+			if (searchTerm) {
+				url += `&searchTerm=${searchTerm}`;
+			}
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				medications: response.data,
+				total: response.data.length, // This might need adjustment, see below
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search medications: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	// ADD THIS FUNCTION:
+	getBatchesForMedication: async (medicationId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${MEDICATION_API_BASE_URL}/${medicationId}/batches`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data; // Return the array of batches
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get batches for medication: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Important: Re-throw the error so the calling component can handle it
+		}
+	},
+}));
+
+```
+│   ├── procedure.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const PROCEDURE_API_BASE_URL = `http://localhost:8080/api/procedures`;
+
+export const useProcedureStore = create((set, get) => ({
+	procedures: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setProcedures: (procedures) => set({ procedures }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createProcedure: async (procedureData) => {
+		console.log("createProcedure - Start", { procedureData });
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(PROCEDURE_API_BASE_URL, procedureData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			console.log("createProcedure - Success", { response });
+			notification.success({
+				message: "Success",
+				description: "Procedure created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			console.error("createProcedure - Error", error);
+			notification.error({
+				message: "Error",
+				description: `Failed to create procedure: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getProcedureById: async (procedureId) => {
+		console.log("getProcedureById - Start", { procedureId });
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PROCEDURE_API_BASE_URL}/${procedureId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			console.log("getProcedureById - Success", { response });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			console.error("getProcedureById - Error", error);
+			notification.error({
+				message: "Error",
+				description: `Failed to get procedure: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getAllProcedures: async () => {
+		console.log("getAllProcedures - Start");
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(PROCEDURE_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			console.log("getAllProcedures - Success", { response });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			console.error("getAllProcedures - Error", error);
+			notification.error({
+				message: "Error",
+				description: `Failed to get procedures: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateProcedure: async (procedureId, procedureData) => {
+		console.log("updateProcedure - Start", { procedureId, procedureData });
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${PROCEDURE_API_BASE_URL}/${procedureId}`, procedureData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			console.log("updateProcedure - Success", { response });
+			notification.success({
+				message: "Success",
+				description: "Procedure updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			console.error("updateProcedure - Error", error);
+			notification.error({
+				message: "Error",
+				description: `Failed to update procedure: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteProcedure: async (procedureId) => {
+		console.log("deleteProcedure - Start", { procedureId });
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PROCEDURE_API_BASE_URL}/${procedureId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			console.log("deleteProcedure - Success");
+			notification.success({
+				message: "Success",
+				description: "Procedure deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			console.error("deleteProcedure - Error", error);
+			notification.error({
+				message: "Error",
+				description: `Failed to delete procedure: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	searchProcedures: async (searchParams) => {
+		console.log("searchProcedures - Start", { searchParams });
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const params = new URLSearchParams(searchParams).toString();
+			const response = await axios.get(`${PROCEDURE_API_BASE_URL}/search?${params}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			if (response.status === 401) {
+				// Handle logout if needed
+				console.log("User needs to log out");
+				return;
+			}
+
+			const { content, totalElements } = response.data;
+			// Update state based on the paginated response
+			set({
+				loading: false,
+				procedures: content,
+				total: totalElements,
+			});
+			console.log("searchProcedures - Success", { content, totalElements });
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			console.error("searchProcedures - Error", error);
+			notification.error({
+				message: "Error",
+				description: `Failed to search procedures: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── activity.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const ACTIVITY_API_BASE_URL = `http://localhost:8080/api/activities`;
+
+export const useActivityStore = create((set, get) => ({
+	allActivities: [],
+	userActivities: [],
+	loading: false,
+	error: null,
+	currentActivity: null,
+
+	setAllActivities: (allActivities) => set({ allActivities }),
+	setUserActivities: (userActivities) => set({ userActivities }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+	setCurrentActivity: (currentActivity) => set({ currentActivity }),
+
+	// --- Activity Creation ---
+	createActivity: async (activityData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(ACTIVITY_API_BASE_URL, activityData, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Activity created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.response?.data?.message || error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create activity: ${error.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	// --- Get Activities for User ---
+	getAvailableActivitiesForUser: async (userId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${ACTIVITY_API_BASE_URL}/user/${userId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false, userActivities: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.response?.data?.message || error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get activities for user: ${error.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	getActivityById: async (activityId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${ACTIVITY_API_BASE_URL}/${activityId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false, currentActivity: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.response?.data?.message || error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get activity: ${error.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	// --- Update Activity State ---
+	updateActivityState: async (activityId, state) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(
+				`${ACTIVITY_API_BASE_URL}/${activityId}/state/${state}`,
+				{},
+				{
+					headers: { Authorization: `Bearer ${user?.token}` },
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Activity state updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.response?.data?.message || error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update activity state: ${error.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	// --- Get All Activities ---
+	getAllActivities: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${ACTIVITY_API_BASE_URL}/all`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false, allActivities: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.response?.data?.message || error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get all activities: ${error.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	// --- Delete Activity ---
+	deleteActivity: async (activityId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${ACTIVITY_API_BASE_URL}/${activityId}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Activity deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.response?.data?.message || error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete activity: ${error.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── dashboardStore.service.js:```
+// src/services/dashboardStore.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service"; // Make sure this path is correct
+
+const DASHBOARD_API_BASE_URL = "http://localhost:8080/api/dashboard";
+
+export const useDashboardStore = create((set, get) => ({
+	admissionCount: null, // Not needed for trend, keep if used elsewhere
+	loading: false,
+	error: null,
+
+	// Keep fetchAdmissionCount if other parts of your app use it.
+	setAdmissionCount: (count) => set({ admissionCount: count }), // Keep if used elsewhere
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	fetchAdmissionTrend: async (startDateString, endDateString, includeOpen, includeFuture, includePast) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/admissions/trend`, {
+				// New endpoint
+				params: {
+					startDate: startDateString, // Pass strings directly
+					endDate: endDateString,
+					includeOpen,
+					includeFuture,
+					includePast,
+				},
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			// Return the data directly.  No need to set in Zustand
+			return response.data;
+		} catch (error) {
+			set({
+				loading: false,
+				error: error.message,
+				admissionCount: null, // Might not be needed
+			});
+			// Handle 401 Unauthorized (e.g., redirect to login)
+			if (error.response && error.response.status === 401) {
+				localStorage.removeItem("user"); // Clear user data
+				window.location.href = "/login"; // Redirect to login page
+			} else {
+				notification.error({
+					message: "Error",
+					description: `Failed to fetch admission trend: ${error?.response?.data?.message || error.message}`,
+				});
+			}
+
+			throw error; // Re-throw the error so the calling component can handle it if needed
+		}
+	},
+	// Keep if used somewhere else in the code.
+	fetchAdmissionCount: async (startDateString, endDateString, includeOpen, includeFuture, includePast) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/admissions/count`, {
+				params: {
+					startDate: startDateString, // Pass strings directly
+					endDate: endDateString,
+					includeOpen,
+					includeFuture,
+					includePast,
+				},
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false, admissionCount: response.data.admissionCount });
+			return response.data.admissionCount;
+		} catch (error) {
+			set({
+				loading: false,
+				error: error.message,
+				admissionCount: null,
+			});
+			// Handle 401 Unauthorized (e.g., redirect to login)
+			if (error.response && error.response.status === 401) {
+				localStorage.removeItem("user"); // Clear user data
+				window.location.href = "/login"; // Redirect to login page
+			} else {
+				notification.error({
+					message: "Error",
+					description: `Failed to fetch admission count: ${error?.response?.data?.message || error.message}`,
+				});
+			}
+
+			throw error; // Re-throw the error so the calling component can handle it if needed
+		}
+	},
+	fetchPaymentStatistics: async (startDateString, endDateString) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/payments/statistics`, {
+				params: {
+					startDate: startDateString,
+					endDate: endDateString,
+				},
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // Return the PaymentStatisticsDTO
+		} catch (error) {
+			set({ loading: false, error: error.message });
+			// Handle 401 Unauthorized (e.g., redirect to login)
+			if (error.response && error.response.status === 401) {
+				localStorage.removeItem("user"); // Clear user data
+				window.location.href = "/login"; // Redirect to login page
+			} else {
+				notification.error({
+					message: "Error",
+					description: `Failed to fetch payment statistics: ${error?.response?.data?.message || error.message}`,
+				});
+			}
+			throw error; // Important for component error handling
+		}
+	},
+	// src/services/dashboardStore.js
+
+	fetchPaymentTrend: async (startDateString, endDateString) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/payments/trend`, {
+				// Use the new endpoint
+				params: {
+					startDate: startDateString,
+					endDate: endDateString,
+				},
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // Return the list of PaymentTrendDTO objects
+		} catch (error) {
+			set({ loading: false, error: error.message });
+			// Handle 401 Unauthorized (e.g., redirect to login)
+			if (error.response && error.response.status === 401) {
+				localStorage.removeItem("user"); // Clear user data
+				window.location.href = "/login"; // Redirect to login page
+			} else {
+				notification.error({
+					message: "Error",
+					description: `Failed to fetch payment trend: ${error?.response?.data?.message || error.message}`,
+				});
+			}
+			throw error;
+		}
+	},
+
+	// Bed Availability
+	fetchBedAvailability: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/availability`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // BedAvailabilityDTO
+		} catch (error) {
+			handleRequestError(error, "bed availability");
+		}
+	},
+
+	// Bed Occupancy by Unit
+	fetchOccupancyByUnit: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/occupancy`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // List<BedOccupancyDTO>
+		} catch (error) {
+			handleRequestError(error, "bed occupancy");
+		}
+	},
+
+	// Critical Capacity Alerts
+	fetchCriticalCapacityAlerts: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/alerts/critical-capacity`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // List<CriticalCapacityAlertDTO>
+		} catch (error) {
+			handleRequestError(error, "critical capacity alerts");
+		}
+	},
+
+	// Bed Counts by Room Type and Unit
+	fetchBedCountsByRoomTypeAndUnit: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/beds/availability/by-room-type`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // Map<String, Map<String, Long>>
+		} catch (error) {
+			handleRequestError(error, "bed counts by room type and unit");
+		}
+	},
+	// Patient Status Overview
+	fetchPatientStatusOverview: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${DASHBOARD_API_BASE_URL}/patients/status`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			return response.data; // PatientStatusOverviewDTO
+		} catch (error) {
+			handleRequestError(error, "patient status overview");
+		}
+	},
+}));
+
+const handleRequestError = (error, endpoint) => {
+	const useDashboardStore = get(); // Correctly get the store
+	useDashboardStore.setLoading(false);
+	useDashboardStore.setError(error.message);
+
+	if (error.response && error.response.status === 401) {
+		localStorage.removeItem("user");
+		window.location.href = "/login";
+	} else {
+		notification.error({
+			message: "Error",
+			description: `Failed to fetch ${endpoint}: ${error.response?.data?.message || error.message}`,
+		});
+	}
+	throw error; // Re-throw to allow component-level handling
+};
+
+```
+│   ├── product.service.js:```
+// src/services/product.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const PRODUCT_API_BASE_URL = `http://localhost:8080/api/products`;
+
+export const useProductStore = create((set, get) => ({
+	products: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setProducts: (products) => set({ products }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createProduct: async (productData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(PRODUCT_API_BASE_URL, productData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Product created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create product: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateProduct: async (productId, productData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${PRODUCT_API_BASE_URL}/${productId}`, productData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Product updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update product: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getProductById: async (productId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PRODUCT_API_BASE_URL}/${productId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get product: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllProducts: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(PRODUCT_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ products: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get products: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteProduct: async (productId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PRODUCT_API_BASE_URL}/${productId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Product deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete product: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchProducts: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { searchTerm, page = 0, size = 10 } = searchParams;
+			let url = `${PRODUCT_API_BASE_URL}/search?page=${page}&size=${size}`;
+			if (searchTerm) {
+				url += `&searchTerm=${searchTerm}`;
+			}
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				products: response.data.content, // Access content array from the backend response
+				total: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search products: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	increaseStock: async (productId, quantity) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.patch(
+				`${PRODUCT_API_BASE_URL}/${productId}/increase-stock?quantity=${quantity}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Stock increased successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to increase stock: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	decreaseStock: async (productId, quantity) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.patch(
+				`${PRODUCT_API_BASE_URL}/${productId}/decrease-stock?quantity=${quantity}`,
+				{},
+				{
+					headers: {
+						Authorization: `Bearer ${user?.token}`,
+					},
+				}
+			);
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Stock decreased successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to decrease stock: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── admission.service.js:```
+// admission.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const ADMISSION_API_BASE_URL = `http://localhost:8080/api/admissions`;
+const ADMISSION_TYPE_API_BASE_URL = `http://localhost:8080/api/admissionTypes`;
+
+export const useAdmissionStore = create((set, get) => ({
+	admissions: [],
+	admissionTypes: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setAdmissions: (admissions) => set({ admissions }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+	setAdmissionTypes: (admissionTypes) => set({ admissionTypes }),
+
+	fetchAllAdmissionTypes: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(ADMISSION_TYPE_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false, admissionTypes: response.data });
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get admission types: ${error?.response?.data?.message || error.message}`,
+			});
+		}
+	},
+
+	createAdmissionType: async (admissionTypeData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(ADMISSION_TYPE_API_BASE_URL, admissionTypeData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Admission type created successfully.",
+			});
+			get().fetchAllAdmissionTypes(); // Fetch updated types
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create admission type: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw the error so the calling component can handle it if needed.
+		}
+	},
+
+	updateAdmissionType: async (admissionTypeId, admissionTypeData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${ADMISSION_TYPE_API_BASE_URL}/${admissionTypeId}`, admissionTypeData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Admission type updated successfully.",
+			});
+			get().fetchAllAdmissionTypes(); // Refresh the list
+			return response.data; // Return the updated data
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update admission type: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deleteAdmissionType: async (admissionTypeId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${ADMISSION_TYPE_API_BASE_URL}/${admissionTypeId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Admission type deleted successfully.",
+			});
+			get().fetchAllAdmissionTypes(); // Refresh the list
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete admission type: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	createAdmission: async (admissionData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(ADMISSION_API_BASE_URL, admissionData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Admission created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create admission: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw for component-level handling
+		}
+	},
+
+	getAdmissionById: async (admissionId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${ADMISSION_API_BASE_URL}/${admissionId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get admission: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllAdmissions: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(ADMISSION_API_BASE_URL, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ admissions: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get admissions: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchOpenAdmissions: async () => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${ADMISSION_API_BASE_URL}/open`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			set({ admissions: response.data });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get open admissions: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	updateAdmission: async (admissionId, admissionData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${ADMISSION_API_BASE_URL}/${admissionId}`, admissionData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Admission updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update admission: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw for component-level handling
+		}
+	},
+
+	deleteAdmission: async (admissionId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${ADMISSION_API_BASE_URL}/${admissionId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Admission deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete admission: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error; // Re-throw for component-level handling
+		}
+	},
+	searchAdmissions: async (searchParams) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const { patientId, bedId, page = 0, size = 10 } = searchParams;
+			let url = `${ADMISSION_API_BASE_URL}?page=${page}&size=${size}`;
+
+			if (patientId) {
+				url += `&patientId=${patientId}`;
+			}
+			if (bedId) {
+				url += `&bedId=${bedId}`;
+			}
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				admissions: response.data,
+				total: response.data.length,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search admissions: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```
+│   ├── lab.service.js:```
+// lab.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service";
+import { notification } from "antd";
+
+const LAB_TEST_API_BASE_URL = `http://localhost:8080/api/lab-tests`;
+const LAB_RESULT_API_BASE_URL = `http://localhost:8080/api/lab-results`;
+
+export const useLabStore = create((set, get) => ({
+	labTests: [],
+	labResults: [],
+	loading: false,
+	totalElements: 0,
+	error: null,
+
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	clearError: () => set({ error: null }),
+
+	fetchLabTests: async (searchTerm = "", testCode = "") => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(LAB_TEST_API_BASE_URL, {
+				params: { testName: searchTerm, testCode: testCode },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				labTests: response.data,
+				loading: false,
+			});
+			return response.data;
+		} catch (error) {
+			handleError(error, "Failed to fetch lab tests");
+			throw error;
+		}
+	},
+
+	createLabTest: async (labTestData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(LAB_TEST_API_BASE_URL, labTestData, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Lab Test created successfully: ${response.data.testName}`,
+			});
+			return response.data;
+		} catch (error) {
+			handleError(error, "Failed to create lab test");
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	// Add updateLabTest function
+	updateLabTest: async (id, labTestData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${LAB_TEST_API_BASE_URL}/${id}`, labTestData, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Lab Test updated successfully: ${response.data.testName}`,
+			});
+			return response.data;
+		} catch (error) {
+			handleError(error, "Failed to update lab test");
+			throw error; // Re-throw the error for the component to handle
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	deleteLabTest: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${LAB_TEST_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: "Lab Test deleted successfully",
+			});
+			// No need to return anything from a delete operation
+		} catch (error) {
+			// Check for the specific error structure
+			if (error.response && error.response.status === 400 && error.response.data.message) {
+				handleError({ message: error.response.data.message }, "Failed to delete lab test");
+			} else if (error.response && error.response.status === 404) {
+				handleError({ message: error.response.data }, "Failed to delete lab test");
+			} else {
+				handleError(error, "Failed to delete lab test");
+			}
+			throw error; // IMPORTANT: Re-throw for component handling
+		} finally {
+			set({ loading: false });
+		}
+	},
+	fetchLabResults: async (page, size, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${LAB_RESULT_API_BASE_URL}/patient/${patientId}`, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({
+				labResults: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+		} catch (error) {
+			handleError(error, "Failed to fetch lab results");
+			throw error;
+		}
+	},
+
+	createLabResult: async (labResultData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(LAB_RESULT_API_BASE_URL, labResultData, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			notification.success({
+				message: "Success",
+				description: `Lab Result created successfully: ${response.data.id}`,
+			});
+			return response.data;
+		} catch (error) {
+			handleError(error, "Failed to create lab result");
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	getLabResultById: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${LAB_RESULT_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			return response.data;
+		} catch (error) {
+			handleError(error, "Failed to get lab result");
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+}));
+
+const handleError = (error, message) => {
+	notification.error({
+		message: "Error",
+		description: `${message}: ${error.message}`,
+	});
+};
+
+```
+│   ├── useAssessmentTypeStore.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service"; // Adjust path if needed
+import { notification } from "antd";
+
+const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
+
+export const useAssessmentTypeStore = create((set, get) => ({
+	// State
+	types: [], // List of types (usually without content)
+	loadingList: false,
+	loadingDetail: false, // For fetching single type with content
+	loadingSubmit: false, // For create/update/delete actions
+	error: null,
+
+	// Actions
+	clearError: () => set({ error: null }),
+
+	// Fetch list of types (name, displayName)
+	fetchTypes: async () => {
+		set({ loadingList: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.get(TYPE_API_URL, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			set({ types: response.data || [], loadingList: false });
+			console.log("Fetched assessment types list:", response.data);
+			return response.data;
+		} catch (error) {
+			const errorMsg = `Failed to fetch assessment types: ${error.response?.data?.message || error.message}`;
+			console.error(errorMsg, error);
+			set({ error: errorMsg, loadingList: false, types: [] });
+			notification.error({ message: "Error Loading Types", description: errorMsg });
+			// Don't rethrow, let UI handle state
+			return []; // Return empty array on error
+		}
+	},
+
+	// Fetch a single type by ID (including content) - needed for editing
+	fetchTypeById: async (id) => {
+		set({ loadingDetail: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.get(`${TYPE_API_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			set({ loadingDetail: false });
+			console.log("Fetched assessment type detail:", response.data);
+			return response.data; // Return the full DTO
+		} catch (error) {
+			const errorMsg = `Failed to fetch assessment type ${id}: ${error.response?.data?.message || error.message}`;
+			console.error(errorMsg, error);
+			set({ error: errorMsg, loadingDetail: false });
+			notification.error({ message: `Error Loading Type ${id}`, description: errorMsg });
+			return null; // Indicate failure
+		}
+	},
+
+	// Create a new assessment type
+	createType: async (typeData) => {
+		set({ loadingSubmit: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.post(TYPE_API_URL, typeData, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			set({ loadingSubmit: false });
+			notification.success({ message: "Success", description: "Assessment type created successfully." });
+			get().fetchTypes(); // Refresh the list after creating
+			return response.data; // Return created object
+		} catch (error) {
+			const errorMsg = `Failed to create assessment type: ${error.response?.data?.message || error.message}`;
+			console.error(errorMsg, error);
+			set({ error: errorMsg, loadingSubmit: false });
+			notification.error({ message: "Error Creating Type", description: errorMsg });
+			throw error; // Re-throw so the form knows submission failed
+		}
+	},
+
+	// Update an existing assessment type
+	updateType: async (id, typeData) => {
+		set({ loadingSubmit: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			const response = await axios.put(`${TYPE_API_URL}/${id}`, typeData, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			set({ loadingSubmit: false });
+			notification.success({ message: "Success", description: "Assessment type updated successfully." });
+			get().fetchTypes(); // Refresh the list after updating
+			return response.data; // Return updated object
+		} catch (error) {
+			const errorMsg = `Failed to update assessment type ${id}: ${error.response?.data?.message || error.message}`;
+			console.error(errorMsg, error);
+			set({ error: errorMsg, loadingSubmit: false });
+			notification.error({ message: `Error Updating Type ${id}`, description: errorMsg });
+			throw error; // Re-throw so the form knows submission failed
+		}
+	},
+
+	// Delete an assessment type
+	deleteType: async (id) => {
+		set({ loadingSubmit: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			if (!user?.token) throw new Error("User not authenticated.");
+
+			await axios.delete(`${TYPE_API_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user.token}` },
+			});
+			set({ loadingSubmit: false });
+			notification.success({ message: "Success", description: "Assessment type deleted successfully." });
+			get().fetchTypes(); // Refresh the list after deleting
+			return true; // Indicate success
+		} catch (error) {
+			const errorMsg = `Failed to delete assessment type ${id}: ${error.response?.data?.message || error.message}`;
+			console.error(errorMsg, error);
+			set({ error: errorMsg, loadingSubmit: false });
+			notification.error({ message: `Error Deleting Type ${id}`, description: errorMsg });
+			return false; // Indicate failure
+		}
+	},
+}));
+
+```
+│   ├── vitalSign.service.js:```
+// vitalSign.service.js
+import axios from "axios";
+import { create } from "zustand";
+import { useAuthStore } from "./auth.service";
+import { notification } from "antd";
+
+const VITAL_SIGNS_API_BASE_URL = `http://localhost:8080/api/vital-signs`;
+
+export const useVitalSignStore = create((set, get) => ({
+	vitalSigns: [],
+	loading: false,
+	totalElements: 0,
+	error: null,
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setVitalSigns: (vitalSigns) => set({ vitalSigns }),
+	clearError: () => set({ error: null }),
+	fetchVitalSigns: async (page, size, patientId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${VITAL_SIGNS_API_BASE_URL}/patient/${patientId}`, {
+				params: { page, size },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			console.log("fetchVitalSigns response:", response.data);
+			set({
+				vitalSigns: response.data.content,
+				totalElements: response.data.totalElements,
+				loading: false,
+			});
+		} catch (error) {
+			console.error("Error fetching vital signs:", error);
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch vital signs: ${error.message}`,
+			});
+			throw error;
+		}
+	},
+	createVitalSign: async (vitalSignData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(VITAL_SIGNS_API_BASE_URL, vitalSignData, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			console.log("createVitalSign response:", response.data);
+			notification.success({
+				message: "Success",
+				description: `Vital sign Created Successfully`,
+			});
+		} catch (error) {
+			console.error("Error creating vital sign:", error);
+			set({ loading: false });
+			if (error.response && error.response.data && error.response.data.errors) {
+				// Extract error messages from the server's response
+				const errorMessages = error.response.data.errors.map((err) => err.defaultMessage).join(", ");
+				notification.error({
+					message: "Error",
+					description: `Failed to create vital sign: ${errorMessages}`,
+				});
+			} else {
+				// Handle other errors
+				notification.error({
+					message: "Error",
+					description: `Failed to create vital sign: ${error.message}`,
+				});
+			}
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	updateVitalSign: async (id, vitalSignData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${VITAL_SIGNS_API_BASE_URL}/${id}`, vitalSignData, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			console.log("updateVitalSign response:", response.data);
+			notification.success({
+				message: "Success",
+				description: `Vital sign updated Successfully`,
+			});
+		} catch (error) {
+			console.error("Error updating vital sign:", error);
+			set({ loading: false });
+			if (error.response && error.response.data && error.response.data.errors) {
+				// Extract error messages from the server's response
+				const errorMessages = error.response.data.errors.map((err) => err.defaultMessage).join(", ");
+				notification.error({
+					message: "Error",
+					description: `Failed to update vital sign: ${errorMessages}`,
+				});
+			} else {
+				// Handle other errors
+				notification.error({
+					message: "Error",
+					description: `Failed to update vital sign: ${error.message}`,
+				});
+			}
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+	deleteVitalSign: async (id) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.delete(`${VITAL_SIGNS_API_BASE_URL}/${id}`, {
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			console.log("deleteVitalSign response:", response.data);
+			notification.success({
+				message: "Success",
+				description: `Vital sign Deleted Successfully`,
+			});
+		} catch (error) {
+			console.error("Error deleting vital sign:", error);
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete vital sign: ${error.message}`,
+			});
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+}));
+
+```
+│   ├── prescription.service.js:```
+import axios from "axios";
+import { create } from "zustand";
+import { notification } from "antd";
+import { useAuthStore } from "./auth.service";
+
+const PRESCRIPTION_API_BASE_URL = `http://localhost:8080/api/prescriptions`;
+
+export const usePrescriptionStore = create((set, get) => ({
+	prescriptions: [],
+	loading: false,
+	error: null,
+	total: 0,
+	setPrescriptions: (prescriptions) => set({ prescriptions }),
+	setLoading: (loading) => set({ loading }),
+	setError: (error) => set({ error }),
+	setTotal: (total) => set({ total }),
+	clearError: () => set({ error: null }),
+
+	createPrescription: async (prescriptionData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.post(PRESCRIPTION_API_BASE_URL, prescriptionData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Prescription created successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to create prescription: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	updatePrescription: async (prescriptionId, prescriptionData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.put(`${PRESCRIPTION_API_BASE_URL}/${prescriptionId}`, prescriptionData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Prescription updated successfully.",
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to update prescription: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	getPrescriptionById: async (prescriptionId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PRESCRIPTION_API_BASE_URL}/${prescriptionId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get prescription: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchPrescriptionsByPatientId: async (patientId, page = 0, size = 10) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${PRESCRIPTION_API_BASE_URL}/patient/${patientId}`, {
+				params: { page, size },
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				prescriptions: response.data.content,
+				total: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch prescriptions for patient: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	fetchAllPrescriptions: async (page = 0, size = 10) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(PRESCRIPTION_API_BASE_URL, {
+				params: { page, size },
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({
+				loading: false,
+				prescriptions: response.data.content,
+				total: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to get prescriptions: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+
+	deletePrescription: async (prescriptionId) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			await axios.delete(`${PRESCRIPTION_API_BASE_URL}/${prescriptionId}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			set({ loading: false });
+			notification.success({
+				message: "Success",
+				description: "Prescription deleted successfully.",
+			});
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to delete prescription: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	searchPrescriptions: async (searchParams, page = 0, size = 10) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+
+			const params = new URLSearchParams(searchParams).toString();
+
+			const response = await axios.get(`${PRESCRIPTION_API_BASE_URL}/search?${params}`, {
+				params: { page, size },
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			if (response.status === 401) {
+				//handle logout
+				console.log("user needs to log out");
+				return;
+			}
+
+			set({
+				loading: false,
+				prescriptions: response.data.content,
+				total: response.data.totalElements,
+			});
+			return response.data;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to search prescriptions: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+}));
+
+```

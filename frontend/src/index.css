@@ -1033,7 +1033,7 @@
 /* Works on Firefox */
 html {
 	scrollbar-width: thin;
-	scrollbar-color: blue rgb(255, 255, 255);
+	scrollbar-color: rgb(0, 0, 0) rgb(255, 255, 255);
 }
 
 /* Works on Chrome, Edge, and Safari */
@@ -1045,7 +1045,7 @@ body::-webkit-scrollbar-track {
 }
 
 body::-webkit-scrollbar-thumb {
-	background-color: blue;
+	background-color: rgb(0, 0, 0);
 	border-radius: 20px;
 	border: 3px solid orange;
 }

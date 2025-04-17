@@ -1,4 +1,3 @@
-// frontend/src/components/appointments/AppointmentFormModal.js
 import React, { useState, useEffect } from "react";
 import { Modal, Form, Input, DatePicker, Select, Button, message } from "antd";
 import moment from "moment";
@@ -6,14 +5,16 @@ import { usePatientStore } from "../../services/patient.service";
 import { useUserStore } from "../../services/user.service";
 import { useProductStore } from "../../services/product.service";
 import { useAuthStore } from "../../services/auth.service";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const { Option } = Select;
 
 const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointment }) => {
+	const { t } = useTranslation(); // Initialize useTranslation
 	const [form] = Form.useForm();
-	const { patients, searchPatients, loading: patientsLoading } = usePatientStore(); // Use searchPatients
+	const { patients, searchPatients, loading: patientsLoading } = usePatientStore();
 	const { users, searchUsers, loading: usersLoading } = useUserStore();
-	const { products, getAllProducts, loading: productsLoading } = useProductStore(); // Fetch products
+	const { products, getAllProducts, loading: productsLoading } = useProductStore();
 	const [filteredProducts, setFilteredProducts] = useState([]);
 	const [patientOptions, setPatientOptions] = useState([]);
 	const [userOptions, setUserOptions] = useState([]);
@@ -25,9 +26,9 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 		const fetchProducts = async () => {
 			setLoading(true);
 			try {
-				await getAllProducts(); // Fetch all initially, then filter
+				await getAllProducts();
 			} catch (error) {
-				console.error("Error fetching products", error);
+				console.error("Error fetching products", error); // Keep console logs untranslated
 			} finally {
 				setLoading(false);
 			}
@@ -36,7 +37,6 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 	}, [getAllProducts]);
 
 	useEffect(() => {
-		// Filter products to only include those with type === "APPOINTMENT"
 		if (products && products.length > 0) {
 			const appointmentProducts = products.filter((product) => product.type === "APPOINTMENT");
 			setFilteredProducts(appointmentProducts);
@@ -46,7 +46,6 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 	// --- Form Initialization and Reset ---
 	useEffect(() => {
 		if (selectedAppointment) {
-			// Editing existing appointment
 			form.setFieldsValue({
 				...selectedAppointment,
 				appointmentDateTime: moment(selectedAppointment.appointmentDateTime),
@@ -57,7 +56,6 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 				productId: selectedAppointment.productId,
 			});
 		} else {
-			// Creating new appointment
 			form.resetFields();
 		}
 	}, [selectedAppointment, form]);
@@ -74,7 +72,7 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 					})) || []
 				);
 			} catch (error) {
-				console.error("Failed to search patients:", error);
+				console.error("Failed to search patients:", error); // Keep console logs untranslated
 				setPatientOptions([]);
 			}
 		} else {
@@ -85,7 +83,7 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 	// --- User Search ---
 	const handleUserSearch = async (value) => {
 		try {
-			const searchParams = { search: value }; // Adapt to your searchUsers function
+			const searchParams = { search: value };
 			const results = await searchUsers(searchParams);
 			setUserOptions(
 				results.content.map((user) => ({
@@ -94,7 +92,7 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 				}))
 			);
 		} catch (error) {
-			console.error("Error searching users:", error);
+			console.error("Error searching users:", error); // Keep console logs untranslated
 			setUserOptions([]);
 		}
 	};
@@ -104,22 +102,21 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 		setLoading(true);
 		try {
 			const values = await form.validateFields();
-			// Construct the appointment data object
 			const appointmentData = {
 				...values,
 				appointmentDateTime: values.appointmentDateTime ? values.appointmentDateTime.toISOString() : null,
 				startTime: values.startTime ? values.startTime.toISOString() : null,
 				endTime: values.endTime ? values.endTime.toISOString() : null,
-				patientId: values.patientId, // Should already be an ID
-				userId: values.userId, // Should already be an ID
-				productId: values.productId, // Should already be an ID
+				patientId: values.patientId,
+				userId: values.userId,
+				productId: values.productId,
 			};
 
-			onSubmit(appointmentData); // Pass data to the parent component
+			onSubmit(appointmentData);
 			form.resetFields();
 		} catch (error) {
-			console.error("Form validation failed:", error);
-			message.error("Please fill in all required fields correctly.");
+			console.error("Form validation failed:", error); // Keep console logs untranslated
+			message.error(t("appointments.formModal.error.validationFailed")); // Translate user message
 		} finally {
 			setLoading(false);
 		}
@@ -127,61 +124,82 @@ const AppointmentFormModal = ({ isVisible, onCancel, onSubmit, selectedAppointme
 
 	return (
 		<Modal
-			title={selectedAppointment ? "Edit Appointment" : "Create Appointment"}
+			// Translate title conditionally
+			title={t(selectedAppointment ? "appointments.formModal.title.edit" : "appointments.formModal.title.add")}
 			open={isVisible}
 			onCancel={onCancel}
 			onOk={handleFormSubmit}
-			confirmLoading={loading} // Disable OK button while loading
+			confirmLoading={loading}
 			forceRender // Important for dynamic content
+			okText={t(selectedAppointment ? "common.update" : "common.save")} // Translate OK button
+			cancelText={t("common.cancel")} // Translate Cancel button
 		>
 			<Form form={form} layout="vertical">
 				<Form.Item
-					label="Appointment Date and Time"
+					label={t("appointments.formModal.label.dateTime")} // Translate
 					name="appointmentDateTime"
-					rules={[{ required: true, message: "Please select a date and time" }]}>
+					rules={[{ required: true, message: t("appointments.formModal.validation.dateTimeRequired") }]}>
+					{" "}
+					{/* Translate */}
 					<DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: "100%" }} />
 				</Form.Item>
-				<Form.Item label="Start Time" name="startTime" rules={[{ required: true, message: "Please enter the start time" }]}>
+				<Form.Item
+					label={t("appointments.formModal.label.startTime")} // Translate
+					name="startTime"
+					rules={[{ required: true, message: t("appointments.formModal.validation.startTimeRequired") }]}>
+					{" "}
+					{/* Translate */}
 					<DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: "100%" }} />
 				</Form.Item>
-
-				<Form.Item label="End Time" name="endTime" rules={[{ required: true, message: "Please enter the end time" }]}>
+				<Form.Item
+					label={t("appointments.formModal.label.endTime")} // Translate
+					name="endTime"
+					rules={[{ required: true, message: t("appointments.formModal.validation.endTimeRequired") }]}>
+					{" "}
+					{/* Translate */}
 					<DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: "100%" }} />
 				</Form.Item>
-				<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
+				<Form.Item
+					label={t("appointments.formModal.label.patient")} // Translate
+					name="patientId"
+					rules={[{ required: true, message: t("appointments.formModal.validation.patientRequired") }]}>
+					{" "}
+					{/* Translate */}
 					<Select
 						showSearch
-						placeholder="Search for a patient"
+						placeholder={t("appointments.formModal.placeholder.searchPatient")} // Translate
 						optionFilterProp="children"
 						onSearch={handlePatientSearch}
-						filterOption={false} // Disable built-in filtering
-						loading={patientsLoading}>
-						{patientOptions.map((option) => (
-							<Option key={option.value} value={option.value}>
-								{option.label}
-							</Option>
-						))}
-					</Select>
+						filterOption={false}
+						loading={patientsLoading}
+						options={patientOptions} // Use options prop for AntD v5+
+					/>
 				</Form.Item>
-
-				<Form.Item label="Doctor/Nurse" name="userId" rules={[{ required: true, message: "Please select a user" }]}>
+				<Form.Item
+					label={t("appointments.formModal.label.user")} // Translate
+					name="userId"
+					rules={[{ required: true, message: t("appointments.formModal.validation.userRequired") }]}>
+					{" "}
+					{/* Translate */}
 					<Select
 						showSearch
-						placeholder="Search for a user"
+						placeholder={t("appointments.formModal.placeholder.searchUser")} // Translate
 						optionFilterProp="children"
 						onSearch={handleUserSearch}
 						filterOption={false}
-						loading={usersLoading}>
-						{userOptions.map((option) => (
-							<Option key={option.value} value={option.value}>
-								{option.label}
-							</Option>
-						))}
-					</Select>
+						loading={usersLoading}
+						options={userOptions} // Use options prop for AntD v5+
+					/>
 				</Form.Item>
-
-				<Form.Item label="Appointment Type" name="productId" rules={[{ required: true, message: "Please select an appointment type" }]}>
-					<Select placeholder="Select an appointment type" loading={productsLoading}>
+				<Form.Item
+					label={t("appointments.formModal.label.appointmentType")} // Translate
+					name="productId"
+					rules={[{ required: true, message: t("appointments.formModal.validation.appointmentTypeRequired") }]}>
+					{" "}
+					{/* Translate */}
+					<Select
+						placeholder={t("appointments.formModal.placeholder.selectAppointmentType")} // Translate
+						loading={productsLoading}>
 						{filteredProducts.map((product) => (
 							<Option key={product.id} value={product.id}>
 								{product.name}

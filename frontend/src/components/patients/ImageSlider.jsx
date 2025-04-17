@@ -84,11 +84,7 @@ const ImageSlider = React.memo(({ open, onClose, data }) => {
 						{t("browser-not-support-video")}
 					</video>
 				) : (
-					<Image
-						src={"http://localhost:8080/api" + url}
-						style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain" }}
-						preview={false}
-					/>
+					<Image src={url} style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain" }} preview={false} />
 				)}
 			</div>
 		);

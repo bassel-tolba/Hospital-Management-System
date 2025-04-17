@@ -18,6 +18,7 @@ import {
 	Col,
 	Spin,
 } from "antd";
+// Import useAuthStore
 import { useAuthStore } from "../../services/auth.service";
 import axios from "axios";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
@@ -42,23 +43,47 @@ const VitalSignList = () => {
 	const { patients, searchPatients } = usePatientStore();
 	const { createVitalSign, updateVitalSign, deleteVitalSign, loading, setVitalSigns, vitalSigns } = useVitalSignStore();
 
-	const user = useAuthStore((state) => state.user);
+	// Use the auth store hook
+	const { user, hasAuthority } = useAuthStore();
 	const API_BASE_URL = `http://localhost:8080/api/vital-signs`;
 
+	// --- Permission Checks ---
+	// Check if user can perform basic read/view (required for fetching data)
+	// Note: Actual fetch blocking happens backend-side. This is for potential UI adjustments if needed, though not strictly used to hide elements below based on READ alone.
+	const canReadVitalSigns = user && hasAuthority("READ_VITAL_SIGN");
+	// Check for Create permission
+	const canCreateVitalSigns = user && hasAuthority("CREATE_VITAL_SIGN");
+	// Check for Update permission
+	const canUpdateVitalSigns = user && hasAuthority("UPDATE_VITAL_SIGN");
+	// Check for Delete permission
+	const canDeleteVitalSigns = user && hasAuthority("DELETE_VITAL_SIGN");
+
+	// Determine if the form/modal submit action is allowed based on context (Create vs Update)
+	const canSubmitModal = selectedVitalSign ? canUpdateVitalSigns : canCreateVitalSigns;
+
 	useEffect(() => {
-		fetchVitalSignsData();
-	}, [page, size, searchParams]);
+		// Fetch data only if the user is logged in (user object exists)
+		// The backend will enforce READ_VITAL_SIGN
+		if (user) {
+			fetchVitalSignsData();
+		} else {
+			setVitalSigns([]); // Clear data if user logs out
+			setTotal(0);
+		}
+	}, [page, size, searchParams, user]); // Add user dependency
 
 	const fetchVitalSignsData = async () => {
 		console.log("fetchVitalSignsData called.  Page:", page, "Size:", size, "SearchParams:", searchParams);
 		if (!searchParams?.patientId) {
 			console.log("No patientId in searchParams.  Clearing vital signs.");
 			setVitalSigns([]);
+			setTotal(0); // Also reset total when clearing
 			return;
 		}
 		try {
 			const response = await axios.get(`${API_BASE_URL}/patient/${searchParams?.patientId}`, {
 				headers: {
+					// Use user?.token cautiously as user might be null briefly during logout/login transitions
 					Authorization: `Bearer ${user?.token}`,
 				},
 				params: {
@@ -67,22 +92,44 @@ const VitalSignList = () => {
 				},
 			});
 			console.log("fetchVitalSignsData response:", response.data);
+			// Assuming backend correctly returns empty list or 403 if user lacks READ_VITAL_SIGN
 			setVitalSigns(response.data.content);
 			setTotal(response.data.totalElements);
 		} catch (error) {
 			console.error("Failed to fetch vital signs:", error);
-			notification.error({
-				message: "Error",
-				description: `Failed to fetch vital signs: ${error.message}`,
-			});
+			// Check if it was an authorization error (e.g., 403 Forbidden)
+			if (error.response && error.response.status === 403) {
+				notification.error({
+					message: "Permission Denied",
+					description: "You do not have permission to view vital signs for this patient.",
+				});
+				setVitalSigns([]); // Clear data on permission error
+				setTotal(0);
+			} else {
+				notification.error({
+					message: "Error",
+					description: `Failed to fetch vital signs: ${error.message}`,
+				});
+			}
 		}
 	};
 
 	const showModal = (vitalSign) => {
+		// Prevent opening modal if user lacks the necessary permission for the action
+		if (vitalSign && !canUpdateVitalSigns) {
+			notification.warning({ message: "Permission Denied", description: "You do not have permission to edit vital signs." });
+			return;
+		}
+		if (!vitalSign && !canCreateVitalSigns) {
+			notification.warning({ message: "Permission Denied", description: "You do not have permission to add vital signs." });
+			return;
+		}
+
 		console.log("showModal called with vitalSign:", vitalSign);
 		setSelectedVitalSign(vitalSign);
 		if (vitalSign) {
 			form.setFieldsValue({
+				// ... (rest of the fields remain the same)
 				...vitalSign,
 				timestamp: moment(vitalSign.timestamp),
 				patientId: vitalSign.patientId,
@@ -104,7 +151,6 @@ const VitalSignList = () => {
 				notes: vitalSign.notes || null,
 				method: vitalSign.method || null,
 			});
-
 			setSelectedPatientId(vitalSign.patientId);
 		} else {
 			form.resetFields();
@@ -131,6 +177,7 @@ const VitalSignList = () => {
 	};
 
 	const handlePatientSearch = async (value) => {
+		// Patient search requires only authentication (handled by login)
 		console.log("handlePatientSearch called with value:", value);
 		setPatientSearchTerm(value);
 		if (value) {
@@ -162,6 +209,11 @@ const VitalSignList = () => {
 	};
 
 	const handleFormSubmit = async () => {
+		// Double-check permission before attempting submission
+		if (!canSubmitModal) {
+			notification.error({ message: "Permission Denied", description: "You do not have permission to save these changes." });
+			return;
+		}
 		console.log("handleFormSubmit called");
 		try {
 			const values = await form.validateFields();
@@ -175,6 +227,7 @@ const VitalSignList = () => {
 			};
 
 			const vitalSignData = {
+				// ... (rest of the fields remain the same)
 				...values,
 				timestamp: formattedTimestamp,
 				patientId: selectedPatientId,
@@ -210,7 +263,7 @@ const VitalSignList = () => {
 				await createVitalSign(filteredVitalSignData);
 			}
 
-			fetchVitalSignsData();
+			fetchVitalSignsData(); // Refetch data after successful save/update
 			setIsModalVisible(false);
 			form.resetFields();
 			setSelectedVitalSign(null);
@@ -227,17 +280,33 @@ const VitalSignList = () => {
 	};
 
 	const handleDelete = async (vitalSignId) => {
-		console.log("handleDelete called with vitalSignId:", vitalSignId);
-		try {
-			await deleteVitalSign(vitalSignId);
-			fetchVitalSignsData();
-		} catch (error) {
-			console.error("Error deleting vital sign:", error);
-			notification.error({
-				message: "Error",
-				description: `Failed to delete vital sign: ${error.message}`,
-			});
+		// Check permission before attempting delete
+		if (!canDeleteVitalSigns) {
+			notification.error({ message: "Permission Denied", description: "You do not have permission to delete vital signs." });
+			return;
 		}
+		console.log("handleDelete called with vitalSignId:", vitalSignId);
+		// Consider adding a confirmation dialog here for better UX
+		Modal.confirm({
+			title: "Are you sure you want to delete this vital sign record?",
+			content: "This action cannot be undone.",
+			okText: "Yes, Delete",
+			okType: "danger",
+			cancelText: "No",
+			onOk: async () => {
+				try {
+					await deleteVitalSign(vitalSignId);
+					fetchVitalSignsData(); // Refetch data after successful delete
+					notification.success({ message: "Success", description: "Vital sign record deleted successfully." });
+				} catch (error) {
+					console.error("Error deleting vital sign:", error);
+					notification.error({
+						message: "Error",
+						description: `Failed to delete vital sign: ${error.message}`,
+					});
+				}
+			},
+		});
 	};
 
 	const handleSearchPatientFilter = (patientId) => {
@@ -253,6 +322,11 @@ const VitalSignList = () => {
 	};
 
 	const handleDataExtracted = (data) => {
+		// AI component interaction - ensure user has permission for the underlying action (Create or Update)
+		if (!canSubmitModal) {
+			notification.warning({ message: "Permission Denied", description: "Cannot populate data as saving is not permitted." });
+			return;
+		}
 		console.log("handleDataExtracted called with data:", data);
 		// Determine if this is a create or update operation
 		const isCreate = !selectedVitalSign;
@@ -262,6 +336,8 @@ const VitalSignList = () => {
 		// Convert timestamp to moment object if it exists and is not "did not get"
 		if (formData.timestamp && formData.timestamp !== "did not get") {
 			formData.timestamp = moment(formData.timestamp, "YYYY-MM-DDTHH:mm:ss");
+		} else if (formData.timestamp === "did not get") {
+			formData.timestamp = null; // Set to null if AI couldn't get it
 		}
 
 		// Convert height, weight and glucose units, only if NOT updating
@@ -271,15 +347,10 @@ const VitalSignList = () => {
 			formData.glucoseUnit = data.glucoseUnit === "did not get" ? "mg/dL" : data.glucoseUnit;
 		}
 
-		// Set "did not get" values based on whether it's a create or update operation
+		// Set "did not get" values to null for form binding (InputNumber expects number or null)
 		Object.keys(formData).forEach((key) => {
-			if (isCreate) {
-				// For CREATE, keep "did not get" as is (don't change to null)
-			} else {
-				// For UPDATE, set "did not get" to null
-				if (formData[key] === "did not get") {
-					formData[key] = null;
-				}
+			if (formData[key] === "did not get") {
+				formData[key] = null;
 			}
 		});
 
@@ -289,7 +360,7 @@ const VitalSignList = () => {
 	};
 
 	const columns = [
-		// ... (your existing columns) ...
+		// ... (columns definition remains the same, except for Actions) ...
 		{
 			title: "Timestamp",
 			dataIndex: "timestamp",
@@ -374,20 +445,28 @@ const VitalSignList = () => {
 			key: "actions",
 			render: (text, record) => (
 				<Space size="middle">
-					<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
-						Edit
-					</Button>
-					<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-						Delete
-					</Button>
+					{/* Show Edit button only if user has UPDATE permission */}
+					{canUpdateVitalSigns && (
+						<Button type="default" icon={<EditOutlined />} onClick={() => showModal(record)}>
+							Edit
+						</Button>
+					)}
+					{/* Show Delete button only if user has DELETE permission */}
+					{canDeleteVitalSigns && (
+						<Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
+							Delete
+						</Button>
+					)}
 				</Space>
 			),
 		},
 	];
 
-	if (loading) {
+	// Show loading spinner centered if loading
+	if (loading && !vitalSigns.length) {
+		// Show spinner only if loading and no data is present yet
 		return (
-			<div style={{ textAlign: "center", padding: "20px" }}>
+			<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
 				<Spin size="large" />
 			</div>
 		);
@@ -395,34 +474,64 @@ const VitalSignList = () => {
 
 	return (
 		<div style={{ padding: "20px" }}>
-			<Title level={2}>Vital Signs</Title>
+			<Title level={2}>Vital Signs Management</Title>
 			<Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={12} md={8}>
+					{/* Patient search doesn't require specific permission beyond login */}
 					<AutoComplete
 						style={{ width: "100%" }}
 						options={patientOptions}
 						onSearch={handlePatientSearch}
-						placeholder="Search for a patient"
+						placeholder="Search and select patient to view/add vitals"
 						filterOption={false}
 						onSelect={handleSearchPatientFilter}
 					/>
 				</Col>
 				<Col xs={24} sm={12} md={8}>
-					<Button type="primary" icon={<PlusOutlined />} onClick={() => showModal(null)} disabled={!searchParams?.patientId}>
-						Add New Vital Sign
-					</Button>
+					{/* Show Add button only if user has CREATE permission */}
+					{canCreateVitalSigns && (
+						<Button
+							type="primary"
+							icon={<PlusOutlined />}
+							onClick={() => showModal(null)}
+							// Disable button if no patient is selected in the filter
+							disabled={!searchParams?.patientId}>
+							Add New Vital Sign
+						</Button>
+					)}
 				</Col>
 			</Row>
-			<div style={{ margin: "0 -16px" }}>
-				<Table columns={columns} dataSource={vitalSigns} loading={loading} rowKey="id" pagination={false} scroll={{ x: "max-content" }} />
-			</div>
-			<Pagination
-				current={page}
-				pageSize={size}
-				total={total}
-				onChange={handlePaginationChange}
-				style={{ marginTop: 16, textAlign: "right" }}
-			/>
+
+			{/* Only render table and pagination if a patient is selected */}
+			{searchParams?.patientId ? (
+				<>
+					<div style={{ margin: "0 -16px" }}>
+						{/* Table data fetching is implicitly protected by READ_VITAL_SIGN via the API call */}
+						<Table
+							columns={columns}
+							dataSource={vitalSigns}
+							loading={loading}
+							rowKey="id"
+							pagination={false}
+							scroll={{ x: "max-content" }}
+						/>
+					</div>
+					<Pagination
+						current={page}
+						pageSize={size}
+						total={total}
+						onChange={handlePaginationChange}
+						style={{ marginTop: 16, textAlign: "right" }}
+						showSizeChanger // Good practice to allow changing page size
+						pageSizeOptions={["10", "20", "50"]} // Example options
+					/>
+				</>
+			) : (
+				<Typography.Text type="secondary" style={{ display: "block", textAlign: "center", marginTop: "20px" }}>
+					Please search for and select a patient to view their vital signs.
+				</Typography.Text>
+			)}
+
 			<Modal
 				title={selectedVitalSign ? "Edit Vital Sign" : "Add Vital Sign"}
 				open={isModalVisible}
@@ -431,22 +540,28 @@ const VitalSignList = () => {
 					<Button key="cancel" onClick={handleCancel}>
 						Cancel
 					</Button>,
-					<Button key="submit" type="primary" onClick={handleFormSubmit}>
+					// Disable submit button if user lacks the required permission (Create or Update)
+					<Button key="submit" type="primary" onClick={handleFormSubmit} disabled={!canSubmitModal}>
 						{selectedVitalSign ? "Update" : "Save"}
 					</Button>,
 				]}
 				width={"90%"}
 				bodyStyle={{ overflowX: "auto" }}>
-				<Form form={form} layout="vertical">
-					{/* Conditionally render VoiceToVitalSigns */}
-					<Form.Item>
-						<VoiceToVitalSigns
-							onDataExtracted={handleDataExtracted}
-							disabled={!selectedPatientId}
-							isUpdate={!!selectedVitalSign} // Pass isUpdate prop
-							originalData={selectedVitalSign || {}} // Pass originalData
-						/>
-					</Form.Item>
+				<Form form={form} layout="vertical" disabled={!canSubmitModal}>
+					{" "}
+					{/* Disable entire form if cannot submit */}
+					{/* Conditionally render VoiceToVitalSigns based on permission */}
+					{canSubmitModal && ( // Show AI component only if user can save/update
+						<Form.Item>
+							<VoiceToVitalSigns
+								onDataExtracted={handleDataExtracted}
+								disabled={!selectedPatientId} // Keep disabled if no patient selected in form
+								isUpdate={!!selectedVitalSign} // Pass isUpdate prop
+								originalData={selectedVitalSign || {}} // Pass originalData
+							/>
+						</Form.Item>
+					)}
+					{/* Patient selection should remain enabled to potentially change patient for a *new* record */}
 					<Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Please select a patient" }]}>
 						<AutoComplete
 							options={patientOptions}
@@ -455,14 +570,17 @@ const VitalSignList = () => {
 							filterOption={false}
 							onSelect={(patientId, option) => {
 								setSelectedPatientId(patientId);
-								form.setFieldsValue({ ...form.getFieldsValue(), patientId: patientId });
+								// Update the form field value explicitly if needed, though AutoComplete usually handles this
+								form.setFieldsValue({ patientId: patientId });
 							}}
+							// Disable patient selection only when editing an existing record
+							disabled={!!selectedVitalSign}
 						/>
 					</Form.Item>
+					{/* Rest of the form items will inherit disabled state from <Form disabled={!canSubmitModal}> */}
 					<Form.Item label="Timestamp" name="timestamp" rules={[{ required: true, message: "Please select the timestamp" }]}>
 						<DatePicker style={{ width: "100%" }} showTime />
 					</Form.Item>
-
 					<Row gutter={16}>
 						<Col xs={24} sm={12} md={8}>
 							<Form.Item label="Heart Rate" name="heartRate">
@@ -500,43 +618,54 @@ const VitalSignList = () => {
 					<Row gutter={16}>
 						<Col xs={24} sm={12} md={8}>
 							<Form.Item label="Pain Level" name="painLevel">
-								<InputNumber style={{ width: "100%" }} />
+								<InputNumber style={{ width: "100%" }} min={0} max={10} /> {/* Added min/max for pain */}
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Height" style={{ width: "70%" }} name="height">
-								<InputNumber />
-							</Form.Item>
-							<Form.Item style={{ display: "inline-block", width: "30%" }} name="heightUnit" initialValue="cm">
-								<Select>
-									<Select.Option value="cm">cm</Select.Option>
-									<Select.Option value="in">in</Select.Option>
-								</Select>
+							<Form.Item label="Height">
+								<Input.Group compact>
+									<Form.Item name="height" noStyle>
+										<InputNumber style={{ width: "70%" }} />
+									</Form.Item>
+									<Form.Item name="heightUnit" noStyle initialValue="cm">
+										<Select style={{ width: "30%" }}>
+											<Select.Option value="cm">cm</Select.Option>
+											<Select.Option value="in">in</Select.Option>
+										</Select>
+									</Form.Item>
+								</Input.Group>
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Weight" style={{ width: "70%" }} name="weight">
-								<InputNumber />
-							</Form.Item>
-							<Form.Item style={{ display: "inline-block", width: "30%" }} name="weightUnit" initialValue="kg">
-								<Select>
-									<Select.Option value="kg">kg</Select.Option>
-									<Select.Option value="lb">lb</Select.Option>
-								</Select>
+							<Form.Item label="Weight">
+								<Input.Group compact>
+									<Form.Item name="weight" noStyle>
+										<InputNumber style={{ width: "70%" }} />
+									</Form.Item>
+									<Form.Item name="weightUnit" noStyle initialValue="kg">
+										<Select style={{ width: "30%" }}>
+											<Select.Option value="kg">kg</Select.Option>
+											<Select.Option value="lb">lb</Select.Option>
+										</Select>
+									</Form.Item>
+								</Input.Group>
 							</Form.Item>
 						</Col>
 					</Row>
-
 					<Row gutter={16}>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Glucose" style={{ width: "70%" }} name="glucose">
-								<InputNumber />
-							</Form.Item>
-							<Form.Item style={{ display: "inline-block", width: "30%" }} name="glucoseUnit" initialValue="mg/dL">
-								<Select>
-									<Select.Option value="mg/dL">mg/dL</Select.Option>
-									<Select.Option value="mmol/L">mmol/L</Select.Option>
-								</Select>
+							<Form.Item label="Glucose">
+								<Input.Group compact>
+									<Form.Item name="glucose" noStyle>
+										<InputNumber style={{ width: "70%" }} />
+									</Form.Item>
+									<Form.Item name="glucoseUnit" noStyle initialValue="mg/dL">
+										<Select style={{ width: "30%" }}>
+											<Select.Option value="mg/dL">mg/dL</Select.Option>
+											<Select.Option value="mmol/L">mmol/L</Select.Option>
+										</Select>
+									</Form.Item>
+								</Input.Group>
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12} md={8}>
@@ -545,14 +674,13 @@ const VitalSignList = () => {
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12} md={8}>
-							<Form.Item label="Capillary Refill Time" name="capillaryRefillTime">
+							<Form.Item label="Capillary Refill Time (sec)" name="capillaryRefillTime">
 								<InputNumber style={{ width: "100%" }} />
 							</Form.Item>
 						</Col>
 					</Row>
-
 					<Form.Item label="Notes" name="notes">
-						<Input.TextArea style={{ width: "100%" }} />
+						<Input.TextArea style={{ width: "100%" }} rows={3} />
 					</Form.Item>
 					<Form.Item label="Method" name="method">
 						<Input style={{ width: "100%" }} />

@@ -299,6 +299,441 @@
 	"medication_administration": "Medication Administration",
 
 	"unassigned": "Unassigned",
-	"all-activities": "All Activities",
-	"user-activities": "User Activities"
+	"security": "Security",
+	"dashboard": "Dashboard",
+	"settings": "Settings",
+	"user-appointments": "User Appointments",
+	"general": "General",
+	"diagnostics-labs-docs": "Diagnostics, Labs & Docs",
+	"inventory-billing": "Inventory & Billing",
+	"medication-orders": "Medications & Orders",
+	"authentication": "Authentication",
+	"//=========================================================================== AdmissionList Page": 0,
+	"admission.list.title": "Admission List",
+	"admission.docs.title": "Admission Page Documentation",
+	"admission.search.patientPlaceholder": "Search for a patient",
+	"admission.action.addNew": "Add New Admission",
+	"admission.action.manageTypes": "Manage Admission Types",
+	"admission.action.end": "End",
+	"admission.table.admissionDate": "Admission Date",
+	"admission.table.dischargeDate": "Discharge Date",
+	"admission.table.patient": "Patient",
+	"admission.table.admissionType": "Admission Type",
+	"admission.table.bed": "Bed",
+	"admission.table.actions": "Actions",
+	"admission.table.statusOpen": "Open",
+	"admission.modal.editTitle": "Edit Admission",
+	"admission.modal.addTitle": "Add Admission",
+	"admission.form.patientLabel": "Patient",
+	"admission.form.patientPlaceholder": "Search and select a patient",
+	"admission.form.admissionTypeLabel": "Admission Type",
+	"admission.form.admissionTypePlaceholder": "Select an Admission Type",
+	"admission.form.unitLabel": "Unit",
+	"admission.form.unitPlaceholder": "Select a Unit",
+	"admission.form.roomLabel": "Room",
+	"admission.form.roomPlaceholder": "Select a Room",
+	"admission.form.bedLabel": "Bed",
+	"admission.form.bedPlaceholder": "Select a Bed",
+	"admission.form.bedOccupied": "Occupied",
+	"admission.form.admissionDateLabel": "Admission Date",
+	"admission.typeModal.editTitle": "Edit Admission Type",
+	"admission.typeModal.addTitle": "Add Admission Type",
+	"admission.typeModal.existingTypesTitle": "Existing Types",
+	"admission.typeModal.priceDescription": "Price: {{price}}",
+	"admission.typeForm.nameLabel": "Name",
+	"admission.typeForm.priceLabel": "Price",
+	"admission.validation.patientRequired": "Please select a patient",
+	"admission.validation.admissionTypeRequired": "Please select an admission type",
+	"admission.validation.unitRequired": "Please select a unit",
+	"admission.validation.roomRequired": "Please select a room",
+	"admission.validation.bedRequired": "Please select a bed",
+	"admission.validation.admissionDateRequired": "Please select an admission date",
+	"admission.validation.typeNameRequired": "Please enter the admission type name",
+	"admission.validation.typePriceRequired": "Please enter the price",
+	"admission.validation.typePriceNumber": "Price must be a number",
+	"admission.notification.fetchFailedPrefix": "Failed to fetch admissions:",
+	"admission.notification.permissionDeniedTitle": "Permission Denied",
+	"admission.notification.permissionDeniedEdit": "You do not have permission to edit admissions.",
+	"admission.notification.permissionDeniedAdd": "You do not have permission to add admissions.",
+	"admission.notification.permissionDeniedManageTypes": "You do not have permission to manage admission types.",
+	"admission.notification.permissionDeniedAction": "You do not have permission to perform this action.",
+	"admission.notification.permissionDeniedUpdate": "You do not have permission to update admissions.",
+	"admission.notification.permissionDeniedDelete": "You do not have permission to delete admissions.",
+	"admission.notification.typeUpdated": "Admission type updated.",
+	"admission.notification.typeCreated": "Admission type created.",
+	"admission.notification.typeSaveFailedPrefix": "Failed to save admission type:",
+	"admission.notification.typeDeleted": "Admission type deleted.",
+	"admission.notification.typeDeleteFailedPrefix": "Failed to delete admission type:",
+	"admission.notification.updated": "Admission updated.",
+	"admission.notification.created": "Admission created.",
+	"admission.notification.saveFailedPrefix": "Failed to save admission:",
+	"admission.notification.ended": "Admission ended successfully",
+	"admission.notification.endFailedPrefix": "Failed to end admission:",
+	"admission.notification.deleted": "Admission deleted.",
+	"admission.notification.deleteFailedPrefix": "Failed to delete admission:",
+	"admission.confirm.deleteTitle": "Are you sure you want to delete this admission?",
+	"admission.confirm.deleteContent": "This action cannot be undone.",
+	"admission.confirm.deleteOk": "Yes, Delete",
+	"admission.confirm.deleteCancel": "No",
+	"admission.error.fetchBedsMount": "Error fetching beds on mount:",
+	"admission.error.patientSearchFailed": "Failed to search patients:",
+	"admission.error.fetchFilteredBedsFailed": "Failed to fetch filtered beds:",
+	"admission.error.saveTypeFailed": "Failed to save admission type:",
+	"admission.error.deleteTypeFailed": "Failed to delete admission type:",
+	"admission.error.saveFailed": "Failed to save admission:",
+	"admission.error.deleteFailed": "Error deleting admission:",
+
+	"common.edit": "Edit",
+	"common.delete": "Delete",
+	"common.save": "Save",
+	"common.update": "Update",
+	"common.cancel": "Cancel",
+	"common.close": "Close",
+	"common.notAvailable": "N/A",
+	"common.unknownError": "Unknown error",
+	"common.permissionDenied403Title": "403 - Forbidden",
+	"common.permissionDenied403Subtitle": "Sorry, you are not authorized to access this page.",
+	"common.pagination.totalItems": "{{range0}}-{{range1}} of {{total}} items",
+	"common.viewDocumentation": "View Documentation",
+	"error": "Error",
+	"success": "Success",
+	"// === AppointmentsList ===": 0,
+	"appointments.list.table.dateTime": "Date and Time",
+	"appointments.list.table.startTime": "Start Time",
+	"appointments.list.table.endTime": "End Time",
+	"appointments.list.table.patient": "Patient",
+	"appointments.list.table.user": "Doctor/Nurse",
+	"appointments.list.table.appointmentType": "Appointment Type",
+	"appointments.list.table.status": "Status",
+	"appointments.list.confirm.deleteTitle": "Are you sure you want to delete this appointment?",
+
+	"// === Appointment Statuses (Shared) ===": 0,
+	"appointments.status.scheduled": "Scheduled",
+	"appointments.status.completed": "Completed",
+	"appointments.status.missed": "Missed",
+	"appointments.status.cancelled": "Cancelled",
+	"appointments.status.unknown": "Unknown Status",
+
+	"// === AppointmentFormModal ===": 0,
+	"appointments.formModal.title.add": "Create Appointment",
+	"appointments.formModal.title.edit": "Edit Appointment",
+	"appointments.formModal.label.dateTime": "Appointment Date and Time",
+	"appointments.formModal.label.startTime": "Start Time",
+	"appointments.formModal.label.endTime": "End Time",
+	"appointments.formModal.label.patient": "Patient",
+	"appointments.formModal.label.user": "Doctor/Nurse",
+	"appointments.formModal.label.appointmentType": "Appointment Type",
+	"appointments.formModal.validation.dateTimeRequired": "Please select a date and time",
+	"appointments.formModal.validation.startTimeRequired": "Please enter the start time",
+	"appointments.formModal.validation.endTimeRequired": "Please enter the end time",
+	"appointments.formModal.validation.patientRequired": "Please select a patient",
+	"appointments.formModal.validation.userRequired": "Please select a user",
+	"appointments.formModal.validation.appointmentTypeRequired": "Please select an appointment type",
+	"appointments.formModal.placeholder.searchPatient": "Search for a patient",
+	"appointments.formModal.placeholder.searchUser": "Search for a user",
+	"appointments.formModal.placeholder.selectAppointmentType": "Select an appointment type",
+	"appointments.formModal.error.validationFailed": "Please fill in all required fields correctly.",
+
+	"// === UserAppointmentList (Calendar & Modal) ===": 0,
+	"appointments.userList.calendar.statusCompleted": "Completed: {{patientName}}",
+	"appointments.userList.calendar.statusMissed": "Missed: {{patientName}}",
+	"appointments.userList.calendar.statusCancelled": "Cancelled: {{patientName}}",
+	"appointments.userList.calendar.statusOverdue": "Overdue: {{patientName}}",
+	"appointments.userList.calendar.statusScheduled": "{{patientName}} - {{time}}",
+	"appointments.userList.calendar.statusUnknown": "Unknown: {{patientName}}",
+	"appointments.userList.modal.title": "Appointment Details",
+	"appointments.userList.modal.labelUser": "Doctor/Nurse",
+	"appointments.userList.modal.labelStartTime": "Start Time",
+	"appointments.userList.modal.labelEndTime": "End Time",
+	"appointments.userList.modal.labelType": "Type",
+	"appointments.userList.modal.labelStatus": "Status",
+	"appointments.userList.modal.actionEnd": "End Appointment",
+
+	"// === New Common Keys ===": 0,
+	"common.view": "View",
+	"common.yes": "Yes",
+	"common.no": "No",
+	"common.actions": "Actions",
+	"// === AppointmentsPage ===": 0,
+	"appointments.page.title": "Appointments",
+	"appointments.page.action.create": "Create Appointment",
+	"appointments.page.filter.searchPlaceholder": "Search by Patient or User name",
+	"appointments.page.filter.patientPlaceholder": "Filter by Patient",
+	"appointments.page.filter.userPlaceholder": "Filter by User",
+
+	"// === (Optional) Appointment Notifications (add if implementing user feedback) ===": 0,
+	"appointments.notification.updated": "Appointment updated successfully.",
+	"appointments.notification.created": "Appointment created successfully.",
+	"appointments.notification.deleted": "Appointment deleted successfully.",
+	"appointments.notification.saveFailed": "Failed to save appointment.",
+	"appointments.notification.deleteFailed": "Failed to delete appointment.",
+	"appointments.notification.fetchFailed": "Failed to fetch appointments.",
+	"common": {
+		"id": "ID",
+		"error": "Error",
+		"success": "Success",
+		"permissionDenied": "Permission Denied",
+		"noMatch": "No match",
+		"delete": "Delete",
+		"cancel": "Cancel",
+		"notAvailable": "N/A",
+		"notAvailableShort": "-",
+		"unknownPatient": "UnknownPatient"
+	},
+	"assessmentList": {
+		"title": "Patient Assessments",
+		"showingFor": "Showing assessments for: {{name}} (ID: {{id}})",
+		"selectPatientPrompt": "Select a patient to view or add assessments.",
+		"viewPermissionDenied": "You do not have permission to view assessments.",
+		"filter": {
+			"label": "Filter by Patient:",
+			"placeholder": "Name or ID (min 2 chars)",
+			"readPermissionPlaceholder": "Read permission needed"
+		},
+		"addAssessment": {
+			"selectPatientTooltip": "Select a patient first to enable adding",
+			"addTooltip": "Add new assessment for selected patient",
+			"button": "Add Assessment"
+		},
+		"table": {
+			"header": {
+				"dateTime": "Date & Time",
+				"notesPreview": "Notes Preview",
+				"actions": "Actions"
+			},
+			"notesPreview": {
+				"empty": "(Empty)",
+				"tooltip": "View full notes in edit mode",
+				"noText": "(No text content)"
+			},
+			"actions": {
+				"editTooltip": "Edit Assessment",
+				"deleteTooltip": "Delete Assessment",
+				"exportDisabledTooltip": "Cannot export empty notes",
+				"exportTooltip": "Export as PDF"
+			},
+			"empty": {
+				"noPermission": "You do not have permission to view assessments.",
+				"noDataFound": "No assessments found for this patient.",
+				"noPatientSelected": "Please select a patient using the filter above."
+			}
+		},
+		"deleteConfirm": {
+			"title": "Delete Assessment?",
+			"description": "Delete assessment from {{dateTime}}? This is irreversible.",
+			"okText": "Delete",
+			"cancelText": "Cancel"
+		},
+		"modal": {
+			"editTitle": "Edit Assessment",
+			"addTitle": "Add New Assessment"
+		},
+		"notifications": {
+			"fetchError": "Could not load assessments: {{error}}",
+			"patientSearchError": "Failed to search patients for filter.",
+			"editPermissionDenied": "You don't have permission to edit assessments.",
+			"addPermissionDenied": "You don't have permission to add assessments.",
+			"deletePermissionDenied": "You do not have permission to delete assessments.",
+			"deletedSuccess": "Assessment deleted successfully.",
+			"deleteError": "Error Deleting Assessment: {{error}}",
+			"exportPermissionDenied": "You do not have permission to export assessments.",
+			"exportEmptyTitle": "Cannot Export",
+			"exportEmptyDesc": "This assessment has no content to export.",
+			"exportStartedTitle": "Export Started",
+			"exportStartedDesc": "\"{{filename}}\" download should begin shortly.",
+			"exportErrorTitle": "PDF Export Error",
+			"exportErrorDesc": "PDF generation failed: {{error}}. Check console for details."
+		},
+		"pdf": {
+			"browserTitle": "Assessment Export",
+			"title": "Assessment Notes",
+			"patientLabel": "Patient:",
+			"dateLabel": "Date:"
+		}
+	},
+	"common": {
+		"validationError": "Validation Error",
+		"unknownError": "Unknown error",
+		"save": "Save",
+		"update": "Update"
+	},
+	"assessmentForm": {
+		"patientIdLabel": "Patient ID: {{id}}",
+		"noLabel": "No Label",
+		"patient": {
+			"label": "Patient",
+			"helpSelected": "Selected: {{patientInfo}}",
+			"helpSearch": "Search by name or ID (min 2 chars)",
+			"placeholder": "Search and select patient...",
+			"notFound": "No patients found"
+		},
+		"dateTime": {
+			"label": "Assessment Date & Time",
+			"validation": "Please select date and time"
+		},
+		"template": {
+			"label": "Select Template",
+			"loadingTip": "Loading templates...",
+			"placeholder": "Select a template to load content...",
+			"notFound": "No templates available"
+		},
+		"aiVoice": {
+			"label": "AI Voice Input (Optional)",
+			"popoverTitle": "AI Recording Tips",
+			"startButton": "Use AI Voice",
+			"stopButton": "Stop Recording"
+		},
+		"notes": {
+			"label": "Notes",
+			"validation": "Notes cannot be empty",
+			"loadingTip": "Loading template...",
+			"loadingContent": "Loading template content...",
+			"initializingEditor": "Initializing editor..."
+		},
+		"updateButton": "Update Assessment",
+		"saveButton": "Save Assessment",
+		"notifications": {
+			"patientSearchError": "Failed to search patients.",
+			"templateLoadError": "Could not load assessment templates. Please try refreshing.",
+			"templateContentLoadError": "Could not load content for template: {{templateName}}. {{error}}",
+			"saveErrorGeneric": "An unexpected error occurred during save.",
+			"saveErrorSpecific": "Save failed: {{error}}",
+			"saveErrorNetwork": "Save failed: No response from server. Check network connection.",
+			"saveErrorOther": "Save failed: {{error}}",
+			"updateSuccess": "Assessment updated successfully.",
+			"createSuccess": "Assessment created successfully.",
+			"editorNotReadyTitle": "Editor Not Ready",
+			"editorNotReadyDesc": "Please wait for the notes editor to load completely.",
+			"templateRequiredTitle": "Template Required",
+			"templateRequiredDesc": "Please select an assessment template before recording.",
+			"patientRequiredTitle": "Patient Required",
+			"patientRequiredDesc": "Please select a patient before recording.",
+			"readOnlyTitle": "Read Only",
+			"readOnlyRecordDesc": "Cannot record in read-only mode.",
+			"readOnlyTranscribeDesc": "Cannot populate notes in read-only mode.",
+			"recordingIssueTitle": "Recording Issue",
+			"recordingIssueDesc": "No audio data was recorded. Check microphone permissions and ensure you spoke.",
+			"editorIssueTitle": "Editor Issue",
+			"editorIssueDesc": "Editor became unavailable. Transcription will start if it becomes ready again.",
+			"recordingErrorTitle": "Recording Error",
+			"recordingErrorDesc": "An error occurred during recording: {{error}}",
+			"micErrorTitle": "Microphone Error",
+			"micErrorGeneric": "Could not access microphone: {{error}}",
+			"micErrorNotAllowed": "Microphone access was denied. Please allow microphone access in your browser settings.",
+			"micErrorNotFound": "No microphone found. Please ensure a microphone is connected and enabled.",
+			"micErrorSecurity": "Microphone access denied due to security settings (e.g., non-HTTPS connection).",
+			"transcriptionPrereqError": "Cannot start transcription. Missing template, patient, or editor is not ready.",
+			"transcriptionSuccess": "Assessment notes populated successfully!",
+			"transcriptionUnexpectedResponse": "Transcription completed but response format was unexpected (Status: {{status}}).",
+			"transcriptionErrorGeneric": "Failed to transcribe and populate notes.",
+			"transcriptionErrorTimeout": "Transcription request timed out (longer than 3 minutes). Try shorter recordings or check server logs.",
+			"transcriptionErrorSpecific": "Transcription failed: {{error}}",
+			"transcriptionErrorOther": "Transcription failed: {{error}}",
+			"transcriptionErrorTitle": "Transcription Error"
+		},
+		"validation": {
+			"selectPatient": "Please select a patient.",
+			"notesNotEmpty": "Notes cannot be empty.",
+			"checkFields": "Please check the required fields."
+		},
+		"aiTips": {
+			"speakClearly": {
+				"title": "Speak Clearly:",
+				"desc": "Enunciate words distinctly."
+			},
+			"usePlaceholders": {
+				"title": "Use Placeholders:",
+				"desc": "State the field name/placeholder before the value (e.g., \"Patient Name is John Doe\", \"Chief Complaint is chest pain\")."
+			},
+			"followOrder": {
+				"title": "Follow Order:",
+				"desc": "Try to dictate information roughly in the template order."
+			},
+			"beSpecific": {
+				"title": "Be Specific:",
+				"desc": "Avoid ambiguity (e.g., \"Temperature 38.5 Celsius\")."
+			},
+			"pauseBriefly": {
+				"title": "Pause Briefly:",
+				"desc": "Short pause between different fields/sections helps."
+			},
+			"checkPermissions": {
+				"title": "Check Permissions:",
+				"desc": "Ensure browser microphone access is allowed (usually requested on first use)."
+			},
+			"note": "Note: AI processing occurs after you stop recording."
+		},
+		"progress": {
+			"transcribing": "Transcribing...",
+			"processing": "Processing...",
+			"populating": "Populating..."
+		}
+	},
+	"common": {},
+	"assessmentTypeForm": {
+		"spinTipUpdate": "Updating Template...",
+		"spinTipCreate": "Creating Template...",
+		"displayName": {
+			"label": "Display Name",
+			"required": "Display Name is required.",
+			"placeholder": "e.g., Pediatric Assessment"
+		},
+		"technicalName": {
+			"label": "Technical Name (Identifier)",
+			"required": "Technical Name is required.",
+			"pattern": "Use only letters, numbers, underscores.",
+			"placeholder": "e.g., childAssessment"
+		},
+		"htmlAlert": {
+			"message": "Enter the HTML structure for your template. Use square brackets for placeholders, e.g., [Patient Name], [Vital Signs Table]."
+		},
+		"templateContent": {
+			"label": "Template Content (HTML with Placeholders)",
+			"required": "Template Content cannot be empty.",
+			"placeholder": "Enter template HTML here..."
+		},
+		"updateButton": "Update Template",
+		"createButton": "Create Template"
+	},
+	"common": {
+		"loading": "Loading...",
+		"deleteConfirmYes": "Yes, Delete",
+		"no": "No"
+	},
+	"assessmentTypeManagement": {
+		"title": "Assessment Template Management",
+		"addButton": "Add New Template",
+		"permissionDeniedMessage": "You do not have permission to manage assessment templates.",
+		"notifications": {
+			"addPermissionDenied": "You don't have permission to add templates.",
+			"editPermissionDenied": "You don't have permission to edit templates.",
+			"deletePermissionDenied": "You do not have permission to delete templates.",
+			"loadFailedTitle": "Load Failed",
+			"loadFailedDesc": "Could not load details for template {{name}}."
+		},
+		"table": {
+			"header": {
+				"displayName": "Display Name",
+				"technicalName": "Technical Name (Identifier)",
+				"actions": "Actions"
+			},
+			"actions": {
+				"editTooltip": "Edit Template",
+				"deleteTooltip": "Delete Template"
+			},
+			"empty": {
+				"noDataOrPermission": "No templates found or permission denied."
+			}
+		},
+		"deleteConfirm": {
+			"title": "Delete Template?",
+			"description": "Delete the \"{{name}}\" template?"
+		},
+		"modal": {
+			"editTitle": "Edit Template: {{name}}",
+			"addTitle": "Add New Assessment Template",
+			"loadingDetailsTip": "Loading template details..."
+		}
+	},
+	"common.noMatch": "No Match"
 }
