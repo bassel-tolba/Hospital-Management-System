@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const VITAL_SIGNS_API_BASE_URL = `http://localhost:8080/api/vital-signs`;
+const VITAL_SIGNS_API_BASE_URL = `/api/vital-signs`;
 
 export const useVitalSignStore = create((set, get) => ({
 	vitalSigns: [],

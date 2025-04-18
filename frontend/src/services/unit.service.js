@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const UNIT_API_BASE_URL = `http://localhost:8080/api/units`;
+const UNIT_API_BASE_URL = `/api/units`;
 
 export const useUnitStore = create((set, get) => ({
 	units: [],

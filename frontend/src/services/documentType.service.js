@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Corrected import
 import { notification } from "antd";
 
-const DOCUMENT_TYPE_API_BASE_URL = `http://localhost:8080/api/documenttypes`;
+const DOCUMENT_TYPE_API_BASE_URL = `/api/documenttypes`;
 
 export const useDocumentTypeStore = create((set, get) => ({
 	// Added get

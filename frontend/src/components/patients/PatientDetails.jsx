@@ -1,9 +1,7 @@
-// PatientDetails.jsx
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
 	Layout,
-	Menu,
-	Breadcrumb,
+	Menu, // Keep for potential future use if structure changes, but not primary nav now
 	Card,
 	Tabs,
 	Typography,
@@ -24,7 +22,8 @@ import {
 	Statistic,
 	Tooltip,
 	List,
-	Grid, // Import Grid
+	Grid, // Keep Grid import
+	FloatButton, // Import FloatButton
 } from "antd";
 import {
 	CalendarOutlined,
@@ -53,27 +52,32 @@ import {
 	AudioOutlined, // For the microphone icon
 	AudioMutedOutlined,
 	FileDoneOutlined,
+	DashboardOutlined, // Icon for Overview tab
+	ManOutlined, // Example Icon for Gender
+	WomanOutlined, // Example Icon for Gender
+	InfoCircleOutlined, // Icon for MRN
+	WarningOutlined, // Icon for Allergies
 } from "@ant-design/icons";
-import MiniCreateActivityForm from "./MiniCreateActivityForm";
-import LabResultDetailsModal from "./LabResultDetailsModal";
-import ImageSlider from "./ImageSlider";
+import MiniCreateActivityForm from "./MiniCreateActivityForm"; // Assuming this exists in the same directory
+import LabResultDetailsModal from "./LabResultDetailsModal"; // Assuming this exists in the same directory
+import ImageSlider from "./ImageSlider"; // Assuming this exists in the same directory
 import { useParams } from "react-router-dom";
-import { usePatientDetailStore } from "../../services/patientDetail.service";
-import { useLabStore } from "../../services/lab.service"; // Import useLabStore
+import { usePatientDetailStore } from "../../services/patientDetail.service"; // Adjust path as needed
+import { useLabStore } from "../../services/lab.service"; // Adjust path as needed
 import moment from "moment";
-import PdfGenerator from "./PdfGenerator"; // Import the new component
-import { useTranslation } from "react-i18next"; // Import
-import { useAuthStore } from "../../services/auth.service";
+import PdfGenerator from "./PdfGenerator"; // Assuming this exists in the same directory
+import { useTranslation } from "react-i18next"; // Adjust path as needed
+import { useAuthStore } from "../../services/auth.service"; // Adjust path as needed
 import WaveSurfer from "wavesurfer.js";
-const { Header, Content, Footer } = Layout;
+
+const { Header, Content, Footer } = Layout; // Keep standard Layout
 const { TabPane } = Tabs;
-const { Text, Title } = Typography;
+const { Text, Title, Paragraph } = Typography;
 const { useBreakpoint } = Grid; // Use the useBreakpoint hook
 
-// Helper function to generate valid image URL
+// Helper function to generate valid image URL (Keep as is)
 const generateImageUrl = (url) => {
 	if (!url) return null;
-
 	const processedUrl = `${
 		(url.startsWith("./") ? url.substring(1) : url).startsWith("/")
 			? url.startsWith("./")
@@ -81,9 +85,9 @@ const generateImageUrl = (url) => {
 				: url
 			: "/" + (url.startsWith("./") ? url.substring(1) : url)
 	}`;
-
 	return `${processedUrl}`;
 };
+// Helper function to generate valid document URL (Keep as is)
 const generateDocumentUrl = (url) => {
 	if (!url) return null;
 	const processedUrl = url.startsWith("./") ? url.substring(1) : url;
@@ -91,10 +95,9 @@ const generateDocumentUrl = (url) => {
 };
 
 // -----------------------------------------------------------------------------
-// Reusable Table Component
+// Reusable Table Component (Keep as is, ensure overflowX is still there)
 // -----------------------------------------------------------------------------
 const PaginatedTable = ({ columns, data, loading, currentPage, onPageChange, totalCount }) => {
-	const { t } = useTranslation();
 	return (
 		<>
 			<Table
@@ -104,11 +107,12 @@ const PaginatedTable = ({ columns, data, loading, currentPage, onPageChange, tot
 				pagination={false}
 				rowKey="id"
 				style={{
-					border: "1px solid #e8e8e8",
-					borderRadius: "4px",
+					// border: "1px solid #e8e8e8", // Removed border for cleaner look within tab card
+					// borderRadius: "4px", // Removed border radius
 					marginBottom: "16px",
-					overflowX: "auto",
+					overflowX: "auto", // Keep horizontal scroll for wide tables
 				}}
+				scroll={{ x: "max-content" }} // Ensures horizontal scroll works reliably
 			/>
 			<Pagination
 				current={currentPage + 1}
@@ -116,13 +120,14 @@ const PaginatedTable = ({ columns, data, loading, currentPage, onPageChange, tot
 				total={totalCount}
 				onChange={(page) => onPageChange(page - 1)}
 				style={{ marginTop: 15, display: "flex", justifyContent: "center" }}
+				showSizeChanger={false} // Simplify pagination
 			/>
 		</>
 	);
 };
 
 // -----------------------------------------------------------------------------
-// Reusable Detail Modal Component
+// Reusable Detail Modal Component (Keep as is, ensure responsiveness)
 // -----------------------------------------------------------------------------
 const DetailModal = ({ title, isOpen, onClose, children }) => {
 	const screens = useBreakpoint();
@@ -141,7 +146,7 @@ const DetailModal = ({ title, isOpen, onClose, children }) => {
 };
 
 // -----------------------------------------------------------------------------
-// Utility function for rendering Detail
+// Utility function for rendering Detail (Keep as is)
 // -----------------------------------------------------------------------------
 const renderDetail = (label, value) => (
 	<div style={{ marginBottom: 8 }}>
@@ -150,25 +155,26 @@ const renderDetail = (label, value) => (
 	</div>
 );
 // -----------------------------------------------------------------------------
-// Utility function for rendering notes
+// Utility function for rendering notes (Keep as is)
 // -----------------------------------------------------------------------------
 const renderAssessmentNotes = (notes) => (
 	<div dangerouslySetInnerHTML={{ __html: notes }} style={{ backgroundColor: "#f0f0f0", padding: 15, borderRadius: 10 }} />
 );
 // -----------------------------------------------------------------------------
-// Utility function for rendering medication list
+// Utility function for rendering medication list (Keep as is)
 // -----------------------------------------------------------------------------
 const renderMedicationList = (medications, t) => {
-	// Accept 't' as a parameter
 	return (
-		<ul style={{ paddingLeft: 20 }}>
+		<ul style={{ paddingLeft: 20, margin: 0 }}>
 			{medications.map((medication, index) => (
 				<li key={index}>
 					<Text>
 						{t("medication-name")}: {medication.medicationName}, {t("dosage")}: {medication.dosage}, {t("route")}: {medication.route},{" "}
 						{t("amount")}: {medication.amount}
 					</Text>
-					<Text type="danger">{medication.expired ? t("administered") : ""}</Text>
+					<Text type="danger" style={{ marginLeft: 5 }}>
+						{medication.expired ? t("administered") : ""}
+					</Text>
 				</li>
 			))}
 		</ul>
@@ -176,7 +182,7 @@ const renderMedicationList = (medications, t) => {
 };
 
 // -----------------------------------------------------------------------------
-// Utility function for rendering image list
+// Utility function for rendering image list (Keep as is)
 // -----------------------------------------------------------------------------
 const renderImagesList = (images) => (
 	<ul style={{ paddingLeft: 20 }}>
@@ -193,7 +199,7 @@ const renderImagesList = (images) => (
 	</ul>
 );
 // -----------------------------------------------------------------------------
-// Expanded Row Details Component
+// Expanded Row Details Component (Keep as is)
 // -----------------------------------------------------------------------------
 const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 	const { t } = useTranslation(); // Initialize useTranslation here
@@ -420,7 +426,7 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 	);
 };
 // -----------------------------------------------------------------------------
-// Patient Avatar Modal Component
+// Patient Avatar Modal Component (Keep as is, ensure responsiveness)
 // -----------------------------------------------------------------------------
 const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 	const { t } = useTranslation();
@@ -433,15 +439,18 @@ const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 			footer={null}
 			width={screens.xs ? "95%" : "90%"}
 			style={{ maxWidth: screens.xs ? "95vw" : "400px", borderColor: "gold", border: "2px solid" }}
-			bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}>
-			{" "}
-			{imageUrl && <Image src={generateImageUrl(imageUrl)} alt="Patient Profile" style={{ width: "100%", objectFit: "contain" }} />}{" "}
+			bodyStyle={{ padding: screens.xs ? "16px" : "24px", textAlign: "center" }}>
+			{imageUrl ? (
+				<Image src={generateImageUrl(imageUrl)} alt="Patient Profile" style={{ width: "100%", maxWidth: "350px", objectFit: "contain" }} />
+			) : (
+				<Text>{t("no-image-available")}</Text>
+			)}
 		</Modal>
 	);
 };
 
-// Quick Notes Modal - Now shows the list and handles CRUD
-
+// Quick Notes Modal - (Keep as is, includes WaveSurfer etc.)
+// -----------------------------------------------------------------------------
 const QuickNotesModal = ({
 	isOpen,
 	onClose,
@@ -458,29 +467,36 @@ const QuickNotesModal = ({
 	const [mediaRecorder, setMediaRecorder] = useState(null);
 	const [audioBlobUrl, setAudioBlobUrl] = useState(null);
 	const [recordingError, setRecordingError] = useState(null);
-	const [isTranscribing, setIsTranscribing] = useState(false); // NEW: Track transcription
+	const [isTranscribing, setIsTranscribing] = useState(false);
 	const waveformRef = useRef(null);
-	const wavesurfer = useRef({ current: null }); // Use object for mutable ref
-
-	const chunks = useRef([]); // Store audio chunks
+	const wavesurfer = useRef({ current: null });
+	const chunks = useRef([]);
 
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
 
 	const handleSave = () => {
 		onSave();
-		onClose();
+		// Keep modal open if list mode, close otherwise
+		if (quickNotesModalMode !== "list") {
+			onClose();
+		}
 	};
 
 	const startRecording = async () => {
 		try {
 			setRecordingError(null);
-			setIsTranscribing(false); // Reset transcription state
+			setIsTranscribing(false);
+			setAudioBlobUrl(null); // Clear previous audio
+			if (wavesurfer.current.current) {
+				wavesurfer.current.current.empty(); // Clear waveform
+			}
+
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			const recorder = new MediaRecorder(stream);
 			setMediaRecorder(recorder);
 			setIsRecording(true);
-			chunks.current = []; // Clear previous chunks
+			chunks.current = [];
 
 			recorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
@@ -495,7 +511,8 @@ const QuickNotesModal = ({
 				if (wavesurfer.current.current) {
 					wavesurfer.current.current.load(url);
 				}
-				sendAudioToBackend(blob); // Send for transcription AFTER loading into WaveSurfer
+				sendAudioToBackend(blob);
+				stream.getTracks().forEach((track) => track.stop()); // Stop stream tracks here
 			};
 
 			recorder.onerror = (error) => {
@@ -525,29 +542,31 @@ const QuickNotesModal = ({
 	const stopRecording = () => {
 		if (mediaRecorder && mediaRecorder.state !== "inactive") {
 			mediaRecorder.stop();
+			// Tracks are stopped in recorder.onstop
 			setIsRecording(false);
-			// Tracks are stopped automatically by recorder.stop()
 		}
 	};
 
 	const sendAudioToBackend = async (blob) => {
-		setIsTranscribing(true); // Indicate transcription is in progress
+		setIsTranscribing(true);
 		const formData = new FormData();
 		formData.append("audio", blob, "recording.webm");
 
 		try {
-			const response = await fetch("http://localhost:8080/api/gemini/soundtotext", {
+			const response = await fetch("/api/gemini/soundtotext", {
 				method: "POST",
 				body: formData,
+				// Add Authorization header if needed by your backend
+				// headers: { Authorization: `Bearer ${useAuthStore.getState().user?.token}` }
 			});
 
 			if (!response.ok) {
-				const errorData = await response.json();
+				const errorData = await response.json().catch(() => ({ message: "Transcription failed with status " + response.status }));
 				throw new Error(errorData.message || "Transcription failed");
 			}
 
 			const transcribedText = await response.text();
-			setQuickNoteText((prevText) => (prevText ? prevText + transcribedText : transcribedText)); // Correct concatenation
+			setQuickNoteText((prevText) => (prevText ? prevText + " " + transcribedText : transcribedText));
 			notification.success({ message: t("success"), description: t("transcription-successful") });
 		} catch (error) {
 			console.error("Error transcribing audio:", error);
@@ -556,69 +575,88 @@ const QuickNotesModal = ({
 				description: t("transcription-failed") + ": " + error.message,
 			});
 		} finally {
-			setIsTranscribing(false); // Reset transcription state
+			setIsTranscribing(false);
 		}
 	};
 
 	useEffect(() => {
+		// Initialize WaveSurfer
 		if (waveformRef.current && !wavesurfer.current.current) {
 			wavesurfer.current.current = WaveSurfer.create({
 				container: waveformRef.current,
 				waveColor: "violet",
 				progressColor: "purple",
 				cursorColor: "navy",
-				barWidth: 3,
+				barWidth: 2,
+				barGap: 1,
 				responsive: true,
-				height: 100,
+				height: 60,
 				normalize: true,
-			});
-
-			wavesurfer.current.current.on("ready", () => {
-				console.log("WaveSurfer is ready!");
-			});
-
-			wavesurfer.current.current.on("error", (error) => {
-				console.error("WaveSurfer error:", error);
 			});
 		}
 
+		// Cleanup function
 		return () => {
 			if (wavesurfer.current.current) {
 				wavesurfer.current.current.destroy();
 				wavesurfer.current.current = null;
 			}
-		};
-	}, []); // Empty dependency array: only run on mount/unmount
-
-	useEffect(() => {
-		return () => {
+			// Stop recording and revoke URL on component unmount
 			if (mediaRecorder && mediaRecorder.state !== "inactive") {
-				mediaRecorder.stop(); // Stops the stream and the recorder
+				mediaRecorder.stop();
+				mediaRecorder.stream.getTracks().forEach((track) => track.stop());
 			}
 			if (audioBlobUrl) {
-				URL.revokeObjectURL(audioBlobUrl); // Clean up blob URL
+				URL.revokeObjectURL(audioBlobUrl);
 			}
 		};
-	}, []); // Empty dependency array:  only run on unmount.
+	}, []); // Empty dependency array ensures this runs only on mount and unmount
+
+	// Reset state when modal opens for create/edit mode
+	useEffect(() => {
+		if (isOpen && (quickNotesModalMode === "create" || quickNotesModalMode === "edit")) {
+			setAudioBlobUrl(null);
+			setRecordingError(null);
+			setIsRecording(false);
+			setIsTranscribing(false);
+			if (wavesurfer.current.current) {
+				wavesurfer.current.current.empty();
+			}
+		}
+	}, [isOpen, quickNotesModalMode]);
 
 	const sortedQuickNotes = [...quickNotes].sort((a, b) => moment(b.createdAt).valueOf() - moment(a.createdAt).valueOf());
 
 	const playAudio = () => {
-		if (wavesurfer.current.current) {
+		if (wavesurfer.current.current && audioBlobUrl) {
 			wavesurfer.current.current.playPause();
 		}
 	};
 
+	// Determine modal title based on mode
+	let modalTitle = t("quick-notes"); // Default for list mode
+	if (quickNotesModalMode === "create") modalTitle = t("add-quick-note");
+	if (quickNotesModalMode === "edit") modalTitle = t("edit-quick-note");
+
 	return (
 		<Modal
-			title={quickNotesModalMode === "create" ? t("add-quick-note") : t("edit-quick-note")}
+			title={modalTitle}
 			open={isOpen}
 			onCancel={onClose}
-			width={quickNotesModalMode === "list" ? (screens.xs ? "95%" : "60%") : screens.xs ? "95%" : "40%"}
+			width={quickNotesModalMode === "list" ? (screens.xs ? "95%" : "60%") : screens.xs ? "95%" : "500px"} // Adjusted width for create/edit
+			style={{ maxWidth: screens.xs ? "95vw" : quickNotesModalMode === "list" ? "800px" : "500px" }}
 			bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}
 			footer={
 				quickNotesModalMode === "list"
-					? null
+					? [
+							// Add footer for list mode to have "Add New Note" button
+							<Button key="add" type="primary" onClick={() => onEdit(null)}>
+								{t("add-new-note")}
+							</Button>,
+							<Button key="close" onClick={onClose}>
+								{t("close")}
+							</Button>,
+					  ]
 					: [
 							<Button key="cancel" onClick={onClose}>
 								{t("cancel")}
@@ -627,73 +665,86 @@ const QuickNotesModal = ({
 								key="submit"
 								type="primary"
 								onClick={handleSave}
-								disabled={isTranscribing} // Disable save while transcribing
+								loading={loading || isTranscribing} // Show loading state
+								disabled={isRecording || isTranscribing} // Disable while recording/transcribing
 							>
 								{quickNotesModalMode === "create" ? t("create-note") : t("update-note")}
 							</Button>,
 					  ]
 			}>
 			{quickNotesModalMode === "list" ? (
-				<>
-					<List
-						itemLayout="horizontal"
-						dataSource={sortedQuickNotes}
-						loading={loading}
-						renderItem={(item) => (
-							<List.Item
-								actions={[
-									<Button type="link" icon={<EditOutlined />} onClick={() => onEdit(item)} />,
-									<Button type="link" danger icon={<DeleteOutlined />} onClick={() => onDelete(item.id)} />,
-								]}>
-								<List.Item.Meta
-									avatar={<Avatar icon={<PushpinOutlined />} />}
-									title={
-										<span>
-											{item.addedByUser || t("system")} - <ClockCircleOutlined />{" "}
-											{moment(item.createdAt).format("YYYY-MM-DD HH:mm")}
-										</span>
-									}
-									description={item.noteText}
-								/>
-							</List.Item>
-						)}
-					/>
-					<Button type="primary" style={{ marginTop: "16px" }} onClick={() => onEdit(null)}>
-						{t("add-new-note")}
-					</Button>
-				</>
+				<List
+					itemLayout="horizontal"
+					dataSource={sortedQuickNotes}
+					loading={loading}
+					renderItem={(item) => (
+						<List.Item
+							actions={[
+								<Tooltip title={t("edit")}>
+									<Button type="text" icon={<EditOutlined />} onClick={() => onEdit(item)} />
+								</Tooltip>,
+								<Tooltip title={t("delete")}>
+									<Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(item.id)} />
+								</Tooltip>,
+							]}>
+							<List.Item.Meta
+								avatar={<Avatar icon={<PushpinOutlined />} />}
+								title={
+									<span>
+										{item.addedByUser || t("system")} - <ClockCircleOutlined style={{ marginRight: 4 }} />
+										{moment(item.createdAt).format("YYYY-MM-DD HH:mm")}
+									</span>
+								}
+								description={<Paragraph style={{ margin: 0 }}>{item.noteText}</Paragraph>}
+							/>
+						</List.Item>
+					)}
+				/>
 			) : (
+				// Create or Edit Mode
 				<>
-					<Space style={{ marginBottom: "16px" }}>
-						<Button
-							icon={isRecording ? <AudioMutedOutlined /> : <AudioOutlined />}
-							type={isRecording ? "danger" : "primary"}
-							onClick={isRecording ? stopRecording : startRecording}
-							disabled={isTranscribing} // Disable recording while transcribing
-						>
-							{isRecording ? t("stop-recording") : t("start-recording")}
-						</Button>
-						<Button onClick={playAudio} disabled={!audioBlobUrl || isTranscribing}>
-							Play/Pause
-						</Button>
-						{recordingError && <Text type="danger">{recordingError}</Text>}
+					<Space direction="vertical" style={{ width: "100%", marginBottom: 16 }}>
+						<Space>
+							<Tooltip title={isRecording ? t("stop-recording") : t("start-recording")}>
+								<Button
+									icon={isRecording ? <AudioMutedOutlined /> : <AudioOutlined />}
+									type={isRecording ? "danger" : "primary"}
+									onClick={isRecording ? stopRecording : startRecording}
+									disabled={isTranscribing}
+									ghost={isRecording} // Make stop button ghost
+								/>
+							</Tooltip>
+							<Tooltip title={t("play-pause-audio")}>
+								<Button onClick={playAudio} disabled={!audioBlobUrl || isTranscribing || isRecording}>
+									{t("play-pause")}
+								</Button>
+							</Tooltip>
+							{recordingError && (
+								<Text type="danger" style={{ marginLeft: 8 }}>
+									{recordingError}
+								</Text>
+							)}
+						</Space>
+						<div
+							id="waveform"
+							ref={waveformRef}
+							style={{
+								width: "100%",
+								height: "60px", // Fixed height for waveform
+								display: isRecording || audioBlobUrl ? "block" : "none",
+								background: "#f0f0f0", // Background for empty state
+								borderRadius: "4px",
+							}}></div>
+						{isTranscribing && <Spin size="small" style={{ marginLeft: 8 }} />}
 					</Space>
-					<div
-						id="waveform"
-						ref={waveformRef}
-						style={{
-							display: isRecording || audioBlobUrl ? "block" : "none", // Corrected display condition
-							marginTop: "10px",
-						}}></div>
 
 					<Input.TextArea
 						value={quickNoteText}
 						onChange={(e) => setQuickNoteText(e.target.value)}
 						placeholder={t("enter-quick-notes")}
-						autoSize={{ minRows: 3, maxRows: 6 }}
-						disabled={isTranscribing} // Disable input while transcribing
+						autoSize={{ minRows: 4, maxRows: 8 }}
+						disabled={isTranscribing}
 					/>
-					{isTranscribing && <Text>Transcribing...</Text>}
 				</>
 			)}
 		</Modal>
@@ -701,15 +752,21 @@ const QuickNotesModal = ({
 };
 
 // -----------------------------------------------------------------------------
-// Patient Details Component
+// Patient Details Component - REVISED LAYOUT
 // -----------------------------------------------------------------------------
 const PatientDetails = () => {
 	const { id: patientId } = useParams();
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
+	const isMobile = screens.xs; // Simplified check for mobile layout adjustments
+
 	const {
 		fetchPatientData,
-		fetchProcedureLogs,
+		// fetchProcedureLogs, // Now handled by fetchPatientData
+		fetchQuickNotes,
+		createQuickNote,
+		updateQuickNote,
+		deleteQuickNote,
 		loading,
 		patient,
 		admissions,
@@ -719,22 +776,20 @@ const PatientDetails = () => {
 		carePlans,
 		prescriptions,
 		vitalSigns,
+		// latestVitalSign, // Available if needed for overview tab
 		productUsages,
 		medicationAdministrations,
 		imageReports,
 		labResults,
 		documents,
-		totalCounts,
 		quickNotes,
 		procedureLogs,
-		fetchQuickNotes,
-		createQuickNote,
-		updateQuickNote,
-		deleteQuickNote,
-		toggleFilter, // Get the toggleFilter function
-		filters, // Get current filter states
+		totalCounts,
+		toggleFilter,
+		filters,
 	} = usePatientDetailStore();
 
+	// --- State ---
 	const [admissionsPage, setAdmissionsPage] = useState(0);
 	const [appointmentsPage, setAppointmentsPage] = useState(0);
 	const [assessmentsPage, setAssessmentsPage] = useState(0);
@@ -747,61 +802,49 @@ const PatientDetails = () => {
 	const [imageReportsPage, setImageReportsPage] = useState(0);
 	const [labResultsPage, setLabResultsPage] = useState(0);
 	const [documentsPage, setDocumentsPage] = useState(0);
-	const [quickNotesPage, setQuickNotesPage] = useState(0); // Add quickNotesPage state
+	const [quickNotesPage, setQuickNotesPage] = useState(0); // Still needed if overview uses its own pagination
 	const [procedureLogsPage, setProcedureLogsPage] = useState(0);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [isQuickNotesModalOpen, setIsQuickNotesModalOpen] = useState(false);
-	const [quickNotesModalMode, setQuickNotesModalMode] = useState("create"); // 'create' or 'edit'
-	const [editingQuickNoteId, setEditingQuickNoteId] = useState(null); // ID of the note being edited
-	const [quickNoteText, setQuickNoteText] = useState(""); // State for the note text
 
-	const [activeTab, setActiveTab] = useState("1");
+	const [searchTerm, setSearchTerm] = useState(""); // Keep search if backend supports it across fields
+	const [activeTab, setActiveTab] = useState("profile"); // Default to profile tab
+
+	// Modal States
 	const [expandedRow, setExpandedRow] = useState(null);
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 	const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
 	const [isSliderOpen, setIsSliderOpen] = useState(false);
 	const [selectedImageData, setSelectedImageData] = useState(null);
 	const [isLabResultModalOpen, setIsLabResultModalOpen] = useState(false);
 	const [selectedLabResult, setSelectedLabResult] = useState(null);
-	const [activityCreated, setActivityCreated] = useState(false);
 	const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 	const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(null);
-	const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-	const [generatingPdfFor, setGeneratingPdfFor] = useState(null);
-	const { fetchLabTests, labTests } = useLabStore(); // Get labTests
-	const { user: loggedInUser } = useAuthStore(); // Get current user from auth store
+	const [isQuickNotesModalOpen, setIsQuickNotesModalOpen] = useState(false);
+	const [quickNotesModalMode, setQuickNotesModalMode] = useState("list"); // Default to list view
+	const [editingQuickNoteId, setEditingQuickNoteId] = useState(null);
+	const [quickNoteText, setQuickNoteText] = useState("");
 
-	// --- Helper function for responsive padding ---
-	const getResponsivePadding = () => {
-		if (screens.xs) {
-			return "8px"; // Smaller padding on extra small screens
-		} else if (screens.sm) {
-			return "12px";
-		} else {
-			return "24px"; // Default padding for larger screens
-		}
+	// Other States
+	const [activityCreated, setActivityCreated] = useState(false); // To trigger refetch after creation
+	const { fetchLabTests, labTests } = useLabStore();
+	const { user: loggedInUser } = useAuthStore();
+
+	// --- Responsive Helpers ---
+	const getResponsivePadding = (defaultValue = "24px") => {
+		if (screens.xs) return "12px";
+		if (screens.sm) return "16px";
+		return defaultValue;
 	};
 
-	// --- Helper function for responsive margins ---
 	const getResponsiveMargin = () => {
-		if (screens.xs) {
-			return "8px 0"; // Smaller margins on extra small
-		} else if (screens.sm) {
-			return "12px 0";
-		} else {
-			return "24px 16px";
-		}
+		if (screens.xs) return "8px";
+		if (screens.sm) return "12px";
+		return "16px"; // Reduced default margin
 	};
 
-	const handleOpenServiceModal = () => {
-		setIsServiceModalOpen(true);
-	};
-	const handleCloseServiceModal = () => {
-		setIsServiceModalOpen(false);
-	};
-	const handleActivityCreated = () => {
-		setActivityCreated((prev) => !prev);
-	};
+	// --- Modal Handlers ---
+	const handleOpenServiceModal = () => setIsServiceModalOpen(true);
+	const handleCloseServiceModal = () => setIsServiceModalOpen(false);
+	const handleActivityCreated = () => setActivityCreated((prev) => !prev); // Trigger refetch
 	const handleOpenLabResultModal = (labResult) => {
 		setSelectedLabResult(labResult);
 		setIsLabResultModalOpen(true);
@@ -811,23 +854,23 @@ const PatientDetails = () => {
 		setSelectedLabResult(null);
 	};
 	const handleOpenSlider = (imageReport) => {
-		setSelectedImageData(imageReport);
+		// Ensure imageUrls are processed before opening
+		const processedUrls = imageReport.imageUrls?.map(generateImageUrl) || [];
+		setSelectedImageData({ ...imageReport, imageUrls: processedUrls });
 		setIsSliderOpen(true);
 	};
 	const handleCloseSlider = () => {
 		setIsSliderOpen(false);
 		setSelectedImageData(null);
 	};
-
-	const handleOpenModal = (row, type) => {
+	const handleOpenDetailModal = (row, type) => {
 		setExpandedRow({ ...row, type });
-		setIsModalOpen(true);
+		setIsDetailModalOpen(true);
 	};
-	const handleCloseModal = () => {
+	const handleCloseDetailModal = () => {
 		setExpandedRow(null);
-		setIsModalOpen(false);
+		setIsDetailModalOpen(false);
 	};
-
 	const handleOpenAvatarModal = (avatarUrl) => {
 		setSelectedAvatarUrl(avatarUrl);
 		setIsAvatarModalOpen(true);
@@ -836,25 +879,36 @@ const PatientDetails = () => {
 		setSelectedAvatarUrl(null);
 		setIsAvatarModalOpen(false);
 	};
-	// Modified to handle opening in different modes
-	const handleOpenQuickNotesModal = () => {
-		setQuickNotesModalMode("list"); // Open in list mode initially
+
+	// Quick Notes Modal Handlers
+	const handleOpenQuickNotesModal = (mode = "list", note = null) => {
+		setQuickNotesModalMode(mode);
+		if (mode === "edit" && note) {
+			setEditingQuickNoteId(note.id);
+			setQuickNoteText(note.noteText);
+		} else if (mode === "create") {
+			setEditingQuickNoteId(null);
+			setQuickNoteText("");
+		}
+		// Fetch notes if opening list view and they might be stale
+		if (mode === "list" && !quickNotes.length) {
+			// Example condition
+			fetchQuickNotes(patientId, 1, 10);
+		}
 		setIsQuickNotesModalOpen(true);
 	};
-
-	// Handles closing, resetting to create mode
 	const handleCloseQuickNotesModal = () => {
 		setIsQuickNotesModalOpen(false);
-		setQuickNotesModalMode("create"); // Reset to create
+		// Reset state, important for WaveSurfer cleanup potentially
+		setQuickNotesModalMode("list");
 		setEditingQuickNoteId(null);
-		setQuickNoteText(""); // Clear text
+		setQuickNoteText("");
 	};
 	const handleSaveQuickNotes = async () => {
 		if (!loggedInUser || !loggedInUser.id) {
 			notification.error({ message: t("error"), description: t("user-not-logged-in") });
 			return;
 		}
-
 		try {
 			if (quickNotesModalMode === "create") {
 				await createQuickNote(patientId, quickNoteText, loggedInUser.id);
@@ -863,591 +917,580 @@ const PatientDetails = () => {
 				await updateQuickNote(editingQuickNoteId, quickNoteText, loggedInUser.id);
 				notification.success({ message: t("success"), description: t("quick-note-updated") });
 			}
-			setQuickNotesModalMode("list"); // Switch back to list mode
-		} catch (error) {
-			// Error handling is already done in the service.
-		}
-	};
-
-	const handleDeleteQuickNote = async (quickNoteId) => {
-		try {
-			await deleteQuickNote(quickNoteId);
-			notification.success({ message: t("success"), description: t("quick-note-deleted") });
+			// After save, switch back to list mode within the modal if desired, or close
+			// Let's switch back to list mode to see the update/creation
 			setQuickNotesModalMode("list");
+			// No need to close here, handleCloseQuickNotesModal handles closing
 		} catch (error) {
-			// Error handling is already in the service.
+			// Error handled in store
+		}
+	};
+	const handleDeleteQuickNote = async (quickNoteId) => {
+		Modal.confirm({
+			title: t("confirm-delete-note-title"),
+			content: t("confirm-delete-note-content"),
+			okText: t("delete"),
+			okType: "danger",
+			cancelText: t("cancel"),
+			onOk: async () => {
+				try {
+					await deleteQuickNote(quickNoteId);
+					notification.success({ message: t("success"), description: t("quick-note-deleted") });
+					// Stay in list mode
+					setQuickNotesModalMode("list");
+				} catch (error) {
+					// Error handled in store
+				}
+			},
+		});
+	};
+	const handleEditQuickNote = (quickNote) => {
+		// This function is called by the Edit button in the list view
+		if (quickNote) {
+			// Editing existing
+			handleOpenQuickNotesModal("edit", quickNote);
+		} else {
+			// Adding new (called from "Add New Note" button in list footer)
+			handleOpenQuickNotesModal("create");
 		}
 	};
 
-	// Function to handle editing
-	const handleEditQuickNote = (quickNote) => {
-		if (quickNote) {
-			// Editing an existing note
-			setQuickNotesModalMode("edit");
-			setEditingQuickNoteId(quickNote.id);
-			setQuickNoteText(quickNote.noteText);
-		} else {
-			// Creating a new note
-			setQuickNotesModalMode("create");
-			setEditingQuickNoteId(null);
-			setQuickNoteText("");
-		}
-	};
+	// --- Data Fetching ---
 	useEffect(() => {
-		// Fetch lab tests when the component mounts
+		// Fetch lab tests once on mount
 		fetchLabTests();
 	}, [fetchLabTests]);
-	useEffect(() => {
-		console.log("prescriptions data:", prescriptions);
-	}, [prescriptions]);
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				await fetchPatientData(patientId);
-			} catch (error) {
-				console.error("Error fetching patient data:", error);
-			}
-		};
-		fetchData();
-	}, [patientId, fetchPatientData]);
 
-	// Generic fetch function (now takes dataType)
-	const fetchPaginatedData = async (page, dataType) => {
+	useEffect(() => {
+		// Fetch initial patient data when ID changes
+		if (patientId) {
+			// Fetch patient details + data for the *initially active tab* (Profile/Overview don't need initial fetch like this)
+			// Let's fetch patient + admissions initially as an example, or adjust as needed
+			// The store's fetchPatientData fetches the patient regardless
+			fetchPatientData(patientId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10);
+			// Fetch quick notes initially for the overview tab/modal
+			fetchQuickNotes(patientId, 1, 10);
+		}
+	}, [patientId, fetchPatientData, fetchQuickNotes]); // Removed activityCreated from initial fetch
+
+	// Generic fetch function adapted for tab-based loading
+	const fetchPaginatedDataForTab = async (dataType, pageState) => {
+		if (!patientId) return;
+		const pageNum = pageState + 1; // API uses 1-based usually, state is 0-based
+
+		// Map dataType to the correct page argument position in fetchPatientData
+		const pageArgs = {
+			admissions: admissionsPage,
+			appointments: appointmentsPage,
+			assessments: assessmentsPage,
+			billings: billingsPage,
+			carePlans: carePlansPage,
+			prescriptions: prescriptionsPage,
+			vitalSigns: vitalSignsPage,
+			productUsages: productUsagesPage,
+			medicationAdministrations: medicationAdministrationsPage,
+			imageReports: imageReportsPage,
+			labResults: labResultsPage,
+			documents: documentsPage,
+			quickNotes: quickNotesPage, // Keep if needed for separate pagination
+			procedureLogs: procedureLogsPage,
+		};
+
 		try {
-			const pageNum = page + 1;
 			await fetchPatientData(
 				patientId,
-				dataType === "admissions" ? pageNum : undefined,
-				dataType === "appointments" ? pageNum : undefined,
-				dataType === "assessments" ? pageNum : undefined,
-				dataType === "billings" ? pageNum : undefined,
-				dataType === "carePlans" ? pageNum : undefined,
-				dataType === "prescriptions" ? pageNum : undefined,
-				dataType === "vitalSigns" ? pageNum : undefined,
-				dataType === "productUsages" ? pageNum : undefined,
-				dataType === "medicationAdministrations" ? pageNum : undefined,
-				dataType === "imageReports" ? pageNum : undefined,
-				dataType === "labResults" ? pageNum : undefined,
-				dataType === "documents" ? pageNum : undefined,
-				dataType === "quickNotes" ? pageNum : undefined,
-				dataType === "procedureLogs" ? pageNum : undefined,
-				10
+				dataType === "admissions" ? pageNum : 0,
+				dataType === "appointments" ? pageNum : 0,
+				dataType === "assessments" ? pageNum : 0,
+				dataType === "billings" ? pageNum : 0,
+				dataType === "carePlans" ? pageNum : 0,
+				dataType === "prescriptions" ? pageNum : 0,
+				dataType === "vitalSigns" ? pageNum : 0,
+				dataType === "productUsages" ? pageNum : 0,
+				dataType === "medicationAdministrations" ? pageNum : 0,
+				dataType === "imageReports" ? pageNum : 0,
+				dataType === "labResults" ? pageNum : 0,
+				dataType === "documents" ? pageNum : 0,
+				dataType === "quickNotes" ? pageNum : 0, // Keep if paginating notes separately
+				dataType === "procedureLogs" ? pageNum : 0,
+				10 // pageSize
 			);
 		} catch (error) {
 			console.error(`Error fetching ${dataType}:`, error.message);
+			// Notification handled in store
 		}
 	};
 
-	// useEffect hooks using fetchPaginatedData
+	// useEffect hooks for specific tabs (triggered by tab change, page change, filter change, activity creation)
 	useEffect(() => {
-		fetchPaginatedData(admissionsPage, "admissions");
-	}, [admissionsPage, patientId, fetchPatientData, activityCreated, searchTerm]);
+		if (activeTab === "3" && patientId) fetchPaginatedDataForTab("admissions", admissionsPage);
+	}, [activeTab, patientId, admissionsPage, activityCreated, searchTerm]); // Filter not applicable to admissions
+
 	useEffect(() => {
-		fetchPaginatedData(appointmentsPage, "appointments");
-	}, [appointmentsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.appointments]);
+		if (activeTab === "4" && patientId) fetchPaginatedDataForTab("appointments", appointmentsPage);
+	}, [activeTab, patientId, appointmentsPage, filters.appointments, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(assessmentsPage, "assessments");
-	}, [assessmentsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.assessments]);
+		if (activeTab === "5" && patientId) fetchPaginatedDataForTab("assessments", assessmentsPage);
+	}, [activeTab, patientId, assessmentsPage, filters.assessments, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(billingsPage, "billings");
-	}, [billingsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.billings]);
+		if (activeTab === "6" && patientId) fetchPaginatedDataForTab("billings", billingsPage);
+	}, [activeTab, patientId, billingsPage, filters.billings, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(carePlansPage, "carePlans");
-	}, [carePlansPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.carePlans]);
+		if (activeTab === "7" && patientId) fetchPaginatedDataForTab("carePlans", carePlansPage);
+	}, [activeTab, patientId, carePlansPage, filters.carePlans, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(prescriptionsPage, "prescriptions");
-	}, [prescriptionsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.prescriptions]);
+		if (activeTab === "8" && patientId) fetchPaginatedDataForTab("prescriptions", prescriptionsPage);
+	}, [activeTab, patientId, prescriptionsPage, filters.prescriptions, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(vitalSignsPage, "vitalSigns");
-	}, [vitalSignsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.vitalSigns]);
+		if (activeTab === "9" && patientId) fetchPaginatedDataForTab("vitalSigns", vitalSignsPage);
+	}, [activeTab, patientId, vitalSignsPage, filters.vitalSigns, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(productUsagesPage, "productUsages");
-	}, [productUsagesPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.productUsages]);
+		if (activeTab === "10" && patientId) fetchPaginatedDataForTab("productUsages", productUsagesPage);
+	}, [activeTab, patientId, productUsagesPage, filters.productUsages, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(medicationAdministrationsPage, "medicationAdministrations");
-	}, [medicationAdministrationsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.medicationAdministrations]);
+		if (activeTab === "11" && patientId) fetchPaginatedDataForTab("medicationAdministrations", medicationAdministrationsPage);
+	}, [activeTab, patientId, medicationAdministrationsPage, filters.medicationAdministrations, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(imageReportsPage, "imageReports");
-	}, [imageReportsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.imageReports]);
+		if (activeTab === "12" && patientId) fetchPaginatedDataForTab("imageReports", imageReportsPage);
+	}, [activeTab, patientId, imageReportsPage, filters.imageReports, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(labResultsPage, "labResults");
-	}, [labResultsPage, patientId, fetchPatientData, activityCreated, searchTerm, labTests, filters.labResults]);
+		if (activeTab === "13" && patientId) fetchPaginatedDataForTab("labResults", labResultsPage);
+	}, [activeTab, patientId, labResultsPage, filters.labResults, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(documentsPage, "documents");
-	}, [documentsPage, patientId, fetchPatientData, activityCreated, searchTerm, filters.documents]);
+		if (activeTab === "14" && patientId) fetchPaginatedDataForTab("documents", documentsPage);
+	}, [activeTab, patientId, documentsPage, filters.documents, activityCreated, searchTerm]);
+
 	useEffect(() => {
-		fetchPaginatedData(quickNotesPage, "quickNotes");
-	}, [quickNotesPage, patientId, fetchQuickNotes, searchTerm]);
-	useEffect(() => {
-		fetchPaginatedData(procedureLogsPage, "procedureLogs");
-	}, [procedureLogsPage, patientId, fetchProcedureLogs, activityCreated, searchTerm, filters.procedureLogs]);
+		if (activeTab === "15" && patientId) fetchPaginatedDataForTab("procedureLogs", procedureLogsPage);
+	}, [activeTab, patientId, procedureLogsPage, filters.procedureLogs, activityCreated, searchTerm]);
+
+	// Note: Quick Notes fetching might be handled primarily by the modal logic now.
+	// If you need the main list populated for the Overview tab, trigger fetchQuickNotes here based on activeTab === 'overview'
+	// useEffect(() => {
+	// 	if (activeTab === 'overview' && patientId) fetchQuickNotes(patientId, 1, 10); // Fetch first page for overview
+	// }, [activeTab, patientId, fetchQuickNotes]);
 
 	const handleTabChange = (key) => {
 		setActiveTab(key);
+		// Reset page numbers when switching tabs? Optional, could be annoying.
+		// Let's not reset pages on tab switch for now.
 	};
 
-	const admissionsColumns = [
-		{
-			title: t("admission-date"),
-			dataIndex: "admissionDate",
-			key: "admissionDate",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Admission")}>
-						{t("view-details")}
-					</Button>{" "}
-					<PdfGenerator type="admission" mode="single" data={record} fileNamePrefix="admission">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-		{
-			title: t("discharge-date"),
-			dataIndex: "dischargeDate",
-			key: "dischargeDate",
-			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : t("open")),
-		},
-		{
-			title: t("bed-id"),
-			dataIndex: "bedId",
-			key: "bedId",
-		},
-	];
-	const appointmentsColumns = [
-		{
-			title: t("appointment-date"),
-			dataIndex: "appointmentDate",
-			key: "appointmentDate",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Appointment")}>
-						{t("view-details")}
-					</Button>
-					<PdfGenerator type="appointment" mode="single" data={record} fileNamePrefix="appointment">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-	];
-	const assessmentsColumns = [
-		{
-			title: t("assessment-date"),
-			dataIndex: "assessmentDateTime",
-			key: "assessmentDate",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Assessment")}>
-						{t("view-details")}
-					</Button>
+	// --- Column Definitions (Memoized and Responsive) ---
 
-					<PdfGenerator type="assessment" mode="single" data={record} fileNamePrefix="assessment">
-						<Button type="default">{t("export-pdf")}</Button>
+	const commonActionColumn = (type, pdfType, pdfPrefix, recordProcessor = (r) => r) => ({
+		title: t("actions"),
+		key: "actions",
+		fixed: isMobile ? false : "right", // Fix actions column on desktop
+		width: isMobile ? 110 : 130, // Adjust width as needed
+		render: (text, record) => (
+			<Space size={isMobile ? "small" : "middle"} wrap={isMobile}>
+				<Tooltip title={t("view-details")}>
+					<Button size="small" type="primary" icon={<EyeOutlined />} onClick={() => handleOpenDetailModal(record, type)} />
+				</Tooltip>
+				<Tooltip title={t("export-pdf")}>
+					<PdfGenerator type={pdfType} mode="single" data={recordProcessor(record)} fileNamePrefix={pdfPrefix} labTests={labTests}>
+						<Button size="small" type="default" icon={<DownloadOutlined />} />
 					</PdfGenerator>
-				</Space>
-			),
-		},
-	];
+				</Tooltip>
+			</Space>
+		),
+	});
 
-	const billingColumns = [
-		{
-			title: t("billing-date"),
-			dataIndex: "billDate",
-			key: "billingDate",
-			render: (text) => <>{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}</>,
-		},
-		{
-			title: t("description"),
-			dataIndex: "description",
-			key: "description",
-			render: (text, record) => (
-				<Space>
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Billing")}>
-						{t("view-details")}
-					</Button>
-					<PdfGenerator type="billing" mode="single" data={record} fileNamePrefix="billing">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-	];
-	const carePlansColumns = [
-		{
-			title: t("plan-date"),
-			dataIndex: "planDate",
-			key: "planDate",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Care Plan")}>
-						{t("view-details")}
-					</Button>
-					<PdfGenerator type="carePlan" mode="single" data={record} fileNamePrefix="care_plan">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-		{
-			title: t("goal"),
-			dataIndex: "goal",
-			key: "goal",
-		},
-		{
-			title: t("interventions"),
-			dataIndex: "interventions",
-			key: "interventions",
-		},
-	];
-	const prescriptionsColumns = useMemo(
-		() => [
+	const admissionsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("admission-date"),
+				dataIndex: "admissionDate",
+				key: "admissionDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{
+				title: t("discharge-date"),
+				dataIndex: "dischargeDate",
+				key: "dischargeDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : <Tag color="green">{t("open")}</Tag>),
+			},
+			{ title: t("bed-id"), dataIndex: "bedId", key: "bedId", width: 100 },
+		];
+		const actionsCol = commonActionColumn("Admission", "admission", "admission");
+
+		return isMobile
+			? [baseColumns[0], actionsCol] // Show Date + Actions on mobile
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]); // Added t and handler dependencies
+
+	const appointmentsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("appointment-date"),
+				dataIndex: "appointmentDate",
+				key: "appointmentDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			// Add other relevant columns if available, e.g., Doctor, Status
+		];
+		const actionsCol = commonActionColumn("Appointment", "appointment", "appointment");
+
+		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const assessmentsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("assessment-date"),
+				dataIndex: "assessmentDateTime",
+				key: "assessmentDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{
+				title: t("notes"),
+				dataIndex: "notes",
+				key: "notes",
+				ellipsis: true, // Add ellipsis for long notes
+				render: (text) => <div dangerouslySetInnerHTML={{ __html: text?.substring(0, 100) + (text?.length > 100 ? "..." : "") }} />, // Show preview
+			},
+		];
+		const actionsCol = commonActionColumn("Assessment", "assessment", "assessment");
+
+		return isMobile ? [baseColumns[0], actionsCol] : [baseColumns[0], baseColumns[1], actionsCol]; // Show Date, Notes Preview, Actions on desktop
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const billingColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("billing-date"),
+				dataIndex: "billDate",
+				key: "billingDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{ title: t("description"), dataIndex: "description", key: "description", ellipsis: true }, // Assuming description exists
+			{ title: t("amount"), dataIndex: "amount", key: "amount", width: 100, render: (text) => (text ? `$${text.toFixed(2)}` : "N/A") }, // Assuming amount exists
+		];
+		const actionsCol = commonActionColumn("Billing", "billing", "billing");
+
+		return isMobile
+			? [baseColumns[0], baseColumns[2] ?? null, actionsCol].filter(Boolean) // Date, Amount (if exists), Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const carePlansColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("plan-date"),
+				dataIndex: "planDate",
+				key: "planDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{ title: t("goal"), dataIndex: "goal", key: "goal", ellipsis: true },
+			{ title: t("interventions"), dataIndex: "interventions", key: "interventions", ellipsis: true },
+		];
+		const actionsCol = commonActionColumn("Care Plan", "carePlan", "care_plan");
+
+		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const prescriptionsColumns = useMemo(() => {
+		const baseColumns = [
 			{
 				title: t("prescription-date"),
 				dataIndex: "prescriptionDate",
 				key: "prescriptionDate",
-				render: (text, record) => (
-					<Space key={record.id}>
-						{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-						<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Prescription")}></Button>
-						<PdfGenerator type="prescription" mode="single" data={record} fileNamePrefix="prescription">
-							<Button type="default">{t("pdf")}</Button>
-						</PdfGenerator>
-					</Space>
-				),
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
 			},
-			{
-				title: t("note"),
-				dataIndex: "note",
-				key: "note",
-			},
+			{ title: t("note"), dataIndex: "note", key: "note", ellipsis: true },
 			{
 				title: t("prescribed-medications"),
 				key: "prescribedMedications",
+				ellipsis: true,
 				render: (text, record) => {
 					const medications = record?.prescribedMedications ?? [];
 					return medications.length > 0
-						? renderMedicationList(medications, t) // PASS 't' HERE
+						? medications.map((m) => m.medicationName).join(", ") // Simple preview
 						: t("no-medications-prescribed");
 				},
 			},
-		],
-		[t, handleOpenModal] // Include 't' in the dependency array!
-	);
-	const vitalSignsColumns = [
-		{
-			title: t("record-date"),
-			dataIndex: "timestamp",
-			key: "recordDate",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Vital Sign")}>
-						{t("view-details")}
-					</Button>
-					<PdfGenerator type="vitalSign" mode="single" data={record} fileNamePrefix="vital_sign">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-		{
-			title: t("temperature"),
-			dataIndex: "temperature",
-			key: "temperature",
-		},
-		{
-			title: t("heart-rate"),
-			dataIndex: "heartRate",
-			key: "heartRate",
-		},
-		{
-			title: t("blood-pressure"),
-			key: "bloodPressure",
-			render: (text, record) => {
-				return `${record.bloodPressureSystolic}/${record.bloodPressureDiastolic}`;
-			},
-		},
-	];
-	const productUsagesColumns = [
-		{
-			title: t("start-time"),
-			dataIndex: "startTime",
-			key: "startTime",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Product Usage")}>
-						{t("view-details")}
-					</Button>
-					<PdfGenerator type="productUsage" mode="single" data={record} fileNamePrefix="product_usage">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>{" "}
-				</Space>
-			),
-		},
-		{
-			title: t("end-time"),
-			dataIndex: "endTime",
-			key: "endTime",
-			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
-		},
-		{
-			title: t("product-name"),
-			dataIndex: "productName",
-			key: "productName",
-		},
-		{
-			title: t("quantity"),
-			dataIndex: "quantity",
-			key: "quantity",
-		},
-		{
-			title: t("price"),
-			dataIndex: "price",
-			key: "price",
-		},
-	];
-	const medicationAdministrationsColumns = [
-		{
-			title: t("administration-time"),
-			dataIndex: "administrationTime",
-			key: "administrationTime",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Medication Administration")}>
-						{t("view-details")}
-					</Button>
-					<PdfGenerator type="medicationAdministration" mode="single" data={record} fileNamePrefix="medication_administration">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-		{
-			title: t("amount"),
-			dataIndex: "amount",
-			key: "amount",
-		},
-		{
-			title: t("calculated-price"),
-			dataIndex: "calculatedPrice",
-			key: "calculatedPrice",
-		},
-		{
-			title: t("prescribed-medication-name"),
-			dataIndex: "medicationName",
-			key: "medicationName",
-		},
-	];
-	const imageReportsColumns = [
-		{
-			title: t("report-date"),
-			dataIndex: "reportDateTime",
-			key: "reportDateTime",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Image Report")}>
-						{t("view-details")}
-					</Button>
-					{/* Pass processed URLs here */}
-					<PdfGenerator
-						type="imageReport"
-						mode="single"
-						data={{ ...record, imageUrls: record.imageUrls.map(generateImageUrl) }}
-						fileNamePrefix="image_report">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
-			),
-		},
-		{
-			title: t("image-type"),
-			dataIndex: "imageType",
-			key: "imageType",
-		},
-		{
-			title: t("description"),
-			dataIndex: "description",
-			key: "description",
-		},
-		{
-			title: t("report-text"),
-			dataIndex: "reportText",
-			key: "reportText",
-		},
-		{
-			title: t("images"),
-			key: "images",
-			render: (text, record) => {
-				if (!record.imageUrls || record.imageUrls.length === 0) {
-					return t("no-images-available");
-				}
+		];
+		const actionsCol = commonActionColumn("Prescription", "prescription", "prescription");
 
-				// *CRUCIAL FIX:  Generate full URLs *before* passing to handleOpenSlider*
-				const imageUrls = record.imageUrls.map((url) => generateImageUrl(url));
+		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
 
-				return (
-					// Pass the processed imageUrls, NOT the original record
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenSlider({ imageUrls })}>
-						{t("view-images")}
-					</Button>
-				);
+	const vitalSignsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("record-date"),
+				dataIndex: "timestamp",
+				key: "recordDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
 			},
-		},
-	];
-	const labResultsColumns = [
-		{
-			title: t("result-date-time"),
-			dataIndex: "resultDateTime",
-			key: "resultDateTime",
-			render: (text) => <>{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}</>,
-		},
-		{
-			title: t("notes"),
-			dataIndex: "notes",
-			key: "notes",
-		},
-		{
+			{ title: t("temp"), dataIndex: "temperature", key: "temperature", width: 60 },
+			{ title: t("hr"), dataIndex: "heartRate", key: "heartRate", width: 60 },
+			{
+				title: t("bp"),
+				key: "bloodPressure",
+				width: 90,
+				render: (text, record) =>
+					record.bloodPressureSystolic && record.bloodPressureDiastolic
+						? `${record.bloodPressureSystolic}/${record.bloodPressureDiastolic}`
+						: "N/A",
+			},
+			{ title: t("rr"), dataIndex: "respiratoryRate", key: "respiratoryRate", width: 60 },
+			{ title: t("spo2"), dataIndex: "oxygenSaturation", key: "oxygenSaturation", width: 60 },
+		];
+		const actionsCol = commonActionColumn("Vital Sign", "vitalSign", "vital_sign");
+
+		return isMobile
+			? [baseColumns[0], baseColumns[3], actionsCol] // Date, BP, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const productUsagesColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("start-time"),
+				dataIndex: "startTime",
+				key: "startTime",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			// { title: t("end-time"), dataIndex: "endTime", key: "endTime", width: 160, render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A") }, // Often same as start or less critical
+			{ title: t("product-name"), dataIndex: "productName", key: "productName", ellipsis: true },
+			{ title: t("qty"), dataIndex: "quantity", key: "quantity", width: 60 },
+			{ title: t("price"), dataIndex: "price", key: "price", width: 80, render: (text) => (text ? `$${text.toFixed(2)}` : "N/A") },
+		];
+		const actionsCol = commonActionColumn("Product Usage", "productUsage", "product_usage");
+
+		return isMobile
+			? [baseColumns[0], baseColumns[1], actionsCol] // Date, Product, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const medicationAdministrationsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("admin-time"),
+				dataIndex: "administrationTime",
+				key: "administrationTime",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{ title: t("medication"), dataIndex: "medicationName", key: "medicationName", ellipsis: true },
+			{ title: t("amount"), dataIndex: "amount", key: "amount", width: 80 },
+			// { title: t("calc-price"), dataIndex: "calculatedPrice", key: "calculatedPrice", width: 100, render: (text) => text ? `$${text.toFixed(2)}` : 'N/A' },
+		];
+		const actionsCol = commonActionColumn("Medication Administration", "medicationAdministration", "med_admin");
+
+		return isMobile
+			? [baseColumns[0], baseColumns[1], actionsCol] // Time, Med Name, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	const imageReportsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("report-date"),
+				dataIndex: "reportDateTime",
+				key: "reportDateTime",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{ title: t("image-type"), dataIndex: "imageType", key: "imageType", width: 120 },
+			{ title: t("description"), dataIndex: "description", key: "description", ellipsis: true },
+			// { title: t("report-text"), dataIndex: "reportText", key: "reportText", ellipsis: true },
+			{
+				title: t("images"),
+				key: "images",
+				width: 100,
+				render: (text, record) => {
+					if (!record.imageUrls || record.imageUrls.length === 0) {
+						return <Text type="secondary">{t("no-images")}</Text>;
+					}
+					return (
+						<Tooltip title={t("view-images")}>
+							<Button size="small" type="dashed" icon={<PictureOutlined />} onClick={() => handleOpenSlider(record)} />
+						</Tooltip>
+					);
+				},
+			},
+		];
+		// Modify action column processor to handle image URLs
+		const actionsCol = commonActionColumn("Image Report", "imageReport", "image_report", (record) => ({
+			...record,
+			imageUrls: record.imageUrls?.map(generateImageUrl) || [],
+		}));
+
+		return isMobile
+			? [baseColumns[0], baseColumns[1], actionsCol] // Date, Type, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal, handleOpenSlider]); // Added handleOpenSlider dependency
+
+	const labResultsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("result-date"),
+				dataIndex: "resultDateTime",
+				key: "resultDateTime",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{
+				title: t("test-name"),
+				key: "testName",
+				ellipsis: true,
+				render: (text, record) => labTests.find((test) => test.id === record.labTestId)?.testName || t("unknown-test"),
+			},
+			{ title: t("notes"), dataIndex: "notes", key: "notes", ellipsis: true },
+		];
+		// Custom Actions Column for Lab Results (Uses different modal)
+		const actionsCol = {
 			title: t("actions"),
 			key: "actions",
+			fixed: isMobile ? false : "right",
+			width: isMobile ? 110 : 130,
 			render: (text, record) => {
 				const labTestDetails = labTests.find((test) => test.id === record.labTestId);
 				return (
-					<Space>
-						<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenLabResultModal(record)}>
-							{t("view-details")}
-						</Button>
-						{/* Corrected data prop */}
-						<PdfGenerator
-							type="labResult"
-							mode="single"
-							data={{ ...record, labTestDetails: labTestDetails }}
-							fileNamePrefix="lab_result"
-							labTests={labTests}>
-							<Button type="default">{t("export-pdf")}</Button>
-						</PdfGenerator>
+					<Space size={isMobile ? "small" : "middle"} wrap={isMobile}>
+						<Tooltip title={t("view-details")}>
+							<Button size="small" type="primary" icon={<EyeOutlined />} onClick={() => handleOpenLabResultModal(record)} />
+						</Tooltip>
+						<Tooltip title={t("export-pdf")}>
+							<PdfGenerator
+								type="labResult"
+								mode="single"
+								data={{ ...record, labTestDetails: labTestDetails }}
+								fileNamePrefix="lab_result"
+								labTests={labTests}>
+								<Button size="small" type="default" icon={<DownloadOutlined />} />
+							</PdfGenerator>
+						</Tooltip>
 					</Space>
 				);
 			},
-		},
-	];
-	const documentsColumns = [
-		{
-			title: t("document-name"),
-			dataIndex: "documentName",
-			key: "documentName",
-		},
-		{
-			title: t("upload-date"),
-			dataIndex: "uploadDate",
-			key: "uploadDate",
-			render: (text) => <>{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}</>,
-		},
-		{
-			title: t("uploaded-by"),
-			dataIndex: "uploadedByName",
-			key: "uploadedByName",
-		},
+		};
 
-		{
+		return isMobile
+			? [baseColumns[0], baseColumns[1], actionsCol] // Date, Test Name, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, labTests, handleOpenLabResultModal]); // Added labTests and handler dependencies
+
+	const documentsColumns = useMemo(() => {
+		const baseColumns = [
+			{ title: t("document-name"), dataIndex: "documentName", key: "documentName", ellipsis: true },
+			{
+				title: t("upload-date"),
+				dataIndex: "uploadDate",
+				key: "uploadDate",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{ title: t("uploaded-by"), dataIndex: "uploadedByName", key: "uploadedByName", width: 150, ellipsis: true },
+		];
+		// Custom Actions for Documents (Download only)
+		const actionsCol = {
 			title: t("actions"),
 			key: "actions",
+			fixed: isMobile ? false : "right",
+			width: isMobile ? 80 : 100,
 			render: (text, record) => (
-				<Button
-					type="primary" // Makes the button stand out
-					icon={<DownloadOutlined />} // Adds an icon for better visual appeal
-					onClick={() => {
-						fetch(generateDocumentUrl(record.documentPath))
-							.then((response) => {
-								if (!response.ok) {
-									throw new Error("Failed to fetch the file");
-								}
-								return response.blob();
-							})
-							.then((blob) => {
-								const url = window.URL.createObjectURL(blob);
-								const link = document.createElement("a");
-								link.href = url;
-								link.download = record.documentName || "default-filename.ext";
-								document.body.appendChild(link);
-								link.click();
-								document.body.removeChild(link);
-								window.URL.revokeObjectURL(url);
-							})
-							.catch((error) => {
-								console.error("Error downloading file:", error);
-							});
-					}}>
-					{t("download")}
-				</Button>
-			),
-		},
-	];
-
-	const procedureLogsColumns = [
-		{
-			title: t("start-time"),
-			dataIndex: "startTime",
-			key: "startTime",
-			render: (text, record) => (
-				<Space>
-					{text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"}
-					<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenModal(record, "Procedure Log")}>
-						{t("view-details")}
+				<Tooltip title={t("download")}>
+					<Button
+						size="small"
+						type="primary"
+						icon={<DownloadOutlined />}
+						onClick={() => {
+							const downloadUrl = generateDocumentUrl(record.documentPath);
+							if (!downloadUrl) {
+								notification.error({ message: t("error"), description: t("invalid-document-path") });
+								return;
+							}
+							fetch(downloadUrl) // Assuming relative path works from frontend host or CORS is set up
+								.then((response) => {
+									if (!response.ok) {
+										throw new Error(`Failed to fetch file: ${response.statusText}`);
+									}
+									return response.blob();
+								})
+								.then((blob) => {
+									const url = window.URL.createObjectURL(blob);
+									const link = document.createElement("a");
+									link.href = url;
+									// Extract filename from path or use documentName
+									const filename = record.documentPath?.split("/").pop() || record.documentName || "downloaded_file";
+									link.download = filename;
+									document.body.appendChild(link);
+									link.click();
+									document.body.removeChild(link);
+									window.URL.revokeObjectURL(url);
+								})
+								.catch((error) => {
+									console.error("Error downloading file:", error);
+									notification.error({ message: t("error"), description: `${t("download-failed")}: ${error.message}` });
+								});
+						}}>
+						{!isMobile && t("download")} {/* Show text only on desktop */}
 					</Button>
-					<PdfGenerator type="procedureLog" mode="single" data={record} fileNamePrefix="procedure_log">
-						<Button type="default">{t("export-pdf")}</Button>
-					</PdfGenerator>
-				</Space>
+				</Tooltip>
 			),
-		},
-		{
-			title: t("username"),
-			dataIndex: "userName",
-			key: "userName",
-		},
-		{
-			title: t("procedure-name"),
-			dataIndex: "procedureName",
-			key: "procedureName",
-		},
-		{
-			title: t("notes"),
-			dataIndex: "notes",
-			key: "notes",
-		},
-	];
+		};
 
-	// Handle search
+		return isMobile
+			? [baseColumns[0], actionsCol] // Name, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t]);
+
+	const procedureLogsColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				title: t("start-time"),
+				dataIndex: "startTime",
+				key: "startTime",
+				width: 160,
+				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
+			},
+			{ title: t("procedure-name"), dataIndex: "procedureName", key: "procedureName", ellipsis: true },
+			{ title: t("done-by"), dataIndex: "userName", key: "userName", width: 150, ellipsis: true },
+			{ title: t("notes"), dataIndex: "notes", key: "notes", ellipsis: true },
+		];
+		const actionsCol = commonActionColumn("Procedure Log", "procedureLog", "procedure_log");
+
+		return isMobile
+			? [baseColumns[0], baseColumns[1], actionsCol] // Time, Name, Actions
+			: [...baseColumns, actionsCol];
+	}, [isMobile, t, handleOpenDetailModal]);
+
+	// Handle search (Placeholder - Adapt based on backend capability)
 	const handleSearch = (value) => {
+		console.log("Search triggered (implement backend search):", value);
 		setSearchTerm(value);
-		setAdmissionsPage(0);
-		setAppointmentsPage(0);
-		setAssessmentsPage(0);
-		setBillingsPage(0);
-		setCarePlansPage(0);
-		setPrescriptionsPage(0);
-		setVitalSignsPage(0);
-		setProductUsagesPage(0);
-		setMedicationAdministrationsPage(0);
-		setImageReportsPage(0);
-		setLabResultsPage(0);
-		setDocumentsPage(0);
-		setQuickNotesPage(0);
-		setProcedureLogsPage(0);
+		// Resetting pages on search might be desired
+		setActiveTab("profile"); // Go back to profile after search? Or stay? TBD.
+		// setAdmissionsPage(0); ... reset all pages
 	};
 
-	// NEW:  Handle filter toggle
+	// Handle filter toggle
 	const handleFilterToggle = (dataType) => {
-		toggleFilter(dataType); // Call the Zustand action
-		// Reset pagination when filter changes.  VERY IMPORTANT!
+		toggleFilter(dataType);
+		// Reset pagination for the specific tab when its filter changes
 		switch (dataType) {
 			case "appointments":
 				setAppointmentsPage(0);
@@ -1490,179 +1533,293 @@ const PatientDetails = () => {
 		}
 	};
 
+	// --- Render ---
 	return (
-		<Layout style={{ minHeight: "100vh" }}>
-			<Layout className="site-layout">
-				<Content style={{ margin: getResponsiveMargin() }}>
-					{/* --- Header Section --- */}
-					<Row gutter={[16, 16]} style={{ marginBottom: screens.xs ? 10 : 20 }} align="middle">
-						<Col>
-							<Title level={2} style={{ margin: 0 }}>
-								{t("patient-details")}
-							</Title>
-						</Col>
-						<Col flex="auto">
-							{/* --- Action Bar --- */}
-							<Space style={{ float: "right" }}>
-								<Tooltip title={t("add-service")}>
-									<Button type="primary" shape="circle" icon={<PlusOutlined />} onClick={handleOpenServiceModal} />
-								</Tooltip>
-								{!loading && (
-									<Tooltip title={t("generate-patient-file-pdf")}>
-										<PdfGenerator mode="patientFile" data={patient} labTests={labTests} fileNamePrefix="patient_file">
-											<Button type="default" shape="circle" icon={<DownloadOutlined />} />
-										</PdfGenerator>
-									</Tooltip>
-								)}
-								{/* Quick Notes Button - Now opens the modal */}
-								<Tooltip title={t("quick-notes")}>
-									<Button
-										type="default"
-										shape="circle"
-										icon={<PushpinOutlined />} // Use PushpinOutlined
-										onClick={handleOpenQuickNotesModal}
-									/>
-								</Tooltip>
-							</Space>
-						</Col>
-					</Row>
+		<Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+			{" "}
+			{/* Light background */}
+			{/* Main Page Header - For global actions */}
+			<Header
+				style={{
+					padding: `0 ${getResponsivePadding()}`,
+					background: "#fff",
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					borderBottom: "1px solid #f0f0f0",
+					height: 56, // Slightly smaller header
+				}}>
+				<Title level={4} style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+					{t("patient-details")}
+				</Title>
+				<Space>
+					{/* Search Input - Optional */}
+					{/* <Input.Search
+						placeholder={t("search-records")}
+						onSearch={handleSearch}
+						style={{ width: 200 }}
+						allowClear
+					/> */}
+					<Tooltip title={t("add-service")}>
+						<Button type="primary" shape="circle" icon={<PlusOutlined />} onClick={handleOpenServiceModal} />
+					</Tooltip>
+					{!loading && patient && (
+						<Tooltip title={t("generate-patient-file-pdf")}>
+							<PdfGenerator
+								mode="patientFile"
+								data={patient}
+								labTests={labTests}
+								fileNamePrefix={`patient_${patient?.lastName || "file"}`}>
+								<Button type="default" shape="circle" icon={<DownloadOutlined />} />
+							</PdfGenerator>
+						</Tooltip>
+					)}
+				</Space>
+			</Header>
+			<Content style={{ margin: `${getResponsiveMargin()} ${getResponsivePadding()}` }}>
+				{loading && !patient && <Spin tip={t("loading-patient-details")} style={{ display: "block", marginTop: 50 }} />}
 
-					{/* --- Quick Stats Dashboard --- */}
-					{patient && (
-						<Row gutter={[16, 16]} style={{ marginBottom: screens.xs ? 12 : 24 }}>
-							{/* Use responsive Col spans */}
-							<Col xs={24} sm={12} md={6}>
-								<Card bodyStyle={{ padding: getResponsivePadding() }}>
-									<Statistic
-										title={t("blood-type")}
-										value={patient.bloodType}
-										prefix={<HeartOutlined style={{ color: "#cf1322" }} />}
-									/>
-								</Card>
+				{/* Compact Patient Header - Sticky */}
+				{patient && (
+					<div
+						style={{
+							padding: getResponsivePadding(),
+							background: "#fff",
+							border: "1px solid #e8e8e8", // Use border instead of shadow for subtlety
+							borderRadius: "8px",
+							marginBottom: getResponsiveMargin(),
+							position: "sticky", // Make header sticky
+							top: 0, // Stick to top (adjust if main header has different height)
+							zIndex: 10, // Ensure it's above scrolling content
+						}}>
+						<Row gutter={[16, 16]} align="middle">
+							{/* Avatar Column */}
+							<Col xs={24} sm={4} md={3} style={{ textAlign: isMobile ? "center" : "left" }}>
+								<Avatar
+									size={isMobile ? 64 : 80}
+									src={generateImageUrl(patient.profilePictureURL)}
+									alt={`${patient.firstName} ${patient.lastName}`}
+									icon={<UserOutlined />} // Fallback icon
+									style={{
+										cursor: "pointer",
+										border: "2px solid #eee",
+									}}
+									onClick={() => handleOpenAvatarModal(patient.profilePictureURL)}
+								/>
 							</Col>
-							<Col xs={24} sm={12} md={6}>
-								<Card bodyStyle={{ padding: getResponsivePadding() }}>
-									<Statistic title={t("age")} value={moment().diff(patient.dateOfBirth, "years")} prefix={<UserOutlined />} />
-								</Card>
-							</Col>
-							<Col xs={24} sm={12} md={6}>
-								<Card bodyStyle={{ padding: getResponsivePadding() }}>
-									{admissions && admissions.length > 0 ? (
-										admissions[0].dischargeDate ? (
+
+							{/* Info Column */}
+							<Col xs={24} sm={20} md={21}>
+								<Row gutter={[16, isMobile ? 8 : 12]}>
+									{/* Name */}
+									<Col xs={24} md={12} lg={8}>
+										<Title level={5} style={{ marginBottom: 0 }}>
+											{patient.firstName} {patient.lastName}
+										</Title>
+									</Col>
+									{/* MRN */}
+									<Col xs={12} md={6} lg={4}>
+										<Text type="secondary">
+											<InfoCircleOutlined style={{ marginRight: 4 }} />
+											{t("mrn")}:
+										</Text>{" "}
+										<Text strong>{patient.medicalRecordNumber}</Text>
+									</Col>
+									{/* Age & DOB */}
+									<Col xs={12} md={6} lg={4}>
+										<Text type="secondary">
+											<UserOutlined style={{ marginRight: 4 }} />
+											{t("age")}:
+										</Text>{" "}
+										<Text strong>{moment().diff(patient.dateOfBirth, "years")}</Text>
+										{!isMobile && <Text style={{ marginLeft: 8 }}>({moment(patient.dateOfBirth).format("YYYY-MM-DD")})</Text>}
+									</Col>
+									{/* Gender */}
+									<Col xs={12} md={6} lg={4}>
+										<Text type="secondary">
+											{patient.gender === "Male" ? (
+												<ManOutlined style={{ marginRight: 4 }} />
+											) : (
+												<WomanOutlined style={{ marginRight: 4 }} />
+											)}{" "}
+											{t("gender")}:
+										</Text>{" "}
+										<Text strong>{patient.gender}</Text>
+									</Col>
+									{/* Allergies */}
+									<Col xs={12} md={6} lg={4}>
+										<Text type="secondary">
+											<WarningOutlined style={{ marginRight: 4 }} />
+											{t("allergies")}:
+										</Text>{" "}
+										<Tag color="red" style={{ margin: 0 }}>
+											{patient.allergies || t("none")}
+										</Tag>
+									</Col>
+
+									{/* Quick Stats Integrated - Example: Last Visit & Next Appt */}
+									{admissions && admissions.length > 0 && !admissions[0].dischargeDate && (
+										<Col xs={12} md={6} lg={4}>
 											<Statistic
-												title={t("last-visit")}
-												value={moment(admissions[0].dischargeDate).fromNow()}
-												prefix={<span style={{ marginLeft: "8px" }}>🗓️</span>}
-												valueStyle={{ color: "#52c41a" }}
+												title={<Text type="secondary">{t("current-visit")}</Text>}
+												value={moment(admissions[0].admissionDate).format("ll")} // Short format
+												valueStyle={{ fontSize: isMobile ? 14 : 16, color: "#3f8600" }}
+												prefix={<CalendarOutlined />}
+												style={{ lineHeight: 1.2 }} // Reduce line height
 											/>
-										) : (
-											<Statistic
-												title={t("current-visit")}
-												value={moment(admissions[0].admissionDate).format("LL")}
-												prefix={<span style={{ marginLeft: "8px" }}>🎉</span>}
-												valueStyle={{ color: "#3f8600" }}
-											/>
-										)
-									) : (
-										<Statistic
-											title={t("last-visit")}
-											value={"N/A"}
-											prefix={<span style={{ marginLeft: "8px" }}>🤷</span>}
-											valueStyle={{ color: "#777" }}
-										/>
+										</Col>
 									)}
-								</Card>
-							</Col>
-							<Col xs={24} sm={12} md={6}>
-								<Card bodyStyle={{ padding: getResponsivePadding() }}>
-									<Statistic
-										title={t("next-appointment")}
-										value={patient.nextAppointment ? moment(patient.nextAppointment).format("LLL") : "N/A"}
-										prefix={<CalendarOutlined />}
-									/>
-								</Card>
+									{/* Consider adding Next Appointment here if important */}
+									{/* <Col xs={12} md={6} lg={4}>
+										 <Statistic title={t("next-appointment")} ... />
+									 </Col> */}
+								</Row>
 							</Col>
 						</Row>
-					)}
-					{/* --- Patient Details Card --- */}
-					<Card style={{ marginBottom: screens.xs ? 12 : 24 }} bodyStyle={{ padding: getResponsivePadding() }}>
-						{/* ... Patient details content ... */}
-						{patient && (
-							<Row gutter={[24, 24]} align="middle">
-								{/* Patient Avatar */}
-								<Col
-									xs={24} // Full width on extra small
-									sm={24}
-									md={8}
-									lg={6}
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-									}}>
-									<Avatar
-										size={150}
-										src={generateImageUrl(patient.profilePictureURL)}
-										alt="Patient Profile"
-										style={{
-											marginBottom: 10,
-											marginRight: 10,
-											objectFit: "cover",
-											border: "2px solid snow",
-											cursor: "pointer", // Indicate it's clickable
-										}}
-										onClick={() => handleOpenAvatarModal(patient.profilePictureURL)}
+					</div>
+				)}
+
+				{/* Tabs Section */}
+				{patient && (
+					<Card
+						className="patient-details-tabs" // Class for CSS targeting
+						bordered={false} // Remove card border, rely on page background
+						bodyStyle={{ padding: `0 ${getResponsivePadding()}` }} // No padding around tabs themselves
+					>
+						<Tabs
+							activeKey={activeTab}
+							onChange={handleTabChange}
+							type="card" // Card style tabs
+							size={isMobile ? "small" : "default"}
+							tabBarStyle={{ marginBottom: getResponsivePadding("16px") }} // Space below tab bar
+						>
+							{/* --- Profile Tab --- */}
+							<TabPane
+								tab={
+									<span>
+										<UserOutlined /> {t("profile")}
+									</span>
+								}
+								key="profile">
+								<Row gutter={[24, 16]} style={{ padding: `${getResponsivePadding()} 0` }}>
+									{" "}
+									{/* Padding inside tab content */}
+									{/* Contact Information */}
+									<Col xs={24} md={12} lg={8}>
+										<Title level={5} style={{ marginBottom: 12 }}>
+											{t("contact-information")}
+										</Title>
+										<Space direction="vertical" size="small">
+											<Text>
+												<EnvironmentOutlined style={{ marginRight: 8, color: "#1890ff" }} /> {patient.address || "N/A"}
+											</Text>
+											<Text>
+												<PhoneOutlined style={{ marginRight: 8, color: "#1890ff" }} /> {patient.phoneNumber || "N/A"}
+											</Text>
+											<Text>
+												<MailOutlined style={{ marginRight: 8, color: "#1890ff" }} /> {patient.email || "N/A"}
+											</Text>
+										</Space>
+									</Col>
+									{/* Medical Information */}
+									<Col xs={24} md={12} lg={8}>
+										<Title level={5} style={{ marginBottom: 12 }}>
+											{t("medical-information")}
+										</Title>
+										<Space direction="vertical" size="small">
+											<Text>
+												<HeartOutlined style={{ marginRight: 8, color: "#cf1322" }} /> {t("blood-type")}:{" "}
+												<Text strong>{patient.bloodType || "N/A"}</Text>
+											</Text>
+											<div>
+												<Text strong>{t("medical-history")}:</Text>
+												<Paragraph ellipsis={{ rows: 3, expandable: true, symbol: t("more") }}>
+													{patient.medicalHistory || "N/A"}
+												</Paragraph>
+											</div>
+										</Space>
+									</Col>
+									{/* Quick Stats (If Option B chosen) */}
+									<Col xs={24} md={24} lg={8}>
+										<Title level={5} style={{ marginBottom: 12 }}>
+											{t("vital-stats")}
+										</Title>
+										<Row gutter={[16, 16]}>
+											{/* Example: Placing stats here */}
+											<Col xs={12} sm={12}>
+												<Statistic
+													title={t("age")}
+													value={moment().diff(patient.dateOfBirth, "years")}
+													prefix={<UserOutlined />}
+												/>
+											</Col>
+											<Col xs={12} sm={12}>
+												{admissions && admissions.length > 0 && admissions[0].dischargeDate ? (
+													<Statistic
+														title={t("last-visit")}
+														value={moment(admissions[0].dischargeDate).fromNow()}
+														valueStyle={{ color: "#52c41a" }}
+														prefix={<CalendarOutlined />}
+													/>
+												) : !loading ? ( // Show N/A only if not loading
+													<Statistic title={t("last-visit")} value={"N/A"} prefix={<CalendarOutlined />} />
+												) : null}
+											</Col>
+										</Row>
+									</Col>
+								</Row>
+							</TabPane>
+
+							{/* --- Overview Tab --- */}
+							<TabPane
+								tab={
+									<span>
+										<DashboardOutlined /> {t("overview")}
+									</span>
+								}
+								key="overview">
+								<div style={{ padding: `${getResponsivePadding()} 0` }}>
+									<Title level={5} style={{ marginBottom: 12 }}>
+										{t("recent-quick-notes")}
+									</Title>
+									<List
+										itemLayout="horizontal"
+										dataSource={quickNotes.slice(0, 5)} // Show latest 5 notes
+										loading={loading && quickNotes.length === 0} // Show loading only if notes aren't loaded yet
+										renderItem={(item) => (
+											<List.Item
+												actions={[
+													<Button type="link" size="small" onClick={() => handleEditQuickNote(item)}>
+														{t("edit")}
+													</Button>,
+												]}>
+												<List.Item.Meta
+													avatar={<Avatar size="small" icon={<PushpinOutlined />} />}
+													title={
+														<span>
+															{item.addedByUser || t("system")} - {moment(item.createdAt).format("YYYY-MM-DD HH:mm")}
+														</span>
+													}
+													description={
+														<Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
+															{item.noteText}
+														</Paragraph>
+													}
+												/>
+											</List.Item>
+										)}
 									/>
-									<Button type="primary" icon={<EyeOutlined />} onClick={() => handleOpenAvatarModal(patient.profilePictureURL)}>
-										{t("view-profile-image")}
-									</Button>
-								</Col>
-								{/* Patient Information */}
-								<Col xs={24} sm={24} md={16} lg={18}>
-									<Row gutter={[16, 8]}>
-										<Col xs={24} sm={12}>
-											<Text strong>{t("name")}:</Text> {patient.firstName} {patient.lastName}
-										</Col>
-										<Col xs={24} sm={12}>
-											<Text strong>{t("date-of-birth")}:</Text>{" "}
-											{patient.dateOfBirth ? moment(patient.dateOfBirth).format("YYYY-MM-DD") : "N/A"}
-										</Col>
-										<Col xs={24} sm={12}>
-											<Text strong>{t("gender")}:</Text> {patient.gender}
-										</Col>
-										<Col xs={24} sm={12}>
-											<Text strong>{t("medical-record-number")}:</Text> {patient.medicalRecordNumber}
-										</Col>
-										<Col xs={24} sm={24}>
-											<Text strong>{t("allergies")}:</Text>
-											<Tag color="red">{patient.allergies || t("none")}</Tag>
-										</Col>
-										<Col xs={24} sm={24}>
-											<Text strong>{t("medical-history")}:</Text> {patient.medicalHistory}
-										</Col>
-									</Row>
+									{quickNotes.length > 5 && (
+										<Button type="link" onClick={() => handleOpenQuickNotesModal("list")} style={{ marginTop: 8 }}>
+											{t("view-all-quick-notes")}
+										</Button>
+									)}
+									{quickNotes.length === 0 && !loading && <Text type="secondary">{t("no-quick-notes-available")}</Text>}
+									{/* Add other overview elements here - e.g., latest vitals graph, upcoming appts */}
+								</div>
+							</TabPane>
 
-									{/* Contact Information - Highlighted Section */}
-									<Divider orientation="left">{t("contact-information")}</Divider>
-									<Row gutter={[16, 8]}>
-										<Col xs={24} sm={12}>
-											<EnvironmentOutlined /> <Text strong>{t("address")}:</Text> {patient.address}
-										</Col>
-										<Col xs={24} sm={12}>
-											<PhoneOutlined /> <Text strong>{t("phone")}:</Text> {patient.phoneNumber}
-										</Col>
-										<Col xs={24} sm={12}>
-											<MailOutlined /> <Text strong>{t("email")}:</Text> {patient.email}
-										</Col>
-									</Row>
-								</Col>
-							</Row>
-						)}
-					</Card>
-
-					{/* --- Tabs --- */}
-					<Card bodyStyle={{ padding: getResponsivePadding() }}>
-						<Tabs defaultActiveKey="1" activeKey={activeTab} onChange={handleTabChange} type="card">
+							{/* --- Data Tabs --- */}
 							<TabPane
 								tab={
 									<span>
@@ -1670,362 +1827,301 @@ const PatientDetails = () => {
 										{t("admissions")}
 									</span>
 								}
-								key="1">
+								key="3">
 								<PaginatedTable
-									t={t}
 									columns={admissionsColumns}
 									data={admissions}
-									loading={loading}
+									loading={loading && activeTab === "3"}
 									currentPage={admissionsPage}
 									onPageChange={setAdmissionsPage}
 									totalCount={totalCounts?.admissions || 0}
 								/>
-								<PdfGenerator mode="table" type="admission" data={admissions} columns={admissionsColumns} fileNamePrefix="admissions">
+								{/* Add Table PDF Export if needed */}
+								{/* <PdfGenerator mode="table" type="admission" data={admissions} columns={admissionsColumns} fileNamePrefix="admissions">
 									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
+								</PdfGenerator> */}
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<CalendarOutlined />
-										{t("appointments")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("appointments")}
-											style={{ marginLeft: 8 }}>
-											{filters.appointments ? t("show-all") : t("filter-by-admission")}
-										</Button>
-									</span>
-								}
-								key="2">
-								<PaginatedTable
-									t={t}
-									columns={appointmentsColumns}
-									data={appointments}
-									loading={loading}
-									currentPage={appointmentsPage}
-									onPageChange={setAppointmentsPage}
-									totalCount={totalCounts?.appointments || 0}
-								/>
-								<PdfGenerator
-									mode="table"
-									type="appointment"
-									data={appointments}
-									columns={appointmentsColumns}
-									fileNamePrefix="appointments">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<FileTextOutlined />
-										{t("assessments")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("assessments")}
-											style={{ marginLeft: 8 }}>
-											{filters.assessments ? t("show-all") : t("filter-by-admission")}
-										</Button>
-									</span>
-								}
-								key="3">
-								<PaginatedTable
-									columns={assessmentsColumns}
-									data={assessments}
-									loading={loading}
-									currentPage={assessmentsPage}
-									onPageChange={setAssessmentsPage}
-									totalCount={totalCounts?.assessments || 0}
-								/>
-								<PdfGenerator mode="table" type="assessment" data={assessments} fileNamePrefix="assessments">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<DollarOutlined />
-										{t("billings")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("billings")}
-											style={{ marginLeft: 8 }}>
-											{filters.billings ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<CalendarOutlined /> {t("appointments")}
+										<Tooltip title={filters.appointments ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.appointments}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("appointments")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="4">
 								<PaginatedTable
-									columns={billingColumns}
-									data={billings}
-									loading={loading}
-									currentPage={billingsPage}
-									onPageChange={setBillingsPage}
-									totalCount={totalCounts?.billings || 0}
+									columns={appointmentsColumns}
+									data={appointments}
+									loading={loading && activeTab === "4"}
+									currentPage={appointmentsPage}
+									onPageChange={setAppointmentsPage}
+									totalCount={totalCounts?.appointments || 0}
 								/>
-								<PdfGenerator mode="table" type="billing" data={billings} fileNamePrefix="billings">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<UnorderedListOutlined />
-										{t("care-plans")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("carePlans")}
-											style={{ marginLeft: 8 }}>
-											{filters.carePlans ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<FileTextOutlined /> {t("assessments")}
+										<Tooltip title={filters.assessments ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.assessments}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("assessments")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="5">
 								<PaginatedTable
-									columns={carePlansColumns}
-									data={carePlans}
-									loading={loading}
-									currentPage={carePlansPage}
-									onPageChange={setCarePlansPage}
-									totalCount={totalCounts?.carePlans || 0}
+									columns={assessmentsColumns}
+									data={assessments}
+									loading={loading && activeTab === "5"}
+									currentPage={assessmentsPage}
+									onPageChange={setAssessmentsPage}
+									totalCount={totalCounts?.assessments || 0}
 								/>
-								<PdfGenerator mode="table" type="carePlan" data={carePlans} columns={carePlansColumns} fileNamePrefix="care_plans">
-									<Button type="primary">{t("export-table-pdf")}</Button>{" "}
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<MedicineBoxOutlined />
-										{t("prescriptions")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("prescriptions")}
-											style={{ marginLeft: 8 }}>
-											{filters.prescriptions ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<DollarOutlined /> {t("billings")}
+										<Tooltip title={filters.billings ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.billings}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("billings")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="6">
 								<PaginatedTable
-									t={t}
-									columns={prescriptionsColumns}
-									data={prescriptions}
-									loading={loading}
-									currentPage={prescriptionsPage}
-									onPageChange={setPrescriptionsPage}
-									totalCount={totalCounts?.prescriptions || 0}
+									columns={billingColumns}
+									data={billings}
+									loading={loading && activeTab === "6"}
+									currentPage={billingsPage}
+									onPageChange={setBillingsPage}
+									totalCount={totalCounts?.billings || 0}
 								/>
-								<PdfGenerator
-									mode="table"
-									type="prescription"
-									data={prescriptions}
-									columns={prescriptionsColumns}
-									fileNamePrefix="prescriptions">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<HeartOutlined />
-										{t("vital-signs")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("vitalSigns")}
-											style={{ marginLeft: 8 }}>
-											{filters.vitalSigns ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<UnorderedListOutlined /> {t("care-plans")}
+										<Tooltip title={filters.carePlans ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.carePlans}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("carePlans")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="7">
 								<PaginatedTable
-									t={t}
-									columns={vitalSignsColumns}
-									data={vitalSigns}
-									loading={loading}
-									currentPage={vitalSignsPage}
-									onPageChange={setVitalSignsPage}
-									totalCount={totalCounts?.vitalSigns || 0}
+									columns={carePlansColumns}
+									data={carePlans}
+									loading={loading && activeTab === "7"}
+									currentPage={carePlansPage}
+									onPageChange={setCarePlansPage}
+									totalCount={totalCounts?.carePlans || 0}
 								/>
-								<PdfGenerator
-									mode="table"
-									type="vitalSign"
-									data={vitalSigns}
-									columns={vitalSignsColumns}
-									fileNamePrefix="vital_signs">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<ShoppingCartOutlined />
-										{t("product-usages")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("productUsages")}
-											style={{ marginLeft: 8 }}>
-											{filters.productUsages ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<MedicineBoxOutlined /> {t("prescriptions")}
+										<Tooltip title={filters.prescriptions ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.prescriptions}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("prescriptions")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="8">
 								<PaginatedTable
-									t={t}
-									columns={productUsagesColumns}
-									data={productUsages}
-									loading={loading}
-									currentPage={productUsagesPage}
-									onPageChange={setProductUsagesPage}
-									totalCount={totalCounts?.productUsages || 0}
+									columns={prescriptionsColumns}
+									data={prescriptions}
+									loading={loading && activeTab === "8"}
+									currentPage={prescriptionsPage}
+									onPageChange={setPrescriptionsPage}
+									totalCount={totalCounts?.prescriptions || 0}
 								/>
-								<PdfGenerator
-									mode="table"
-									type="productUsage"
-									data={productUsages}
-									columns={productUsagesColumns}
-									fileNamePrefix="product_usages">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<MedicineBoxOutlined />
-										{t("medication-administrations")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("medicationAdministrations")}
-											style={{ marginLeft: 8 }}>
-											{filters.medicationAdministrations ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<HeartOutlined /> {t("vital-signs")}
+										<Tooltip title={filters.vitalSigns ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.vitalSigns}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("vitalSigns")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="9">
 								<PaginatedTable
-									t={t}
-									columns={medicationAdministrationsColumns}
-									data={medicationAdministrations}
-									loading={loading}
-									currentPage={medicationAdministrationsPage}
-									onPageChange={setMedicationAdministrationsPage}
-									totalCount={totalCounts?.medicationAdministrations || 0}
+									columns={vitalSignsColumns}
+									data={vitalSigns}
+									loading={loading && activeTab === "9"}
+									currentPage={vitalSignsPage}
+									onPageChange={setVitalSignsPage}
+									totalCount={totalCounts?.vitalSigns || 0}
 								/>
-								<PdfGenerator
-									mode="table"
-									type="medicationAdministration"
-									data={medicationAdministrations}
-									columns={medicationAdministrationsColumns}
-									fileNamePrefix="medication_administrations">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<PictureOutlined />
-										{t("image-reports")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("imageReports")}
-											style={{ marginLeft: 8 }}>
-											{filters.imageReports ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<ShoppingCartOutlined /> {t("product-usages")}
+										<Tooltip title={filters.productUsages ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.productUsages}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("productUsages")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="10">
 								<PaginatedTable
-									t={t}
-									columns={imageReportsColumns}
-									data={imageReports}
-									loading={loading}
-									currentPage={imageReportsPage}
-									onPageChange={setImageReportsPage}
-									totalCount={totalCounts?.imageReports || 0}
+									columns={productUsagesColumns}
+									data={productUsages}
+									loading={loading && activeTab === "10"}
+									currentPage={productUsagesPage}
+									onPageChange={setProductUsagesPage}
+									totalCount={totalCounts?.productUsages || 0}
 								/>
-								<PdfGenerator
-									mode="table"
-									type="imageReport"
-									// Map over imageReports and process the URLs
-									data={imageReports.map((report) => ({
-										...report,
-										imageUrls: report.imageUrls ? report.imageUrls.map(generateImageUrl) : [],
-									}))}
-									fileNamePrefix="image_reports">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<ExperimentOutlined />
-										{t("lab-results")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("labResults")}
-											style={{ marginLeft: 8 }}>
-											{filters.labResults ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<MedicineBoxOutlined /> {t("med-admin")} {/* Shortened Name */}
+										<Tooltip title={filters.medicationAdministrations ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.medicationAdministrations}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("medicationAdministrations")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="11">
 								<PaginatedTable
-									t={t}
-									columns={labResultsColumns}
-									data={labResults}
-									loading={loading}
-									currentPage={labResultsPage}
-									onPageChange={setLabResultsPage}
-									totalCount={totalCounts?.labResults || 0}
+									columns={medicationAdministrationsColumns}
+									data={medicationAdministrations}
+									loading={loading && activeTab === "11"}
+									currentPage={medicationAdministrationsPage}
+									onPageChange={setMedicationAdministrationsPage}
+									totalCount={totalCounts?.medicationAdministrations || 0}
 								/>
-								{/* Pass labTests to the PdfGenerator */}
-								<PdfGenerator mode="table" type="labResult" data={labResults} fileNamePrefix="lab_results" labTests={labTests}>
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 							<TabPane
 								tab={
 									<span>
-										<FileTextOutlined />
-										{t("documents")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("documents")}
-											style={{ marginLeft: 8 }}>
-											{filters.documents ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<PictureOutlined /> {t("image-reports")}
+										<Tooltip title={filters.imageReports ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.imageReports}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("imageReports")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
 								key="12">
 								<PaginatedTable
-									t={t}
+									columns={imageReportsColumns}
+									data={imageReports}
+									loading={loading && activeTab === "12"}
+									currentPage={imageReportsPage}
+									onPageChange={setImageReportsPage}
+									totalCount={totalCounts?.imageReports || 0}
+								/>
+							</TabPane>
+							<TabPane
+								tab={
+									<span>
+										<ExperimentOutlined /> {t("lab-results")}
+										<Tooltip title={filters.labResults ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.labResults}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("labResults")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
+									</span>
+								}
+								key="13">
+								<PaginatedTable
+									columns={labResultsColumns}
+									data={labResults}
+									loading={loading && activeTab === "13"}
+									currentPage={labResultsPage}
+									onPageChange={setLabResultsPage}
+									totalCount={totalCounts?.labResults || 0}
+								/>
+							</TabPane>
+							<TabPane
+								tab={
+									<span>
+										<FileTextOutlined /> {t("documents")}
+										<Tooltip title={filters.documents ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.documents}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("documents")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
+									</span>
+								}
+								key="14">
+								<PaginatedTable
 									columns={documentsColumns}
 									data={documents}
-									loading={loading}
+									loading={loading && activeTab === "14"}
 									currentPage={documentsPage}
 									onPageChange={setDocumentsPage}
 									totalCount={totalCounts?.documents || 0}
@@ -2034,43 +2130,50 @@ const PatientDetails = () => {
 							<TabPane
 								tab={
 									<span>
-										<FileDoneOutlined />
-										{t("procedure-logs")}
-										{/* Filter Toggle Button */}
-										<Button
-											type="link"
-											icon={<FilterOutlined />}
-											onClick={() => handleFilterToggle("procedureLogs")}
-											style={{ marginLeft: 8 }}>
-											{filters.procedureLogs ? t("show-all") : t("filter-by-admission")}
-										</Button>
+										<FileDoneOutlined /> {t("procedure-logs")}
+										<Tooltip title={filters.procedureLogs ? t("show-all") : t("filter-by-admission")}>
+											<Button
+												type="text"
+												size="small"
+												danger={filters.procedureLogs}
+												icon={<FilterOutlined />}
+												onClick={() => handleFilterToggle("procedureLogs")}
+												style={{ marginLeft: 4, padding: "0 4px" }}
+											/>
+										</Tooltip>
 									</span>
 								}
-								key="13">
+								key="15">
 								<PaginatedTable
-									t={t}
 									columns={procedureLogsColumns}
 									data={procedureLogs}
-									loading={loading}
+									loading={loading && activeTab === "15"}
 									currentPage={procedureLogsPage}
 									onPageChange={setProcedureLogsPage}
 									totalCount={totalCounts?.procedureLogs || 0}
 								/>
-								<PdfGenerator
-									mode="table"
-									type="procedureLog"
-									data={procedureLogs}
-									columns={procedureLogsColumns}
-									fileNamePrefix="procedure_logs">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator>
 							</TabPane>
 						</Tabs>
 					</Card>
-					{/* Footer here  */}
-				</Content>
-				<Footer style={{ textAlign: "center", padding: screens.xs ? "12px" : "24px" }}></Footer>
-			</Layout>
+				)}
+
+				{!patient && !loading && (
+					<Card style={{ textAlign: "center", padding: 50 }}>
+						<Text type="secondary">{t("patient-not-found")}</Text>
+					</Card>
+				)}
+			</Content>
+			{/* Footer (Optional) */}
+			{/* <Footer style={{ textAlign: "center", padding: getResponsivePadding("12px") }}>
+				Patient Record System ©{new Date().getFullYear()}
+			</Footer> */}
+			{/* --- Floating Action Buttons --- */}
+			<FloatButton.Group shape="circle" style={{ right: isMobile ? 16 : 24, bottom: isMobile ? 60 : 24 }}>
+				<Tooltip title={t("quick-notes")}>
+					<FloatButton icon={<PushpinOutlined />} onClick={() => handleOpenQuickNotesModal("list")} />
+				</Tooltip>
+				<FloatButton.BackTop visibilityHeight={100} />
+			</FloatButton.Group>
 			{/* --- Modals --- */}
 			<Modal
 				title={t("request-service")}
@@ -2078,34 +2181,57 @@ const PatientDetails = () => {
 				onCancel={handleCloseServiceModal}
 				footer={null}
 				width={screens.xs ? "95%" : "90%"}
+				style={{ maxWidth: screens.xs ? "95vw" : "600px" }}
 				bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}>
+				{/* Ensure MiniCreateActivityForm is adaptable */}
 				<MiniCreateActivityForm onActivityCreated={handleActivityCreated} patientId={patientId} />
 			</Modal>
-			<ExpandedRowDetails t={t} expandedRow={expandedRow} isModalOpen={isModalOpen} handleCloseModal={handleCloseModal} />
+			{/* Detail Modal */}
+			<ExpandedRowDetails
+				// t={t} // Already has its own t
+				expandedRow={expandedRow}
+				isModalOpen={isDetailModalOpen}
+				handleCloseModal={handleCloseDetailModal}
+			/>
+			{/* Lab Result Details Modal */}
 			<LabResultDetailsModal
-				t={t}
+				// t={t} // Already has its own t
 				isOpen={isLabResultModalOpen}
 				onClose={handleCloseLabResultModal}
 				labResult={selectedLabResult}
 				labTests={labTests}
-				width={screens.xs ? "95%" : "90%"}
-				bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}
+				// width={screens.xs ? "95%" : "90%"} // Handled inside component potentially
+				// bodyStyle={{ padding: screens.xs ? "16px" : "24px" }} // Handled inside component potentially
 			/>
-			{isSliderOpen && selectedImageData && <ImageSlider t={t} open={isSliderOpen} data={selectedImageData} onClose={handleCloseSlider} />}
-			<PatientAvatarModal t={t} imageUrl={selectedAvatarUrl} isOpen={isAvatarModalOpen} onClose={handleCloseAvatarModal} />
-			{/* Quick Notes Modal - Now with list and CRUD */}
+			{/* Image Slider Modal */}
+			{isSliderOpen && selectedImageData && (
+				<ImageSlider
+					// t={t} // Already has its own t
+					open={isSliderOpen}
+					data={selectedImageData}
+					onClose={handleCloseSlider}
+				/>
+			)}
+			{/* Patient Avatar Modal */}
+			<PatientAvatarModal
+				// t={t} // Already has its own t
+				imageUrl={selectedAvatarUrl}
+				isOpen={isAvatarModalOpen}
+				onClose={handleCloseAvatarModal}
+			/>
+			{/* Quick Notes Modal */}
 			<QuickNotesModal
-				t={t}
+				// t={t} // Already has its own t
 				isOpen={isQuickNotesModalOpen}
 				onClose={handleCloseQuickNotesModal}
 				onSave={handleSaveQuickNotes}
 				quickNotesModalMode={quickNotesModalMode}
 				quickNoteText={quickNoteText}
 				setQuickNoteText={setQuickNoteText}
-				quickNotes={quickNotes} // Pass quick notes
-				onDelete={handleDeleteQuickNote} // Pass delete handler
-				onEdit={handleEditQuickNote} // Pass edit handler
-				loading={loading}
+				quickNotes={quickNotes}
+				onDelete={handleDeleteQuickNote}
+				onEdit={handleEditQuickNote} // Pass the function to handle switching to edit/create mode
+				loading={loading && quickNotesModalMode === "list"} // Show loading only in list mode potentially
 			/>
 		</Layout>
 	);

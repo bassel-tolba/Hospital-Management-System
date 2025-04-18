@@ -97,7 +97,7 @@ const { defaultAlgorithm, darkAlgorithm } = antdTheme;
 const { useBreakpoint } = Grid;
 const { Search } = Input;
 const { Text } = Typography;
-const GEMINI_API_CONFIG_URL = `http://localhost:8080/api/gemini/configure-key`;
+const GEMINI_API_CONFIG_URL = `/api/gemini/configure-key`;
 
 // --- Styled Components --- (No changes needed here)
 const AppWrapper = styled.div`

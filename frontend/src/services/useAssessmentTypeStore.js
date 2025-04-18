@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Adjust path if needed
 import { notification } from "antd";
 
-const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
+const TYPE_API_URL = `/api/assessment-types`;
 
 export const useAssessmentTypeStore = create((set, get) => ({
 	// State

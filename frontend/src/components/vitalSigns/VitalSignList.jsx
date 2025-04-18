@@ -45,7 +45,7 @@ const VitalSignList = () => {
 
 	// Use the auth store hook
 	const { user, hasAuthority } = useAuthStore();
-	const API_BASE_URL = `http://localhost:8080/api/vital-signs`;
+	const API_BASE_URL = `/api/vital-signs`;
 
 	// --- Permission Checks ---
 	// Check if user can perform basic read/view (required for fetching data)

@@ -4,8 +4,8 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_DATA_URL = `http://localhost:8080/api/patients-data`;
-const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
+const PATIENT_API_BASE_DATA_URL = `/api/patients-data`;
+const IMAGE_REPORT_API_BASE_URL = `/api/imagereports`;
 
 export const usePatientDetailStore = create((set, get) => ({
 	loading: false,
@@ -18,6 +18,7 @@ export const usePatientDetailStore = create((set, get) => ({
 	carePlans: [],
 	prescriptions: [],
 	vitalSigns: [],
+	latestVitalSign: null, // NEW: Store the latest vital sign record
 	productUsages: [],
 	medicationAdministrations: [],
 	imageReports: [],
@@ -26,7 +27,7 @@ export const usePatientDetailStore = create((set, get) => ({
 	quickNotes: [],
 	procedureLogs: [],
 	totalCounts: {},
-	// NEW:  Store filter states for each data type
+	// NEW: Store filter states for each data type
 	filters: {
 		appointments: false,
 		assessments: false,
@@ -45,7 +46,7 @@ export const usePatientDetailStore = create((set, get) => ({
 	setError: (error) => set({ error }),
 	clearError: () => set({ error: null }),
 
-	// NEW:  Toggle filter for a specific data type
+	// NEW: Toggle filter for a specific data type
 	toggleFilter: (dataType) =>
 		set((state) => ({
 			filters: {
@@ -62,7 +63,7 @@ export const usePatientDetailStore = create((set, get) => ({
 		billingsPage,
 		carePlansPage,
 		prescriptionsPage,
-		vitalSignsPage,
+		vitalSignsPage, // Keep this parameter
 		productUsagesPage,
 		medicationAdministrationsPage,
 		imageReportsPage,
@@ -101,7 +102,7 @@ export const usePatientDetailStore = create((set, get) => ({
 				);
 			}
 
-			// All other data types:  Include filterByAdmission parameter
+			// All other data types: Include filterByAdmission parameter
 			if (procedureLogsPage) {
 				requests.push(
 					axios
@@ -186,15 +187,18 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 				);
 			}
+			// Fetch Vital Signs (always fetch page 0 if needed, or respect the requested page)
 			if (vitalSignsPage) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/vital-signs`, {
 							headers: { Authorization: `Bearer ${user?.token}` },
-							params: { page: vitalSignsPage - 1, size: pageSize, filterByAdmission: filters.vitalSigns }, // Pass filter
+							// Request page 0 if we specifically need the latest, otherwise use the provided page number
+							// Let's assume the component will always pass vitalSignsPage=1 when it initially loads or wants the latest
+							params: { page: vitalSignsPage - 1, size: pageSize, filterByAdmission: filters.vitalSigns, sort: "timestamp,desc" }, // Pass filter and sort
 						})
 						.then((res) => {
-							responses.vitalSigns = res;
+							responses.vitalSigns = res; // Store the full response
 						})
 				);
 			}
@@ -266,6 +270,11 @@ export const usePatientDetailStore = create((set, get) => ({
 
 			await Promise.all(requests);
 
+			// Determine the latest vital sign
+			// Update latestVitalSign ONLY if vitalSignsPage was requested AND data exists
+			const newLatestVitalSign =
+				vitalSignsPage && responses.vitalSigns?.data?.content?.length > 0 ? responses.vitalSigns.data.content[0] : get().latestVitalSign;
+
 			set((state) => ({
 				...state,
 				loading: false,
@@ -277,6 +286,7 @@ export const usePatientDetailStore = create((set, get) => ({
 				carePlans: responses.carePlans?.data?.content || state.carePlans,
 				prescriptions: responses.prescriptions?.data?.content || state.prescriptions,
 				vitalSigns: responses.vitalSigns?.data?.content || state.vitalSigns,
+				latestVitalSign: newLatestVitalSign, // UPDATE LATEST VITAL SIGN HERE
 				productUsages: responses.productUsages?.data?.content || state.productUsages,
 				medicationAdministrations: responses.medicationAdministrations?.data?.content || state.medicationAdministrations,
 				imageReports: responses.imageReports?.data?.content || state.imageReports,
@@ -369,8 +379,8 @@ export const usePatientDetailStore = create((set, get) => ({
 					},
 				}
 			);
-			//  Refetch quick notes after creating (or add to state directly)
-			get().fetchQuickNotes(patientId, 1, 10); // Assuming you want page 1, size 10
+			// Refetch quick notes after creating
+			get().fetchQuickNotes(patientId, 1, 10); // Assuming page 1, size 10
 			set({ loading: false });
 			return response.data; // Return the created note data
 		} catch (error) {

@@ -33,8 +33,8 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 
 	const { searchPatients } = usePatientStore();
 	const { user, hasAuthority } = useAuthStore();
-	const API_BASE_URL = `http://localhost:8080/api/assessments`;
-	const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
+	const API_BASE_URL = `/api/assessments`;
+	const TYPE_API_URL = `/api/assessment-types`;
 	const mediaRecorder = useRef(null);
 	const recordedChunks = useRef([]);
 

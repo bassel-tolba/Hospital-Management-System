@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const NURSE_ACTIVITY_API_BASE_URL = `http://localhost:8080/api/nurses`;
+const NURSE_ACTIVITY_API_BASE_URL = `/api/nurses`;
 
 export const useNurseActivityStore = create((set, get) => ({
 	activities: [],

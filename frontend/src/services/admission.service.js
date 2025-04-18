@@ -4,8 +4,8 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const ADMISSION_API_BASE_URL = `http://localhost:8080/api/admissions`;
-const ADMISSION_TYPE_API_BASE_URL = `http://localhost:8080/api/admissionTypes`;
+const ADMISSION_API_BASE_URL = `/api/admissions`;
+const ADMISSION_TYPE_API_BASE_URL = `/api/admissionTypes`;
 
 export const useAdmissionStore = create((set, get) => ({
 	admissions: [],

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const USER_API_BASE_URL = `http://localhost:8080/api/users`;
+const USER_API_BASE_URL = `/api/users`;
 
 export const useUserStore = create((set, get) => ({
 	users: [],

@@ -32,7 +32,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 // --- Define Backend URL for Gemini API ---
-const GEMINI_API_BASE_URL = "http://localhost:8080/api/gemini"; // Adjust if needed
+const GEMINI_API_BASE_URL = "/api/gemini"; // Adjust if needed
 
 // --- Remove Hardcoded API Key ---
 // const apiKey = "AIzaSyDrsmf3oyOeUhXFXkuoUXMxVkTkSlfeNy0"; // REMOVED

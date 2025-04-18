@@ -146,7 +146,7 @@ const VoiceNavigation = ({ onNavigate }) => {
 			const formData = new FormData();
 			formData.append("audio", audioBlob, "navigation-audio.webm");
 
-			const response = await axios.post(`http://localhost:8080/api/gemini/navigate`, formData, {
+			const response = await axios.post(`/api/gemini/navigate`, formData, {
 				headers: { Authorization: `Bearer ${userToken}` },
 				timeout: 30000,
 			});

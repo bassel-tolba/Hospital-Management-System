@@ -44,7 +44,7 @@ const AssessmentList = ({ darkMode }) => {
 
 	// --- Other Stores & Config ---
 	const { searchPatients } = usePatientStore();
-	const API_BASE_URL = `http://localhost:8080/api/assessments`;
+	const API_BASE_URL = `/api/assessments`;
 
 	// --- Fetch Assessments Function ---
 	const fetchAssessments = useCallback(

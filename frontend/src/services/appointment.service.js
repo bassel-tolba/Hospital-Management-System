@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const APPOINTMENT_API_BASE_URL = `http://localhost:8080/api/appointments`;
+const APPOINTMENT_API_BASE_URL = `/api/appointments`;
 
 export const useAppointmentStore = create((set, get) => ({
 	appointments: [],

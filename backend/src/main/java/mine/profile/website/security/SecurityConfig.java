@@ -164,9 +164,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/assessments/{id}").hasAnyAuthority("UPDATE_ASSESSMENT")
                         .requestMatchers(HttpMethod.DELETE, "/api/assessments/{id}")
                         .hasAnyAuthority("DELETE_ASSESSMENT")
-                        .requestMatchers(HttpMethod.POST, "/api/assessments/ai/**")
-                        .hasAnyAuthority("CREATE_ASSESSMENT", "UPDATE_ASSESSMENT") // AI linked to assessment
-                                                                                   // permissions
+                        .requestMatchers(HttpMethod.POST, "/api/assessments/ai/transcribe-and-populate")
+                        .hasAnyAuthority("CREATE_ASSESSMENT", "UPDATE_ASSESSMENT") // AI linked to
+                        // permissions
 
                         .requestMatchers(HttpMethod.GET, "/api/nursingCarePlans/**")
                         .hasAnyAuthority("READ_NURSING_CARE_PLAN") // Assuming controller maps to this path
@@ -322,6 +322,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/permissions/**").hasAuthority("MANAGE_PERMISSIONS")
                         .requestMatchers(HttpMethod.DELETE, "/api/permissions/**").hasAuthority("MANAGE_PERMISSIONS")
 
+                        // Secure POST for gemini api key
+                        .requestMatchers("/api/gemini/configure-key").hasAnyAuthority(
+                                "MANAGE_GEMINI_API_KEY")
                         // --- Catch-all: Default Deny (More Secure) ---
                         // .anyRequest().permitAll() // <-- Original Less Secure
                         .anyRequest().authenticated() // <-- More Secure Default: Require authentication if no specific
