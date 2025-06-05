@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Form, DatePicker, AutoComplete, Select, Button, Progress, notification, Popover, Spin, Input, Space, Row, Col } from "antd";
 import { AudioOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
-import CKEditorComponent from "../../CKEditorComponent"; // Adjust path if needed
 import axios from "axios";
 import { useAuthStore } from "../../services/auth.service"; // Adjust path if needed
 import { usePatientStore } from "../../services/patient.service"; // Adjust path if needed
@@ -11,13 +10,13 @@ import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 
 const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode }) => {
-	console.log("[AssessmentForm] Component Instantiating/Rendering...");
+	console.log("[AssessmentForm] Component Instantiating/Rendering (Structured AI Approach)...");
 	const { t } = useTranslation();
 	const [form] = Form.useForm();
+	const notesDisplayAreaRef = useRef(null);
+
 	const [editorNotes, setEditorNotes] = useState("");
 	const [selectedTemplateName, setSelectedTemplateName] = useState(null);
-	const [isEditorReady, setIsEditorReady] = useState(false);
-	const [editorInstance, setEditorInstance] = useState(null);
 	const [pendingAudioBlob, setPendingAudioBlob] = useState(null);
 	const [isRecording, setIsRecording] = useState(false);
 	const [isTranscribing, setIsTranscribing] = useState(false);
@@ -35,6 +34,8 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 	const { user, hasAuthority } = useAuthStore();
 	const API_BASE_URL = `/api/assessments`;
 	const TYPE_API_URL = `/api/assessment-types`;
+	const AI_STRUCTURED_ENDPOINT = `${API_BASE_URL}/ai/extract-structured-data`;
+
 	const mediaRecorder = useRef(null);
 	const recordedChunks = useRef([]);
 
@@ -42,14 +43,9 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 	const canCreateAssessment = hasAuthority("CREATE_ASSESSMENT");
 	const canUpdateAssessment = hasAuthority("UPDATE_ASSESSMENT");
 	const isReadOnly = isEditing ? !canUpdateAssessment : !canCreateAssessment;
-	console.log(
-		`[AssessmentForm] Permissions Check: isEditing=${isEditing}, canCreate=${canCreateAssessment}, canUpdate=${canUpdateAssessment}, calculated isReadOnly=${isReadOnly}`
-	);
 
-	// --- Debounced Patient Search ---
 	const debouncedPatientSearch = useCallback(
 		debounce(async (value) => {
-			console.log(`[AssessmentForm] Debounced search triggered for term: "${value}"`);
 			if (!value || value.length < 2) {
 				setPatientOptions([]);
 				setIsSearchingPatients(false);
@@ -57,17 +53,16 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 			}
 			setIsSearchingPatients(true);
 			try {
-				const searchResults = await searchPatients({ searchTerm: value, page: 0, size: 15 });
-				const options =
-					searchResults?.content?.map((patient) => ({
-						label: `${patient.firstName} ${patient.lastName} (${t("common.id")}: ${patient.id})`,
-						value: patient.id,
-						key: patient.id,
-						name: `${patient.firstName} ${patient.lastName}`,
+				const results = await searchPatients({ searchTerm: value, page: 0, size: 15 });
+				const opts =
+					results?.content?.map((p) => ({
+						label: `${p.firstName} ${p.lastName} (${t("common.id")}: ${p.id})`,
+						value: p.id,
+						key: p.id,
+						name: `${p.firstName} ${p.lastName}`,
 					})) || [];
-				setPatientOptions(options);
-			} catch (error) {
-				console.error("[AssessmentForm] Failed to search patients:", error);
+				setPatientOptions(opts);
+			} catch (err) {
 				notification.error({ message: t("common.error"), description: t("assessmentForm.notifications.patientSearchError") });
 				setPatientOptions([]);
 			} finally {
@@ -77,77 +72,58 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 		[searchPatients, t]
 	);
 
-	// --- Fetch Assessment Types ---
 	useEffect(() => {
-		let isMounted = true;
-		const fetchTypes = async () => {
-			console.log("[AssessmentForm] useEffect[user?.token, t]: Fetching assessment types...");
+		let mounted = true;
+		const fetch = async () => {
 			setLoadingTypes(true);
 			try {
-				const response = await axios.get(TYPE_API_URL, { headers: { Authorization: `Bearer ${user?.token}` } });
-				if (isMounted) {
-					setAssessmentTypes(response.data || []);
-					console.log("[AssessmentForm] Assessment types fetched successfully:", response.data?.length);
-					setLoadingTypes(false);
-				} else {
-					console.log("[AssessmentForm] fetchTypes: Unmounted before setting types.");
-				}
-			} catch (error) {
-				console.error("[AssessmentForm] Failed to fetch assessment types:", error);
-				if (isMounted) {
+				const res = await axios.get(TYPE_API_URL, { headers: { Authorization: `Bearer ${user?.token}` } });
+				if (mounted) setAssessmentTypes(res.data || []);
+			} catch (err) {
+				if (mounted) {
 					notification.error({ message: t("common.error"), description: t("assessmentForm.notifications.templateLoadError") });
 					setAssessmentTypes([]);
-					setLoadingTypes(false);
 				}
+			} finally {
+				if (mounted) setLoadingTypes(false);
 			}
 		};
-		fetchTypes();
+		if (user?.token) fetch();
+		else setLoadingTypes(false);
 		return () => {
-			console.log("[AssessmentForm] useEffect[user?.token, t]: Cleanup. Unmounting or token changed.");
-			isMounted = false;
+			mounted = false;
 		};
 	}, [user?.token, t]);
 
-	// --- Effect to Set Form Values ---
 	useEffect(() => {
-		console.log(
-			"[AssessmentForm] useEffect[assessment, form, initialPatient, t]: Setting form values. Assessment ID:",
-			assessment?.id,
-			"InitialPatient ID:",
-			initialPatient?.id
-		);
-		isCancelling.current = false; // Reset cancel flag
-
-		const formatPatientLabel = (name, id) => `${name} (${t("common.id")}: ${id})`;
-		let initialNotesValue = "";
+		isCancelling.current = false;
+		const fmtLabel = (name, id) => `${name} (${t("common.id")}: ${id})`;
+		let initialNotesHTML = "";
 
 		if (assessment) {
-			console.log("[AssessmentForm] useEffect[assessment...]: Setting form for EXISTING assessment:", assessment.id);
-			let patientLabel = t("assessmentForm.patientIdLabel", { id: assessment.patientId });
-			if (initialPatient?.id === assessment.patientId && initialPatient?.name)
-				patientLabel = formatPatientLabel(initialPatient.name, assessment.patientId);
-			else if (assessment.patientName) patientLabel = formatPatientLabel(assessment.patientName, assessment.patientId);
-
+			let pL = t("assessmentForm.patientIdLabel", { id: assessment.patientId });
+			if (initialPatient?.id === assessment.patientId && initialPatient?.name) pL = fmtLabel(initialPatient.name, assessment.patientId);
+			else if (assessment.patientName) pL = fmtLabel(assessment.patientName, assessment.patientId);
 			form.setFieldsValue({
 				assessmentDateTime: assessment.assessmentDateTime ? moment(assessment.assessmentDateTime) : null,
 				patientId: assessment.patientId,
 			});
 			setSelectedPatientId(assessment.patientId);
-			setPatientSearchTerm(patientLabel);
-			initialNotesValue = assessment.notes || "";
-			setSelectedTemplateName(null);
+			setPatientSearchTerm(pL);
+			initialNotesHTML = assessment.notes || "";
+			if (assessmentTypes.length > 0) {
+				const found = assessmentTypes.find((type) => type.name === assessment.templateName);
+				setSelectedTemplateName(found ? assessment.templateName : null);
+			}
 		} else {
-			console.log("[AssessmentForm] useEffect[assessment...]: Resetting form for NEW assessment.");
 			form.resetFields();
-			const defaultDateTime = moment();
-			form.setFieldsValue({ assessmentDateTime: defaultDateTime });
-			initialNotesValue = "";
+			form.setFieldsValue({ assessmentDateTime: moment() });
+			initialNotesHTML = "";
 			setSelectedTemplateName(null);
 			if (initialPatient?.id) {
-				console.log("[AssessmentForm] useEffect[assessment...]: Using initialPatient for NEW assessment:", initialPatient);
-				const patientLabel = formatPatientLabel(initialPatient.name, initialPatient.id);
+				const pL = fmtLabel(initialPatient.name, initialPatient.id);
 				setSelectedPatientId(initialPatient.id);
-				setPatientSearchTerm(patientLabel);
+				setPatientSearchTerm(pL);
 				form.setFieldsValue({ patientId: initialPatient.id });
 			} else {
 				setSelectedPatientId(null);
@@ -157,210 +133,152 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 			setPatientOptions([]);
 			setPendingAudioBlob(null);
 		}
-		console.log("[AssessmentForm] useEffect[assessment...]: Setting editorNotes state.");
-		setEditorNotes(initialNotesValue);
+		setEditorNotes(initialNotesHTML);
+		form.setFieldsValue({ notesContent: initialNotesHTML || null });
 
-		if (editorInstance && isEditorReady) {
-			console.log("[AssessmentForm] useEffect[assessment...]: Editor instance exists and ready. Attempting to set data.");
-			try {
-				const currentEditorData = editorInstance.getData();
-				if (currentEditorData !== initialNotesValue) {
-					console.log("[AssessmentForm] useEffect[assessment...]: Updating editor content.");
-					editorInstance.setData(initialNotesValue);
-				} else {
-					console.log("[AssessmentForm] useEffect[assessment...]: Editor content already matches. No update.");
-				}
-			} catch (e) {
-				console.warn("[AssessmentForm] useEffect[assessment...]: Error setting data on editor instance:", e);
-			}
-		} else {
-			console.log(
-				`[AssessmentForm] useEffect[assessment...]: Editor not available/ready (instance: ${!!editorInstance}, ready: ${isEditorReady}). Notes set in state.`
-			);
+		if (pendingAudioBlob && selectedTemplateName && selectedPatientId && !isTranscribing) {
+			transcribeAndPopulate(pendingAudioBlob);
+			setPendingAudioBlob(null);
 		}
-	}, [assessment, form, initialPatient, t]);
+	}, [assessment, form, initialPatient, t, assessmentTypes]);
 
-	// --- CKEditor Ready Handler ---
-	const handleEditorReady = useCallback(
-		(editor) => {
-			console.log("[AssessmentForm] handleEditorReady: Callback received editor instance:", !!editor);
-			if (editor) {
-				console.log("[AssessmentForm] handleEditorReady: Setting editor instance and marking editor as READY.");
-				setEditorInstance(editor);
-				setIsEditorReady(true);
-
-				const currentEditorData = editor.getData();
-				if (currentEditorData !== editorNotes) {
-					console.log("[AssessmentForm] handleEditorReady: Editor content differs from state. Syncing editor.");
-					editor.setData(editorNotes || "");
-				} else {
-					console.log("[AssessmentForm] handleEditorReady: Editor content matches state. No sync.");
-				}
-
-				if (pendingAudioBlob) {
-					console.warn("[AssessmentForm] handleEditorReady: Found pending audio blob. Starting transcription.");
-					transcribeAndPopulate(pendingAudioBlob);
-					setPendingAudioBlob(null);
-				}
-			} else {
-				console.error("[AssessmentForm] handleEditorReady: Called with null/undefined editor instance! Resetting state.");
-				setEditorInstance(null);
-				setIsEditorReady(false);
-			}
-		},
-		[editorNotes, pendingAudioBlob] // Removed transcribeAndPopulate from deps
-	);
-
-	// --- CKEditor Change Handler ---
-	const handleEditorChange = useCallback(
-		(event, editor) => {
-			if (editor) {
-				const data = editor.getData();
-				setEditorNotes((prevNotes) => (data !== prevNotes ? data : prevNotes));
-			} else {
-				console.warn("[AssessmentForm] handleEditorChange: Called but editor instance was invalid.");
-			}
-		},
-		[setEditorNotes]
-	);
-
-	// --- Template Selection Handler ---
 	const handleTemplateSelect = async (value) => {
-		console.log(`[AssessmentForm] handleTemplateSelect: Template selected: ${value}`);
 		setSelectedTemplateName(value);
 		if (!value) {
-			console.log("[AssessmentForm] handleTemplateSelect: Template deselected. Clearing notes.");
 			setEditorNotes("");
-			if (editorInstance && isEditorReady) editorInstance?.setData("");
 			return;
 		}
-		console.log(`[AssessmentForm] handleTemplateSelect: Fetching content for template name: ${value}`);
 		setLoadingTemplateContent(true);
 		try {
-			const response = await axios.get(`${TYPE_API_URL}/by-name/${value}`, { headers: { Authorization: `Bearer ${user?.token}` } });
-			const templateContent = response.data?.templateContent || "";
-			console.log("[AssessmentForm] handleTemplateSelect: Template content fetched. Length:", templateContent.length);
-			setEditorNotes(templateContent);
-			if (editorInstance && isEditorReady) {
-				console.log("[AssessmentForm] handleTemplateSelect: Editor ready, setting editor data.");
-				editorInstance?.setData(templateContent);
-			} else {
-				console.log("[AssessmentForm] handleTemplateSelect: Editor not ready, content set in state.");
+			const res = await axios.get(`${TYPE_API_URL}/by-name/${value}`, { headers: { Authorization: `Bearer ${user?.token}` } });
+			setEditorNotes(res.data?.templateContent || "");
+			if (pendingAudioBlob && selectedPatientId && value && !isTranscribing) {
+				transcribeAndPopulate(pendingAudioBlob);
+				setPendingAudioBlob(null);
 			}
-		} catch (error) {
-			console.error("[AssessmentForm] handleTemplateSelect: Failed to fetch template content:", error.response || error);
+		} catch (err) {
 			notification.error({
 				message: t("common.error"),
 				description: t("assessmentForm.notifications.templateContentLoadError", {
 					templateName: value,
-					error: error.response?.data?.message || error.message || "",
+					error: err.response?.data?.message || err.message,
 				}),
 			});
 		} finally {
-			console.log("[AssessmentForm] handleTemplateSelect: Finished loading template content.");
 			setLoadingTemplateContent(false);
 		}
 	};
 
-	// --- Patient Search/Select Handlers ---
-	const handlePatientSearch = (value) => {
-		console.log(`[AssessmentForm] handlePatientSearch: Input changed: "${value}"`);
-		setPatientSearchTerm(value);
-		if (!value) {
+	const handlePatientSearch = (val) => {
+		setPatientSearchTerm(val);
+		if (!val) {
 			setSelectedPatientId(null);
 			setPatientOptions([]);
 			form.setFieldsValue({ patientId: undefined });
-		} else {
-			debouncedPatientSearch(value);
+		} else debouncedPatientSearch(val);
+	};
+	const handlePatientSelect = (id, opt) => {
+		setSelectedPatientId(id);
+		setPatientSearchTerm(opt.label);
+		form.setFieldsValue({ patientId: id });
+		setPatientOptions([]);
+		if (pendingAudioBlob && selectedTemplateName && id && !isTranscribing) {
+			transcribeAndPopulate(pendingAudioBlob);
+			setPendingAudioBlob(null);
 		}
 	};
-	const handlePatientSelect = (patientId, option) => {
-		console.log("[AssessmentForm] handlePatientSelect: Patient selected:", { patientId, label: option.label });
-		setSelectedPatientId(patientId);
-		setPatientSearchTerm(option.label);
-		form.setFieldsValue({ patientId: patientId });
-		setPatientOptions([]);
-	};
 
-	// --- Form Submission Handler ---
 	const handleFormSubmit = async () => {
 		console.log("[AssessmentForm] handleFormSubmit: Initiating submission...");
 		try {
-			const currentEditorData = editorInstance && isEditorReady ? editorInstance?.getData() : editorNotes;
-			const isNotesEmpty = !currentEditorData || currentEditorData.replace(/<[^>]*>/g, "").trim() === "";
-			form.setFieldsValue({ notesContent: isNotesEmpty ? null : currentEditorData });
+			let processedNotesHtml = editorNotes;
+			if (notesDisplayAreaRef.current) {
+				console.log("[AssessmentForm] Processing notes from notesDisplayAreaRef for submission.");
+				const tempContainer = document.createElement("div");
+				tempContainer.innerHTML = editorNotes;
+				const templateInputs = tempContainer.querySelectorAll("input, textarea, select");
+				const liveRenderedInputs = notesDisplayAreaRef.current.querySelectorAll("input, textarea, select");
 
-			console.log("[AssessmentForm] handleFormSubmit: Triggering validation...");
+				templateInputs.forEach((templateInput, index) => {
+					const liveInput = liveRenderedInputs[index];
+					if (!liveInput) {
+						console.warn(`[Submit] No live input for template input idx ${index}.`);
+						return;
+					}
+					const inputType = templateInput.type || templateInput.tagName.toLowerCase();
+					switch (inputType) {
+						case "checkbox":
+						case "radio":
+							if (liveInput.checked) templateInput.setAttribute("checked", "checked");
+							else templateInput.removeAttribute("checked");
+							templateInput.checked = liveInput.checked;
+							break;
+						case "select-one":
+						case "select-multiple":
+						case "select":
+							templateInput.value = liveInput.value;
+							Array.from(templateInput.options).forEach((opt, i) => {
+								if (liveInput.options[i]) {
+									if (liveInput.options[i].selected) opt.setAttribute("selected", "selected");
+									else opt.removeAttribute("selected");
+									opt.selected = liveInput.options[i].selected;
+								}
+							});
+							break;
+						case "textarea":
+							templateInput.textContent = liveInput.value;
+							templateInput.value = liveInput.value;
+							break;
+						default:
+							templateInput.setAttribute("value", liveInput.value);
+							templateInput.value = liveInput.value;
+							break;
+					}
+				});
+				processedNotesHtml = tempContainer.innerHTML;
+			}
+			const isNotesEmpty = !processedNotesHtml || processedNotesHtml.replace(/<[^>]*>/g, "").trim() === "";
+			form.setFieldsValue({ notesContent: isNotesEmpty ? null : processedNotesHtml });
 			const values = await form.validateFields(["assessmentDateTime", "notesContent", "patientId"]);
-			console.log("[AssessmentForm] handleFormSubmit: Validation successful.");
-
 			if (!selectedPatientId) {
-				// Safeguard
-				console.error("[AssessmentForm] handleFormSubmit: CRITICAL - No selectedPatientId despite validation pass!");
 				notification.error({ message: t("common.validationError"), description: t("assessmentForm.validation.selectPatient") });
 				return;
 			}
-
-			const formattedDateTime = values.assessmentDateTime.format("YYYY-MM-DDTHH:mm:ss");
 			const assessmentData = {
-				assessmentDateTime: formattedDateTime,
+				assessmentDateTime: values.assessmentDateTime.format("YYYY-MM-DDTHH:mm:ss"),
 				patientId: selectedPatientId,
-				notes: currentEditorData,
+				notes: processedNotesHtml,
+				templateName: selectedTemplateName || null,
 			};
-
-			let url = API_BASE_URL;
-			let method = "post";
+			let url = API_BASE_URL,
+				method = "post";
 			if (assessment?.id) {
 				url = `${API_BASE_URL}/${assessment.id}`;
 				method = "put";
-				console.log(`[AssessmentForm] handleFormSubmit: Preparing UPDATE: ${url}`);
-			} else {
-				console.log(`[AssessmentForm] handleFormSubmit: Preparing CREATE: ${url}`);
 			}
-
-			const response = await axios[method](url, assessmentData, { headers: { Authorization: `Bearer ${user?.token}` } });
-			console.log(`[AssessmentForm] handleFormSubmit: Save successful. Status: ${response.status}`);
-			const successMessage = assessment ? t("assessmentForm.notifications.updateSuccess") : t("assessmentForm.notifications.createSuccess");
-			notification.success({ message: t("common.success"), description: successMessage });
+			await axios[method](url, assessmentData, { headers: { Authorization: `Bearer ${user?.token}` } });
+			notification.success({
+				message: t("common.success"),
+				description: assessment ? t("assessmentForm.notifications.updateSuccess") : t("assessmentForm.notifications.createSuccess"),
+			});
 			onSave();
-		} catch (error) {
-			if (error.name === "ValidateError") {
-				console.error("[AssessmentForm] handleFormSubmit: Form validation failed (Antd):", error.errorFields);
+		} catch (err) {
+			if (err.name === "ValidateError")
 				notification.warning({ message: t("common.validationError"), description: t("assessmentForm.validation.checkFields") });
-			} else {
-				console.error("[AssessmentForm] handleFormSubmit: Save API failed:", error.response || error);
-				let errorDescription = t("assessmentForm.notifications.saveErrorGeneric");
-				if (error.response)
-					errorDescription = t("assessmentForm.notifications.saveErrorSpecific", {
-						error: error.response.data?.message || error.response.statusText || `Status ${error.response.status}`,
+			else {
+				let desc = t("assessmentForm.notifications.saveErrorGeneric");
+				if (err.response)
+					desc = t("assessmentForm.notifications.saveErrorSpecific", {
+						error: err.response.data?.message || err.response.statusText || `Status ${err.response.status}`,
 					});
-				else if (error.request) errorDescription = t("assessmentForm.notifications.saveErrorNetwork");
-				else errorDescription = t("assessmentForm.notifications.saveErrorOther", { error: error.message });
-				notification.error({ message: t("common.error"), description: errorDescription });
+				else if (err.request) desc = t("assessmentForm.notifications.saveErrorNetwork");
+				else desc = t("assessmentForm.notifications.saveErrorOther", { error: err.message });
+				notification.error({ message: t("common.error"), description: desc });
 			}
 		}
 	};
 
-	// --- Recording and Transcription Logic ---
 	const startRecording = async () => {
-		console.log("[AssessmentForm] startRecording: Attempting...");
-		console.log(
-			"[AssessmentForm] startRecording: Prerequisites check - isEditorReady:",
-			isEditorReady,
-			"Template:",
-			selectedTemplateName,
-			"Patient:",
-			selectedPatientId,
-			"ReadOnly:",
-			isReadOnly
-		);
-		if (!isEditorReady || !editorInstance) {
-			notification.error({
-				message: t("assessmentForm.notifications.editorNotReadyTitle"),
-				description: t("assessmentForm.notifications.editorNotReadyDesc"),
-			});
-			return;
-		}
 		if (!selectedTemplateName) {
 			notification.warning({
 				message: t("assessmentForm.notifications.templateRequiredTitle"),
@@ -383,224 +301,194 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 			});
 			return;
 		}
-
-		console.log("[AssessmentForm] startRecording: Prerequisites met. Starting...");
 		recordedChunks.current = [];
 		try {
-			console.log("[AssessmentForm] startRecording: Requesting mic...");
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			console.log("[AssessmentForm] startRecording: Mic granted. Creating MediaRecorder.");
 			mediaRecorder.current = new MediaRecorder(stream, { mimeType: "audio/webm" });
-
-			mediaRecorder.current.ondataavailable = (event) => {
-				if (event.data.size > 0) recordedChunks.current.push(event.data);
+			mediaRecorder.current.ondataavailable = (e) => {
+				if (e.data.size > 0) recordedChunks.current.push(e.data);
 			};
-
 			mediaRecorder.current.onstop = () => {
-				console.log("[AssessmentForm] onstop: MediaRecorder stopped.");
-				setIsRecording(false); // Set state FIRST
-				console.log("[AssessmentForm] onstop: isRecording state set to false.");
-
+				setIsRecording(false);
 				if (isCancelling.current) {
-					console.warn("[AssessmentForm] onstop: Cancelled during recording, skipping transcription.");
-					stream.getTracks().forEach((track) => track.stop());
+					stream.getTracks().forEach((t) => t.stop());
 					recordedChunks.current = [];
 					return;
 				}
-
 				const audioBlob = new Blob(recordedChunks.current, { type: "audio/webm" });
-				console.log("[AssessmentForm] onstop: Audio Blob created, size:", audioBlob.size);
 				recordedChunks.current = [];
-				stream.getTracks().forEach((track) => {
-					console.log(`[AssessmentForm] onstop: Stopping media track: ${track.kind}`);
-					track.stop();
-				});
-
+				stream.getTracks().forEach((t) => t.stop());
 				if (audioBlob.size === 0) {
-					console.warn("[AssessmentForm] onstop: Empty blob. Not transcribing.");
 					notification.warning({
 						message: t("assessmentForm.notifications.recordingIssueTitle"),
 						description: t("assessmentForm.notifications.recordingIssueDesc"),
 					});
 					return;
 				}
-
-				if (isEditorReady && editorInstance) {
-					console.log("[AssessmentForm] onstop: Editor ready. Proceeding with transcription.");
-					transcribeAndPopulate(audioBlob); // Pass blob directly
-				} else {
-					console.warn("[AssessmentForm] onstop: Editor NOT READY after stop. Storing blob.");
+				if (selectedTemplateName && selectedPatientId && !isTranscribing) transcribeAndPopulate(audioBlob);
+				else {
 					setPendingAudioBlob(audioBlob);
 					notification.info({
-						message: t("assessmentForm.notifications.editorIssueTitle"),
-						description: t("assessmentForm.notifications.editorIssueDesc"),
+						message: t("assessmentForm.notifications.transcriptionPendingTitle"),
+						description: t("assessmentForm.notifications.transcriptionPendingDesc"),
 					});
 				}
 			};
-
-			mediaRecorder.current.onerror = (event) => {
-				console.error("[AssessmentForm] onerror: MediaRecorder error:", event.error);
+			mediaRecorder.current.onerror = (e) => {
 				notification.error({
 					message: t("assessmentForm.notifications.recordingErrorTitle"),
-					description: t("assessmentForm.notifications.recordingErrorDesc", { error: event.error?.name || t("common.unknownError") }),
+					description: t("assessmentForm.notifications.recordingErrorDesc", { error: e.error?.name || t("common.unknownError") }),
 				});
 				setIsRecording(false);
-				stream.getTracks().forEach((track) => track.stop());
+				stream.getTracks().forEach((t) => t.stop());
 			};
-
 			mediaRecorder.current.start();
-			setIsRecording(true); // Set state AFTER successful start
-			console.log("[AssessmentForm] startRecording: MediaRecorder started successfully.");
-		} catch (error) {
-			console.error("[AssessmentForm] startRecording: Mic/recorder error:", error);
-			let errorMsg = t("assessmentForm.notifications.micErrorGeneric", { error: error.message });
-			if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError")
-				errorMsg = t("assessmentForm.notifications.micErrorNotAllowed");
-			else if (error.name === "NotFoundError") errorMsg = t("assessmentForm.notifications.micErrorNotFound");
-			else if (error.name === "SecurityError") errorMsg = t("assessmentForm.notifications.micErrorSecurity");
-			notification.error({ message: t("assessmentForm.notifications.micErrorTitle"), description: errorMsg });
+			setIsRecording(true);
+		} catch (err) {
+			let msg = t("assessmentForm.notifications.micErrorGeneric", { error: err.message });
+			if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") msg = t("assessmentForm.notifications.micErrorNotAllowed");
+			else if (err.name === "NotFoundError") msg = t("assessmentForm.notifications.micErrorNotFound");
+			else if (err.name === "SecurityError") msg = t("assessmentForm.notifications.micErrorSecurity");
+			notification.error({ message: t("assessmentForm.notifications.micErrorTitle"), description: msg });
 			setIsRecording(false);
 		}
 	};
-
 	const stopRecording = () => {
-		console.log("[AssessmentForm] stopRecording: Button clicked.");
-		if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-			console.log("[AssessmentForm] stopRecording: Calling mediaRecorder.stop().");
-			mediaRecorder.current.stop();
-		} else {
-			console.log("[AssessmentForm] stopRecording: Recorder not active/already stopped. State:", mediaRecorder.current?.state);
-			if (isRecording) {
-				console.warn("[AssessmentForm] stopRecording: Forcing isRecording state false.");
-				setIsRecording(false);
-			}
-		}
+		if (mediaRecorder.current?.state === "recording") mediaRecorder.current.stop();
+		else if (isRecording) setIsRecording(false);
 	};
 
-	// --- Updated: transcribeAndPopulate now includes currentHtml in FormData ---
-	const transcribeAndPopulate = async (audioBlob) => {
-		console.log("[AssessmentForm] transcribeAndPopulate: Starting...");
-		console.log(
-			"[AssessmentForm] transcribeAndPopulate: Prerequisites check - Template:",
-			selectedTemplateName,
-			"Patient:",
-			selectedPatientId,
-			"EditorReady:",
-			isEditorReady,
-			"ReadOnly:",
-			isReadOnly
-		);
-
-		if (!selectedTemplateName || !selectedPatientId || !editorInstance || !isEditorReady) {
-			console.error("[AssessmentForm] transcribeAndPopulate: CRITICAL - Prerequisites failed just before API!");
-			notification.error({ message: t("common.error"), description: t("assessmentForm.notifications.transcriptionPrereqError") });
-			setIsTranscribing(false);
-			setTranscriptionProgress(0);
+	const transcribeAndPopulate = async (audioBlobToTranscribe) => {
+		console.log("[AssessmentForm] AI: Starting transcription for structured data population.");
+		if (!selectedTemplateName || !selectedPatientId || isReadOnly || isTranscribing) {
+			if (!selectedTemplateName) notification.error({ message: "Error", description: "Template must be selected for AI transcription." });
+			if (!selectedPatientId) notification.error({ message: "Error", description: "Patient must be selected for AI transcription." });
+			if (isReadOnly) notification.error({ message: "Error", description: "Cannot transcribe in read-only mode." });
+			if (isTranscribing) console.warn("AI: Transcription already in progress.");
+			if (!isRecording && audioBlobToTranscribe) setPendingAudioBlob(audioBlobToTranscribe);
 			return;
 		}
-		if (isReadOnly) {
-			console.error("[AssessmentForm] transcribeAndPopulate: Cancelled - read-only.");
-			notification.error({
-				message: t("assessmentForm.notifications.readOnlyTitle"),
-				description: t("assessmentForm.notifications.readOnlyTranscribeDesc"),
-			});
-			setIsTranscribing(false);
-			setTranscriptionProgress(0);
-			return;
-		}
-
-		console.log("[AssessmentForm] transcribeAndPopulate: Prerequisites met. Setting isTranscribing=true.");
 		setIsTranscribing(true);
 		setTranscriptionProgress(1);
-
-		let currentProgress = 1;
-		const progressInterval = setInterval(() => {
-			currentProgress += Math.random() * 5 + 1;
-			setTranscriptionProgress(Math.min(Math.floor(currentProgress), 95));
+		let currentProg = 1;
+		const progInterval = setInterval(() => {
+			currentProg += Math.random() * 5 + 1;
+			setTranscriptionProgress(Math.min(Math.floor(currentProg), 95));
 		}, 400);
-
 		try {
 			const formData = new FormData();
-			const fileName = `assessment_audio_${selectedPatientId}_${Date.now()}.webm`;
-
-			// --- Get the current HTML content ---
-			const currentEditorData = editorInstance && isEditorReady ? editorInstance.getData() : editorNotes;
-			if (currentEditorData === null || currentEditorData === undefined) {
-				console.error("[AssessmentForm] transcribeAndPopulate: Cannot send request, current editor data is null/undefined.");
-				notification.error({ message: "Error", description: "Cannot get editor content for transcription." });
-				setIsTranscribing(false);
-				setTranscriptionProgress(0);
-				clearInterval(progressInterval);
-				return; // Exit the function
-			}
-
-			formData.append("audio", audioBlob, fileName);
+			formData.append("audio", audioBlobToTranscribe, `audio_${selectedPatientId}_${Date.now()}.webm`);
 			formData.append("templateName", selectedTemplateName);
 			formData.append("patientId", selectedPatientId.toString());
-			// --- >>> ADDED currentHtml <<< ---
-			formData.append("currentHtml", currentEditorData);
-			// --- >>> END ADDED currentHtml <<< ---
-
-			if (assessment?.id) {
-				formData.append("assessmentId", assessment.id.toString());
-			}
-
-			console.log(
-				`[AssessmentForm] transcribeAndPopulate: Sending POST to ${API_BASE_URL}/ai/transcribe-and-populate. Filename: ${fileName}, Size: ${audioBlob.size}`
-			);
-			console.log("[AssessmentForm] transcribeAndPopulate: FormData keys:", Array.from(formData.keys())); // Log keys
-
-			// --- API Call ---
-			const response = await axios.post(`${API_BASE_URL}/ai/transcribe-and-populate`, formData, {
+			formData.append("currentHtml", editorNotes);
+			if (assessment?.id) formData.append("assessmentId", assessment.id.toString());
+			console.log(`[AssessmentForm] AI: Sending audio to ${AI_STRUCTURED_ENDPOINT}`);
+			const response = await axios.post(AI_STRUCTURED_ENDPOINT, formData, {
 				headers: { Authorization: `Bearer ${user?.token}` },
 				timeout: 180000,
 			});
-			// --- End API Call ---
-
-			console.log("[AssessmentForm] transcribeAndPopulate: Response received - Status:", response.status);
-			clearInterval(progressInterval);
+			clearInterval(progInterval);
 			setTranscriptionProgress(100);
 
-			if (response.status === 200 && response.data?.updatedHtml !== undefined) {
-				const updatedHtml = response.data.updatedHtml;
-				console.log("[AssessmentForm] transcribeAndPopulate: Success. Updating editor.");
-				if (editorInstance && isEditorReady) {
-					editorInstance?.setData(updatedHtml);
-					setEditorNotes(updatedHtml);
-					form.setFieldsValue({ notesContent: updatedHtml || null });
-					console.log("[AssessmentForm] transcribeAndPopulate: Editor, state, form value updated.");
+			if (response.status === 200 && response.data && response.data.fields) {
+				console.log("[AssessmentForm] AI: Received structured data:", response.data.fields);
+				const tempContainer = document.createElement("div");
+				tempContainer.innerHTML = editorNotes;
+				const aiFields = response.data.fields;
+				let changesMadeToNotes = false;
+				for (const fieldKey in aiFields) {
+					if (Object.hasOwnProperty.call(aiFields, fieldKey)) {
+						const fieldValue = aiFields[fieldKey];
+						let targetEl = tempContainer.querySelector(`#${fieldKey}`) || tempContainer.querySelector(`[name="${fieldKey}"]`);
+						if (!targetEl && tempContainer.querySelector(`input[name="${fieldKey}"][type="radio"]`)) {
+							const radios = tempContainer.querySelectorAll(`input[name="${fieldKey}"][type="radio"]`);
+							radios.forEach((radio) => {
+								if (radio.value === String(fieldValue)) {
+									radio.setAttribute("checked", "checked");
+									radio.checked = true;
+									changesMadeToNotes = true;
+								} else {
+									radio.removeAttribute("checked");
+									radio.checked = false;
+								}
+							});
+							if (changesMadeToNotes) console.log(`[AI Merge] Set radio group '${fieldKey}' to '${fieldValue}'`);
+							continue;
+						}
+						if (targetEl) {
+							changesMadeToNotes = true;
+							const elType = targetEl.type || targetEl.tagName.toLowerCase();
+							console.log(`[AI Merge] Updating field '${fieldKey}' (type: ${elType}) with value:`, fieldValue);
+							switch (elType) {
+								case "checkbox":
+									const isChk = typeof fieldValue === "boolean" ? fieldValue : String(fieldValue).toLowerCase() === "true";
+									if (isChk) targetEl.setAttribute("checked", "checked");
+									else targetEl.removeAttribute("checked");
+									targetEl.checked = isChk;
+									break;
+								case "select":
+								case "select-one":
+								case "select-multiple":
+									targetEl.value = String(fieldValue);
+									Array.from(targetEl.options).forEach((opt) => {
+										if (opt.value === String(fieldValue)) {
+											opt.setAttribute("selected", "selected");
+											opt.selected = true;
+										} else {
+											opt.removeAttribute("selected");
+											opt.selected = false;
+										}
+									});
+									break;
+								case "textarea":
+									targetEl.textContent = String(fieldValue);
+									targetEl.value = String(fieldValue);
+									break;
+								default:
+									targetEl.setAttribute("value", String(fieldValue));
+									targetEl.value = String(fieldValue);
+									break;
+							}
+						} else {
+							console.warn(`[AI Merge] No target element found for AI field key: '${fieldKey}'`);
+						}
+					}
+				}
+				if (changesMadeToNotes) {
+					const newNotesHtml = tempContainer.innerHTML;
+					setEditorNotes(newNotesHtml);
+					form.setFieldsValue({ notesContent: newNotesHtml || null });
+					console.log("[AssessmentForm] AI: EditorNotes updated.");
 				} else {
-					console.error("[AssessmentForm] transcribeAndPopulate: SUCCESS but editor instance invalid/not ready!");
-					setEditorNotes(updatedHtml);
-					form.setFieldsValue({ notesContent: updatedHtml || null });
+					console.log("[AssessmentForm] AI: No changes to notes from AI data.");
+				}
+				if (response.data.rawTranscription) {
+					notification.info({
+						message: t("assessmentForm.notifications.aiRawTranscriptionTitle", "AI Raw Transcription"),
+						description: response.data.rawTranscription,
+						duration: 10,
+					});
 				}
 				notification.success({ message: t("common.success"), description: t("assessmentForm.notifications.transcriptionSuccess") });
 			} else {
-				console.error("[AssessmentForm] transcribeAndPopulate: Unexpected response format:", response.data);
+				console.error("[AssessmentForm] AI: Backend returned unexpected response:", response.data);
 				throw new Error(t("assessmentForm.notifications.transcriptionUnexpectedResponse", { status: response.status }));
 			}
-		} catch (error) {
-			clearInterval(progressInterval);
-			console.error("[AssessmentForm] transcribeAndPopulate: API call error:", error.response || error);
+		} catch (err) {
+			clearInterval(progInterval);
 			setTranscriptionProgress(0);
-			if (error.response?.status === 403) {
-				notification.error({
-					message: t("assessmentForm.notifications.transcriptionErrorTitle"),
-					description: t("assessmentForm.notifications.transcriptionErrorForbidden", "Permission denied for transcription service."),
+			if (audioBlobToTranscribe) setPendingAudioBlob(audioBlobToTranscribe);
+			let desc = t("assessmentForm.notifications.transcriptionErrorGeneric");
+			if (err.response?.status === 403) desc = t("assessmentForm.notifications.transcriptionErrorForbidden");
+			else if (err.code === "ECONNABORTED" || err.message?.includes("timeout"))
+				desc = t("assessmentForm.notifications.transcriptionErrorTimeout");
+			else if (err.response)
+				desc = t("assessmentForm.notifications.transcriptionErrorSpecific", {
+					error: err.response.data?.message || err.response.statusText || `Status ${err.response.status}`,
 				});
-			} else {
-				let errorDescription = t("assessmentForm.notifications.transcriptionErrorGeneric");
-				if (error.code === "ECONNABORTED" || error.message?.includes("timeout"))
-					errorDescription = t("assessmentForm.notifications.transcriptionErrorTimeout");
-				else if (error.response)
-					errorDescription = t("assessmentForm.notifications.transcriptionErrorSpecific", {
-						error: error.response.data?.message || error.response.statusText || `Status ${error.response.status}`,
-					});
-				else errorDescription = t("assessmentForm.notifications.transcriptionErrorOther", { error: error.message });
-				notification.error({ message: t("assessmentForm.notifications.transcriptionErrorTitle"), description: errorDescription });
-			}
+			else desc = t("assessmentForm.notifications.transcriptionErrorOther", { error: err.message });
+			notification.error({ message: t("assessmentForm.notifications.transcriptionErrorTitle"), description: desc });
 		} finally {
-			console.log("[AssessmentForm] transcribeAndPopulate: Finished. Resetting isTranscribing.");
 			setIsTranscribing(false);
 			setTimeout(() => {
 				if (!isTranscribing) setTranscriptionProgress(0);
@@ -608,18 +496,12 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 		}
 	};
 
-	// --- Template Options ---
-	const templateOptions = useMemo(() => {
-		return assessmentTypes.map((type) => ({
-			label: type.displayName || type.name,
-			value: type.name,
-			key: type.name,
-		}));
-	}, [assessmentTypes]);
-
-	// --- AI Tips ---
-	const aiRecordingTips = useMemo(() => {
-		return (
+	const templateOptions = useMemo(
+		() => assessmentTypes.map((type) => ({ label: type.displayName || type.name, value: type.name, key: type.name })),
+		[assessmentTypes]
+	);
+	const aiRecordingTips = useMemo(
+		() => (
 			<div style={{ maxWidth: "300px" }}>
 				<p>
 					<b>{t("assessmentForm.aiTips.speakClearly.title")}</b> {t("assessmentForm.aiTips.speakClearly.desc")}
@@ -643,77 +525,61 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 					<i>{t("assessmentForm.aiTips.note")}</i>
 				</p>
 			</div>
-		);
-	}, [t]);
-
-	// --- Hidden Notes Field Sync ---
-	useEffect(() => {
-		const currentNotes = editorNotes;
-		const isEmpty = !currentNotes || currentNotes.replace(/<[^>]*>/g, "").trim() === "";
-		const formValue = isEmpty ? null : currentNotes;
-		if (form.getFieldValue("notesContent") !== formValue) {
-			form.setFieldsValue({ notesContent: formValue });
-		}
-	}, [editorNotes, form]);
-
-	// --- Progress Formatter ---
-	const formatProgress = useCallback(
-		(percent) => {
-			if (!percent) return "";
-			if (percent < 95) return `${percent}% ${t("assessmentForm.progress.transcribing")}`;
-			if (percent < 100) return `${percent}% ${t("assessmentForm.progress.processing")}`;
-			return t("assessmentForm.progress.populating");
-		},
+		),
 		[t]
 	);
 
-	// --- AI Button Disabled Logic ---
-	const cannotStartRecording =
-		isReadOnly || !selectedTemplateName || !selectedPatientId || !isEditorReady || loadingTemplateContent || isTranscribing || isRecording;
+	useEffect(() => {
+		const notes = editorNotes;
+		const isEmpty = !notes || notes.replace(/<[^>]*>/g, "").trim() === "";
+		const val = isEmpty ? null : notes;
+		if (form.getFieldValue("notesContent") !== val) form.setFieldsValue({ notesContent: val });
+	}, [editorNotes, form]);
+
+	const formatProgress = useCallback(
+		(p) =>
+			!p || p < 1
+				? ""
+				: p < 95
+				? `${p}% ${t("assessmentForm.progress.transcribing")}`
+				: p < 100
+				? `${p}% ${t("assessmentForm.progress.processing")}`
+				: t("assessmentForm.progress.populating"),
+		[t]
+	);
+	const cannotStartRecording = isReadOnly || !selectedTemplateName || !selectedPatientId || loadingTemplateContent || isTranscribing || isRecording;
 	const aiButtonDisabled = isTranscribing || (!isRecording && cannotStartRecording);
 
-	// --- Render Logic ---
-	console.log("[AssessmentForm] RENDERING. Current states:", {
-		isEditorReady,
-		editorInstance: !!editorInstance,
-		loadingTemplateContent,
-		isReadOnly,
-		selectedTemplateName,
-		selectedPatientId,
-		isTranscribing,
-		isRecording,
-		cannotStartRecording,
-		aiButtonDisabled,
-		editorNotesLength: editorNotes?.length,
-	});
-
-	// --- Unmount Cleanup ---
-	useEffect(() => {
-		return () => {
-			console.log("[AssessmentForm] Component Unmounting. Cleaning up...");
+	useEffect(
+		() => () => {
 			isCancelling.current = true;
-			if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-				console.warn("[AssessmentForm] Unmounting while recording. Stopping recorder.");
-				mediaRecorder.current.stop();
-			}
-		};
-	}, []);
-
-	// --- Wrapper for onCancel prop ---
+			if (mediaRecorder.current?.state === "recording") mediaRecorder.current.stop();
+		},
+		[]
+	);
 	const handleCancelClick = () => {
-		console.log("[AssessmentForm] Cancel button clicked.");
 		isCancelling.current = true;
-		if (isRecording) {
-			console.log("[AssessmentForm] Cancel clicked while recording. Stopping recorder first.");
-			stopRecording();
-		}
+		if (isRecording) stopRecording();
 		onCancel();
+	};
+
+	const notesContainerClass = `notes-display-area ${isReadOnly ? "readonly" : ""} ${darkMode ? "dark" : ""}`;
+	const notesContainerStyle = {
+		border: "1px solid #d9d9d9",
+		borderRadius: "2px",
+		minHeight: "300px",
+		padding: "10px",
+		overflowY: "auto",
+		backgroundColor: darkMode ? (isReadOnly ? "#1f1f1f" : "#262626") : isReadOnly ? "#f5f5f5" : "white",
+		color: darkMode ? (isReadOnly ? "rgba(255,255,255,0.45)" : "#f0f0f0") : "inherit",
+		lineHeight: "1.5",
+		whiteSpace: "pre-wrap",
+		wordWrap: "break-word",
 	};
 
 	return (
 		<>
 			<Form form={form} layout="vertical" onFinish={handleFormSubmit} name="assessment_form">
-				{/* Patient Row */}
 				<Row gutter={16}>
 					<Col xs={24} md={12}>
 						<Form.Item
@@ -757,30 +623,26 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 							label={t("assessmentForm.dateTime.label")}
 							name="assessmentDateTime"
 							rules={[{ required: true, message: t("assessmentForm.dateTime.validation") }]}>
-							<DatePicker
-								showTime
-								style={{ width: "100%" }}
-								format="YYYY-MM-DD HH:mm:ss"
-								disabled={isReadOnly}
-								onChange={(date) => form.setFieldsValue({ assessmentDateTime: date })}
-							/>
+							<DatePicker showTime style={{ width: "100%" }} format="YYYY-MM-DD HH:mm:ss" disabled={isReadOnly} />
 						</Form.Item>
 					</Col>
 				</Row>
 
-				{/* Template & AI Row */}
 				<Row gutter={16}>
 					<Col xs={24} md={12}>
-						<Form.Item label={t("assessmentForm.template.label")} name="templateName">
+						<Form.Item
+							label={t("assessmentForm.template.label")}
+							name="templateNameSelectedInUI" // Name for AntD form, value primarily from state
+						>
 							{loadingTypes ? (
 								<Spin tip={t("assessmentForm.template.loadingTip")} />
 							) : (
 								<Select
-									placeholder={t("assessmentForm.template.placeholder")}
+									value={selectedTemplateName}
 									options={templateOptions}
 									onChange={handleTemplateSelect}
+									placeholder={t("assessmentForm.template.placeholder")}
 									style={{ width: "100%" }}
-									value={selectedTemplateName}
 									allowClear
 									disabled={isReadOnly || loadingTemplateContent || isTranscribing || isRecording}
 									loading={loadingTemplateContent}
@@ -800,8 +662,8 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 										type={isRecording ? "danger" : "primary"}
 										icon={<AudioOutlined />}
 										onClick={isRecording ? stopRecording : startRecording}
-										loading={isTranscribing}
-										disabled={aiButtonDisabled} // Use updated logic
+										loading={isTranscribing && transcriptionProgress < 1}
+										disabled={aiButtonDisabled}
 										ghost={!isRecording}>
 										{isRecording ? t("assessmentForm.aiVoice.stopButton") : t("assessmentForm.aiVoice.startButton")}
 										<QuestionCircleOutlined style={{ marginLeft: 8, verticalAlign: "middle", fontSize: "14px", opacity: 0.7 }} />
@@ -819,16 +681,15 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 										/>
 									</div>
 								)}
-								{!isTranscribing && <div style={{ height: "24px", flexGrow: 1, minWidth: "150px" }}></div>}
+								{!isTranscribing && <div style={{ height: "24px", flexGrow: 1, minWidth: "150px" }}></div>} {/* Placeholder */}
 							</Space>
 						</Form.Item>
 					</Col>
 				</Row>
 
-				{/* CKEditor Notes Area */}
 				<Form.Item
 					label={t("assessmentForm.notes.label")}
-					name="notesContent"
+					name="notesContent" // For validation
 					required
 					rules={[{ required: true, message: t("assessmentForm.notes.validation") }]}
 					validateStatus={
@@ -836,60 +697,26 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 					}>
 					<Spin spinning={loadingTemplateContent} tip={t("assessmentForm.notes.loadingTip")}>
 						<div
-							className={`ckeditor-container ${isReadOnly ? "readonly" : ""} ${darkMode ? "dark" : ""}`}
-							style={{
-								border: "1px solid #d9d9d9",
-								borderRadius: "2px",
-								minHeight: "300px",
-								position: "relative",
-								backgroundColor: isReadOnly ? "#f5f5f5" : "transparent",
-							}}>
-							{!loadingTemplateContent ? (
-								<CKEditorComponent
-									data={editorNotes}
-									onReady={handleEditorReady}
-									onChange={handleEditorChange}
-									darkMode={darkMode}
-									readOnly={isReadOnly}
-								/>
-							) : (
-								<div
-									style={{
-										padding: "20px",
-										textAlign: "center",
-										color: "#aaa",
-										display: "flex",
-										justifyContent: "center",
-										alignItems: "center",
-										height: "300px",
-									}}>
-									{t("assessmentForm.notes.loadingContent")}
-								</div>
-							)}
-						</div>
+							ref={notesDisplayAreaRef}
+							className={notesContainerClass}
+							style={notesContainerStyle}
+							dangerouslySetInnerHTML={{ __html: editorNotes }}
+						/>
 					</Spin>
-					{!isEditorReady && !loadingTemplateContent && (
-						<div style={{ color: "#aaa", marginTop: "5px", fontSize: "12px" }}>{t("assessmentForm.notes.initializingEditor")}</div>
-					)}
 				</Form.Item>
-
-				{/* Hidden input for validation */}
 				<Form.Item name="notesContent" hidden>
 					<Input />
 				</Form.Item>
 
-				{/* Action Buttons */}
 				<div style={{ textAlign: "right", marginTop: 16, borderTop: "1px solid #f0f0f0", paddingTop: "16px" }}>
 					<Space wrap>
-						<Button key="cancel" onClick={handleCancelClick} disabled={isTranscribing}>
+						<Button onClick={handleCancelClick} disabled={isTranscribing}>
 							{t("common.cancel")}
 						</Button>
 						<Button
-							key="submit"
 							type="primary"
 							htmlType="submit"
-							disabled={isReadOnly || isRecording || isTranscribing || loadingTemplateContent || loadingTypes}
-							loading={false}>
+							disabled={isReadOnly || isRecording || isTranscribing || loadingTemplateContent || loadingTypes}>
 							{assessment ? t("assessmentForm.updateButton") : t("assessmentForm.saveButton")}
 						</Button>
 					</Space>

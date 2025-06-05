@@ -5900,7 +5900,7 @@ import mine.profile.website.security.JwtTokenProvider;
 import mine.profile.website.service.UserService;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("http://localhost:8080/api/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -7590,7 +7590,7 @@ import mine.profile.website.service.NurseActivityService;
 import mine.profile.website.service.NurseService;
 
 @RestController
-@RequestMapping("/api/nurses")
+@RequestMapping("http://localhost:8080/api/nurses")
 public class NurseController {
     private final NurseService nurseService;
     private final NurseActivityService nurseActivityService;
@@ -7767,7 +7767,7 @@ import mine.profile.website.dtos.PrescribedMedicationDTO;
 import mine.profile.website.service.PrescribedMedicationService;
 
 @RestController
-@RequestMapping("/api/prescribed-medications")
+@RequestMapping("http://localhost:8080/api/prescribed-medications")
 public class PrescribedMedicationController {
 
     private final PrescribedMedicationService prescribedMedicationService;
@@ -7824,7 +7824,7 @@ import mine.profile.website.service.PrescriptionService;
 import mine.profile.website.services.PatientService;
 
 @RestController
-@RequestMapping("/api/medication-administrations")
+@RequestMapping("http://localhost:8080/api/medication-administrations")
 public class MedicationAdministrationController {
 
     private final MedicationAdministrationService medicationAdministrationService;
@@ -7902,7 +7902,7 @@ import mine.profile.website.repository.MedicationRepository;
 import mine.profile.website.service.MedicationService;
 
 @RestController
-@RequestMapping("/api/medications")
+@RequestMapping("http://localhost:8080/api/medications")
 public class MedicationController {
 
     private final MedicationService medicationService;
@@ -7985,7 +7985,7 @@ import mine.profile.website.dtos.LabTestDTO;
 import mine.profile.website.service.LabTestService;
 
 @RestController
-@RequestMapping("/api/lab-tests")
+@RequestMapping("http://localhost:8080/api/lab-tests")
 public class LabTestController {
 
     @Autowired
@@ -8107,7 +8107,7 @@ import mine.profile.website.dtos.UserDTO;
 import mine.profile.website.service.UserService;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("http://localhost:8080/api/users")
 public class UserController {
 
     @Autowired
@@ -8212,7 +8212,7 @@ import mine.profile.website.dtos.LabResultDTO;
 import mine.profile.website.service.LabResultService;
 
 @RestController
-@RequestMapping("/api/lab-results")
+@RequestMapping("http://localhost:8080/api/lab-results")
 public class LabResultController {
 
     @Autowired
@@ -8273,7 +8273,7 @@ import mine.profile.website.dtos.AdmissionDTO;
 import mine.profile.website.service.AdmissionService;
 
 @RestController
-@RequestMapping("/api/admissions")
+@RequestMapping("http://localhost:8080/api/admissions")
 public class AdmissionController {
 
     @Autowired
@@ -8348,7 +8348,7 @@ import mine.profile.website.dtos.ImageReportDTO;
 import mine.profile.website.service.ImageReportService;
 
 @RestController
-@RequestMapping("/api/imagereports")
+@RequestMapping("http://localhost:8080/api/imagereports")
 public class ImageReportController {
 
     @Autowired
@@ -8414,7 +8414,7 @@ import mine.profile.website.dtos.ProductDTO;
 import mine.profile.website.service.ProductService;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("http://localhost:8080/api/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -8489,7 +8489,7 @@ import mine.profile.website.dtos.PatientDTO;
 import mine.profile.website.services.PatientService;
 
 @RestController
-@RequestMapping("/api/patients")
+@RequestMapping("http://localhost:8080/api/patients")
 public class PatientRestController {
 
     @Autowired
@@ -8587,7 +8587,7 @@ import mine.profile.website.dtos.AssessmentDTO;
 import mine.profile.website.service.AssessmentService;
 
 @RestController
-@RequestMapping("/api/assessments")
+@RequestMapping("http://localhost:8080/api/assessments")
 public class AssessmentController {
 
     @Autowired
@@ -8648,7 +8648,7 @@ import mine.profile.website.dtos.ProcedureDTO;
 import mine.profile.website.service.ProcedureService;
 
 @RestController
-@RequestMapping("/api/procedures")
+@RequestMapping("http://localhost:8080/api/procedures")
 public class ProcedureController {
 
     private static final Logger log = LoggerFactory.getLogger(ProcedureController.class);
@@ -8728,7 +8728,7 @@ import mine.profile.website.dtos.PatientProductUsageDTO;
 import mine.profile.website.service.PatientProductUsageService;
 
 @RestController
-@RequestMapping("/api/product-usage")
+@RequestMapping("http://localhost:8080/api/product-usage")
 public class PatientProductUsageController {
 
     private final PatientProductUsageService patientProductUsageService;
@@ -8796,7 +8796,7 @@ import mine.profile.website.dtos.UnitDTO;
 import mine.profile.website.service.UnitService;
 
 @RestController
-@RequestMapping("/api/units")
+@RequestMapping("http://localhost:8080/api/units")
 public class UnitController {
 
     @Autowired
@@ -8871,7 +8871,7 @@ import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.VitalSignService;
 
 @RestController
-@RequestMapping("/api/vital-signs")
+@RequestMapping("http://localhost:8080/api/vital-signs")
 public class VitalSignController {
 
     @Autowired
@@ -8942,7 +8942,7 @@ import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.PatientDataService;
 
 @RestController
-@RequestMapping("/api/patients-data")
+@RequestMapping("http://localhost:8080/api/patients-data")
 public class PatientDataController {
 
     @Autowired
@@ -9125,7 +9125,7 @@ import mine.profile.website.dtos.PrescriptionDTO;
 import mine.profile.website.service.PrescriptionService;
 
 @RestController
-@RequestMapping("/api/prescriptions")
+@RequestMapping("http://localhost:8080/api/prescriptions")
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
@@ -9189,7 +9189,7 @@ import mine.profile.website.dtos.ImageReportTypeDTO;
 import mine.profile.website.service.ImageReportTypeService;
 
 @RestController
-@RequestMapping("/api/imagereporttypes")
+@RequestMapping("http://localhost:8080/api/imagereporttypes")
 public class ImageReportTypeController {
 
     @Autowired
@@ -9244,7 +9244,7 @@ import mine.profile.website.dtos.ProcedureLogDTO;
 import mine.profile.website.service.ProcedureLogService;
 
 @RestController
-@RequestMapping("/api/procedure-logs")
+@RequestMapping("http://localhost:8080/api/procedure-logs")
 public class ProcedureLogController {
 
     private final ProcedureLogService procedureLogService;
@@ -10422,7 +10422,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("http://localhost:8080/api/auth/**").permitAll()
                         // In SecurityConfig
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers("/login", "/register").permitAll()
@@ -10430,63 +10430,63 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
 
                         // *** Patient Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/patients/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/patients/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.PUT, "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.DELETE, "/api/patients/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/patients-data/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/patients/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/patients-data/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "SOCIAL_WORKER", "HEAD_NURSE")
 
                         // *** Doctor Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/doctors/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/doctors/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/doctors/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/doctors/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
 
                         // *** User Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/users/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/users/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "SOCIAL_WORKER", "ACCOUNTANT",
                                 "LAB_TECHNICIAN", "RADIOLOGIST", "PHARMACIST", "INSURANCE_PROVIDER", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/users/**").hasRole("ADMIN")
 
                         // *** Department Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/departments/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/departments/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/departments/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
 
                         // *** Appointment Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/appointments/**").hasRole("ADMIN")
 
                         // *** Medication Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/medications/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/medications/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/medications/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
 
                         // *** Prescription Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/prescriptions/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/prescriptions/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prescriptions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/prescriptions/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/prescribed-medications/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/prescribed-medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "PHARMACIST", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/prescribed-medications/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/prescribed-medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prescribed-medications/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prescribed-medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/prescribed-medications/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/prescribed-medications/**").hasRole("ADMIN")
 
                         // *** Room Endpoints ***
                         .requestMatchers(HttpMethod.GET, "/rooms/**")
@@ -10503,113 +10503,113 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/beds/**").hasRole("ADMIN")
 
                         // *** Admission Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/admissions/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/admissions/**")
                         .hasAnyRole("ADMIN", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/admissions/open")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/admissions/open")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "RECEPTIONIST", "HEAD_NURSE")
 
                         // *** Assessment Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/assessments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/assessments/**").hasRole("ADMIN")
 
                         // *** Nursing Care Plan Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/nursingCarePlans/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/nursingCarePlans/**").hasRole("ADMIN")
 
                         // *** Lab Test Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/lab-tests/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/lab-tests/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "LAB_TECHNICIAN")
-                        .requestMatchers(HttpMethod.POST, "/api/lab-tests/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/lab-tests/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
                         // *** Lab Result Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/lab-results/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/lab-results/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "LAB_TECHNICIAN")
-                        .requestMatchers(HttpMethod.POST, "/api/lab-results/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/lab-results/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
                         // *** Image Report Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/imagereports/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/imagereports/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.POST, "/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.PUT, "/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.DELETE, "/api/imagereports/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/imagereports/**").hasRole("ADMIN")
 
                         // *** Medication Administration Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/medication-administrations/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/medication-administrations/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/medication-administrations/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/medication-administrations/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/medication-administrations/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/medication-administrations/**").hasRole("ADMIN")
 
                         // *** Product Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "PHARMACIST")
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/products/**").hasAnyRole("ADMIN", "PHARMACIST")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/products/**").hasRole("ADMIN")
 
                         // *** Patient Product Usage Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/product-usage/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/product-usage/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/product-usage/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/product-usage/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/product-usage/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/product-usage/**").hasRole("ADMIN")
 
                         // *** Procedure Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/procedures/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/procedures/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/procedures/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/procedures/**").hasRole("ADMIN")
 
                         // *** Vital Sign Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/vital-signs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/vital-signs/**").hasRole("ADMIN")
 
                         // *** Unit Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/units/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/units/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/units/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/units/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/units/**").hasRole("ADMIN")
 
                         // *** Billing Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/billings/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/billings/**")
                         .hasAnyRole("ADMIN", "ACCOUNTANT", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.POST, "/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.PUT, "/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.DELETE, "/api/billings/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/billings/**").hasRole("ADMIN")
 
                         // *** Care Plan Goals Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/carePlanGoals/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/carePlanGoals/**").hasRole("ADMIN")
 
                         // *** Nurse Specific Permissions
-                        .requestMatchers(HttpMethod.GET, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
 
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -20670,7 +20670,7 @@ import mine.profile.website.security.JwtTokenProvider;
 import mine.profile.website.service.UserService;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("http://localhost:8080/api/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -22360,7 +22360,7 @@ import mine.profile.website.service.NurseActivityService;
 import mine.profile.website.service.NurseService;
 
 @RestController
-@RequestMapping("/api/nurses")
+@RequestMapping("http://localhost:8080/api/nurses")
 public class NurseController {
     private final NurseService nurseService;
     private final NurseActivityService nurseActivityService;
@@ -22537,7 +22537,7 @@ import mine.profile.website.dtos.PrescribedMedicationDTO;
 import mine.profile.website.service.PrescribedMedicationService;
 
 @RestController
-@RequestMapping("/api/prescribed-medications")
+@RequestMapping("http://localhost:8080/api/prescribed-medications")
 public class PrescribedMedicationController {
 
     private final PrescribedMedicationService prescribedMedicationService;
@@ -22594,7 +22594,7 @@ import mine.profile.website.service.PrescriptionService;
 import mine.profile.website.services.PatientService;
 
 @RestController
-@RequestMapping("/api/medication-administrations")
+@RequestMapping("http://localhost:8080/api/medication-administrations")
 public class MedicationAdministrationController {
 
     private final MedicationAdministrationService medicationAdministrationService;
@@ -22672,7 +22672,7 @@ import mine.profile.website.repository.MedicationRepository;
 import mine.profile.website.service.MedicationService;
 
 @RestController
-@RequestMapping("/api/medications")
+@RequestMapping("http://localhost:8080/api/medications")
 public class MedicationController {
 
     private final MedicationService medicationService;
@@ -22755,7 +22755,7 @@ import mine.profile.website.dtos.LabTestDTO;
 import mine.profile.website.service.LabTestService;
 
 @RestController
-@RequestMapping("/api/lab-tests")
+@RequestMapping("http://localhost:8080/api/lab-tests")
 public class LabTestController {
 
     @Autowired
@@ -22877,7 +22877,7 @@ import mine.profile.website.dtos.UserDTO;
 import mine.profile.website.service.UserService;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("http://localhost:8080/api/users")
 public class UserController {
 
     @Autowired
@@ -22982,7 +22982,7 @@ import mine.profile.website.dtos.LabResultDTO;
 import mine.profile.website.service.LabResultService;
 
 @RestController
-@RequestMapping("/api/lab-results")
+@RequestMapping("http://localhost:8080/api/lab-results")
 public class LabResultController {
 
     @Autowired
@@ -23043,7 +23043,7 @@ import mine.profile.website.dtos.AdmissionDTO;
 import mine.profile.website.service.AdmissionService;
 
 @RestController
-@RequestMapping("/api/admissions")
+@RequestMapping("http://localhost:8080/api/admissions")
 public class AdmissionController {
 
     @Autowired
@@ -23118,7 +23118,7 @@ import mine.profile.website.dtos.ImageReportDTO;
 import mine.profile.website.service.ImageReportService;
 
 @RestController
-@RequestMapping("/api/imagereports")
+@RequestMapping("http://localhost:8080/api/imagereports")
 public class ImageReportController {
 
     @Autowired
@@ -23184,7 +23184,7 @@ import mine.profile.website.dtos.ProductDTO;
 import mine.profile.website.service.ProductService;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("http://localhost:8080/api/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -23259,7 +23259,7 @@ import mine.profile.website.dtos.PatientDTO;
 import mine.profile.website.services.PatientService;
 
 @RestController
-@RequestMapping("/api/patients")
+@RequestMapping("http://localhost:8080/api/patients")
 public class PatientRestController {
 
     @Autowired
@@ -23357,7 +23357,7 @@ import mine.profile.website.dtos.AssessmentDTO;
 import mine.profile.website.service.AssessmentService;
 
 @RestController
-@RequestMapping("/api/assessments")
+@RequestMapping("http://localhost:8080/api/assessments")
 public class AssessmentController {
 
     @Autowired
@@ -23418,7 +23418,7 @@ import mine.profile.website.dtos.ProcedureDTO;
 import mine.profile.website.service.ProcedureService;
 
 @RestController
-@RequestMapping("/api/procedures")
+@RequestMapping("http://localhost:8080/api/procedures")
 public class ProcedureController {
 
     private static final Logger log = LoggerFactory.getLogger(ProcedureController.class);
@@ -23498,7 +23498,7 @@ import mine.profile.website.dtos.PatientProductUsageDTO;
 import mine.profile.website.service.PatientProductUsageService;
 
 @RestController
-@RequestMapping("/api/product-usage")
+@RequestMapping("http://localhost:8080/api/product-usage")
 public class PatientProductUsageController {
 
     private final PatientProductUsageService patientProductUsageService;
@@ -23566,7 +23566,7 @@ import mine.profile.website.dtos.UnitDTO;
 import mine.profile.website.service.UnitService;
 
 @RestController
-@RequestMapping("/api/units")
+@RequestMapping("http://localhost:8080/api/units")
 public class UnitController {
 
     @Autowired
@@ -23641,7 +23641,7 @@ import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.VitalSignService;
 
 @RestController
-@RequestMapping("/api/vital-signs")
+@RequestMapping("http://localhost:8080/api/vital-signs")
 public class VitalSignController {
 
     @Autowired
@@ -23712,7 +23712,7 @@ import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.PatientDataService;
 
 @RestController
-@RequestMapping("/api/patients-data")
+@RequestMapping("http://localhost:8080/api/patients-data")
 public class PatientDataController {
 
     @Autowired
@@ -23895,7 +23895,7 @@ import mine.profile.website.dtos.PrescriptionDTO;
 import mine.profile.website.service.PrescriptionService;
 
 @RestController
-@RequestMapping("/api/prescriptions")
+@RequestMapping("http://localhost:8080/api/prescriptions")
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
@@ -23959,7 +23959,7 @@ import mine.profile.website.dtos.ImageReportTypeDTO;
 import mine.profile.website.service.ImageReportTypeService;
 
 @RestController
-@RequestMapping("/api/imagereporttypes")
+@RequestMapping("http://localhost:8080/api/imagereporttypes")
 public class ImageReportTypeController {
 
     @Autowired
@@ -24014,7 +24014,7 @@ import mine.profile.website.dtos.ProcedureLogDTO;
 import mine.profile.website.service.ProcedureLogService;
 
 @RestController
-@RequestMapping("/api/procedure-logs")
+@RequestMapping("http://localhost:8080/api/procedure-logs")
 public class ProcedureLogController {
 
     private final ProcedureLogService procedureLogService;
@@ -25192,7 +25192,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("http://localhost:8080/api/auth/**").permitAll()
                         // In SecurityConfig
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers("/login", "/register").permitAll()
@@ -25200,63 +25200,63 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
 
                         // *** Patient Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/patients/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/patients/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.PUT, "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.DELETE, "/api/patients/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/patients-data/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/patients/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/patients-data/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "SOCIAL_WORKER", "HEAD_NURSE")
 
                         // *** Doctor Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/doctors/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/doctors/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/doctors/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/doctors/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
 
                         // *** User Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/users/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/users/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "SOCIAL_WORKER", "ACCOUNTANT",
                                 "LAB_TECHNICIAN", "RADIOLOGIST", "PHARMACIST", "INSURANCE_PROVIDER", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/users/**").hasRole("ADMIN")
 
                         // *** Department Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/departments/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/departments/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/departments/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
 
                         // *** Appointment Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/appointments/**").hasRole("ADMIN")
 
                         // *** Medication Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/medications/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/medications/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/medications/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
 
                         // *** Prescription Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/prescriptions/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/prescriptions/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prescriptions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/prescriptions/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/prescribed-medications/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/prescribed-medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "PHARMACIST", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/prescribed-medications/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/prescribed-medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prescribed-medications/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prescribed-medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/prescribed-medications/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/prescribed-medications/**").hasRole("ADMIN")
 
                         // *** Room Endpoints ***
                         .requestMatchers(HttpMethod.GET, "/rooms/**")
@@ -25273,113 +25273,113 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/beds/**").hasRole("ADMIN")
 
                         // *** Admission Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/admissions/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/admissions/**")
                         .hasAnyRole("ADMIN", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/admissions/open")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/admissions/open")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "RECEPTIONIST", "HEAD_NURSE")
 
                         // *** Assessment Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/assessments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/assessments/**").hasRole("ADMIN")
 
                         // *** Nursing Care Plan Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/nursingCarePlans/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/nursingCarePlans/**").hasRole("ADMIN")
 
                         // *** Lab Test Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/lab-tests/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/lab-tests/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "LAB_TECHNICIAN")
-                        .requestMatchers(HttpMethod.POST, "/api/lab-tests/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/lab-tests/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
                         // *** Lab Result Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/lab-results/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/lab-results/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "LAB_TECHNICIAN")
-                        .requestMatchers(HttpMethod.POST, "/api/lab-results/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/lab-results/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
                         // *** Image Report Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/imagereports/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/imagereports/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.POST, "/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.PUT, "/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.DELETE, "/api/imagereports/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/imagereports/**").hasRole("ADMIN")
 
                         // *** Medication Administration Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/medication-administrations/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/medication-administrations/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/medication-administrations/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/medication-administrations/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/medication-administrations/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/medication-administrations/**").hasRole("ADMIN")
 
                         // *** Product Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "PHARMACIST")
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/products/**").hasAnyRole("ADMIN", "PHARMACIST")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/products/**").hasRole("ADMIN")
 
                         // *** Patient Product Usage Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/product-usage/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/product-usage/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/product-usage/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/product-usage/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/product-usage/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/product-usage/**").hasRole("ADMIN")
 
                         // *** Procedure Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/procedures/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/procedures/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/procedures/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/procedures/**").hasRole("ADMIN")
 
                         // *** Vital Sign Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/vital-signs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/vital-signs/**").hasRole("ADMIN")
 
                         // *** Unit Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/units/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/units/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/units/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/units/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/units/**").hasRole("ADMIN")
 
                         // *** Billing Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/billings/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/billings/**")
                         .hasAnyRole("ADMIN", "ACCOUNTANT", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.POST, "/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.PUT, "/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.DELETE, "/api/billings/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/billings/**").hasRole("ADMIN")
 
                         // *** Care Plan Goals Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/carePlanGoals/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/carePlanGoals/**").hasRole("ADMIN")
 
                         // *** Nurse Specific Permissions
-                        .requestMatchers(HttpMethod.GET, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
 
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -30952,7 +30952,7 @@ import mine.profile.website.security.JwtTokenProvider;
 import mine.profile.website.service.UserService;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("http://localhost:8080/api/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -32683,7 +32683,7 @@ import mine.profile.website.service.NurseActivityService;
 import mine.profile.website.service.NurseService;
 
 @RestController
-@RequestMapping("/api/nurses")
+@RequestMapping("http://localhost:8080/api/nurses")
 public class NurseController {
     private final NurseService nurseService;
     private final NurseActivityService nurseActivityService;
@@ -32860,7 +32860,7 @@ import mine.profile.website.dtos.PrescribedMedicationDTO;
 import mine.profile.website.service.PrescribedMedicationService;
 
 @RestController
-@RequestMapping("/api/prescribed-medications")
+@RequestMapping("http://localhost:8080/api/prescribed-medications")
 public class PrescribedMedicationController {
 
     private final PrescribedMedicationService prescribedMedicationService;
@@ -32917,7 +32917,7 @@ import mine.profile.website.service.PrescriptionService;
 import mine.profile.website.services.PatientService;
 
 @RestController
-@RequestMapping("/api/medication-administrations")
+@RequestMapping("http://localhost:8080/api/medication-administrations")
 public class MedicationAdministrationController {
 
     private final MedicationAdministrationService medicationAdministrationService;
@@ -32995,7 +32995,7 @@ import mine.profile.website.repository.MedicationRepository;
 import mine.profile.website.service.MedicationService;
 
 @RestController
-@RequestMapping("/api/medications")
+@RequestMapping("http://localhost:8080/api/medications")
 public class MedicationController {
 
     private final MedicationService medicationService;
@@ -33078,7 +33078,7 @@ import mine.profile.website.dtos.LabTestDTO;
 import mine.profile.website.service.LabTestService;
 
 @RestController
-@RequestMapping("/api/lab-tests")
+@RequestMapping("http://localhost:8080/api/lab-tests")
 public class LabTestController {
 
     @Autowired
@@ -33200,7 +33200,7 @@ import mine.profile.website.dtos.UserDTO;
 import mine.profile.website.service.UserService;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("http://localhost:8080/api/users")
 public class UserController {
 
     @Autowired
@@ -33305,7 +33305,7 @@ import mine.profile.website.dtos.LabResultDTO;
 import mine.profile.website.service.LabResultService;
 
 @RestController
-@RequestMapping("/api/lab-results")
+@RequestMapping("http://localhost:8080/api/lab-results")
 public class LabResultController {
 
     @Autowired
@@ -33366,7 +33366,7 @@ import mine.profile.website.dtos.AdmissionDTO;
 import mine.profile.website.service.AdmissionService;
 
 @RestController
-@RequestMapping("/api/admissions")
+@RequestMapping("http://localhost:8080/api/admissions")
 public class AdmissionController {
 
     @Autowired
@@ -33441,7 +33441,7 @@ import mine.profile.website.dtos.ImageReportDTO;
 import mine.profile.website.service.ImageReportService;
 
 @RestController
-@RequestMapping("/api/imagereports")
+@RequestMapping("http://localhost:8080/api/imagereports")
 public class ImageReportController {
 
     @Autowired
@@ -33507,7 +33507,7 @@ import mine.profile.website.dtos.ProductDTO;
 import mine.profile.website.service.ProductService;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("http://localhost:8080/api/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -33582,7 +33582,7 @@ import mine.profile.website.dtos.PatientDTO;
 import mine.profile.website.services.PatientService;
 
 @RestController
-@RequestMapping("/api/patients")
+@RequestMapping("http://localhost:8080/api/patients")
 public class PatientRestController {
 
     @Autowired
@@ -33680,7 +33680,7 @@ import mine.profile.website.dtos.AssessmentDTO;
 import mine.profile.website.service.AssessmentService;
 
 @RestController
-@RequestMapping("/api/assessments")
+@RequestMapping("http://localhost:8080/api/assessments")
 public class AssessmentController {
 
     @Autowired
@@ -33741,7 +33741,7 @@ import mine.profile.website.dtos.ProcedureDTO;
 import mine.profile.website.service.ProcedureService;
 
 @RestController
-@RequestMapping("/api/procedures")
+@RequestMapping("http://localhost:8080/api/procedures")
 public class ProcedureController {
 
     private static final Logger log = LoggerFactory.getLogger(ProcedureController.class);
@@ -33821,7 +33821,7 @@ import mine.profile.website.dtos.PatientProductUsageDTO;
 import mine.profile.website.service.PatientProductUsageService;
 
 @RestController
-@RequestMapping("/api/product-usage")
+@RequestMapping("http://localhost:8080/api/product-usage")
 public class PatientProductUsageController {
 
     private final PatientProductUsageService patientProductUsageService;
@@ -33889,7 +33889,7 @@ import mine.profile.website.dtos.UnitDTO;
 import mine.profile.website.service.UnitService;
 
 @RestController
-@RequestMapping("/api/units")
+@RequestMapping("http://localhost:8080/api/units")
 public class UnitController {
 
     @Autowired
@@ -33964,7 +33964,7 @@ import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.VitalSignService;
 
 @RestController
-@RequestMapping("/api/vital-signs")
+@RequestMapping("http://localhost:8080/api/vital-signs")
 public class VitalSignController {
 
     @Autowired
@@ -34035,7 +34035,7 @@ import mine.profile.website.dtos.VitalSignDTO;
 import mine.profile.website.service.PatientDataService;
 
 @RestController
-@RequestMapping("/api/patients-data")
+@RequestMapping("http://localhost:8080/api/patients-data")
 public class PatientDataController {
 
     @Autowired
@@ -34218,7 +34218,7 @@ import mine.profile.website.dtos.PrescriptionDTO;
 import mine.profile.website.service.PrescriptionService;
 
 @RestController
-@RequestMapping("/api/prescriptions")
+@RequestMapping("http://localhost:8080/api/prescriptions")
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
@@ -34282,7 +34282,7 @@ import mine.profile.website.dtos.ImageReportTypeDTO;
 import mine.profile.website.service.ImageReportTypeService;
 
 @RestController
-@RequestMapping("/api/imagereporttypes")
+@RequestMapping("http://localhost:8080/api/imagereporttypes")
 public class ImageReportTypeController {
 
     @Autowired
@@ -34337,7 +34337,7 @@ import mine.profile.website.dtos.ProcedureLogDTO;
 import mine.profile.website.service.ProcedureLogService;
 
 @RestController
-@RequestMapping("/api/procedure-logs")
+@RequestMapping("http://localhost:8080/api/procedure-logs")
 public class ProcedureLogController {
 
     private final ProcedureLogService procedureLogService;
@@ -35532,7 +35532,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("http://localhost:8080/api/auth/**").permitAll()
                         // In SecurityConfig
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers("/login", "/register").permitAll()
@@ -35540,63 +35540,63 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
 
                         // *** Patient Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/patients/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/patients/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.PUT, "/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.DELETE, "/api/patients/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/patients-data/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/patients/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/patients/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/patients-data/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "SOCIAL_WORKER", "HEAD_NURSE")
 
                         // *** Doctor Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/doctors/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/doctors/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/doctors/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/doctors/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/doctors/**").hasRole("ADMIN")
 
                         // *** User Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/users/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/users/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "SOCIAL_WORKER", "ACCOUNTANT",
                                 "LAB_TECHNICIAN", "RADIOLOGIST", "PHARMACIST", "INSURANCE_PROVIDER", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/users/**").hasRole("ADMIN")
 
                         // *** Department Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/departments/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/departments/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/departments/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/departments/**").hasRole("ADMIN")
 
                         // *** Appointment Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/appointments/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/appointments/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/appointments/**").hasRole("ADMIN")
 
                         // *** Medication Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/medications/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/medications/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/medications/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/medications/**").hasRole("ADMIN")
 
                         // *** Prescription Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/prescriptions/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/prescriptions/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prescriptions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/prescriptions/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/prescribed-medications/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/prescribed-medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "PHARMACIST", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/prescribed-medications/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/prescribed-medications/**")
                         .hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prescribed-medications/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prescribed-medications/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/prescribed-medications/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/prescribed-medications/**").hasRole("ADMIN")
 
                         // *** Room Endpoints ***
                         .requestMatchers(HttpMethod.GET, "/rooms/**")
@@ -35613,113 +35613,113 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/beds/**").hasRole("ADMIN")
 
                         // *** Admission Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/admissions/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/admissions/**")
                         .hasAnyRole("ADMIN", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/admissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/admissions/open")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/admissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/admissions/open")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "RECEPTIONIST", "HEAD_NURSE")
 
                         // *** Assessment Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/assessments/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/assessments/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/assessments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/assessments/**").hasRole("ADMIN")
 
                         // *** Nursing Care Plan Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/nursingCarePlans/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/nursingCarePlans/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/nursingCarePlans/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/nursingCarePlans/**").hasRole("ADMIN")
 
                         // *** Lab Test Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/lab-tests/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/lab-tests/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "LAB_TECHNICIAN")
-                        .requestMatchers(HttpMethod.POST, "/api/lab-tests/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/lab-tests/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
                         // *** Lab Result Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/lab-results/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/lab-results/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "LAB_TECHNICIAN")
-                        .requestMatchers(HttpMethod.POST, "/api/lab-results/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/lab-results/**").hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
                         // *** Image Report Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/imagereports/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/imagereports/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.POST, "/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.PUT, "/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
-                        .requestMatchers(HttpMethod.DELETE, "/api/imagereports/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/imagereports/**").hasAnyRole("ADMIN", "RADIOLOGIST")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/imagereports/**").hasRole("ADMIN")
 
                         // *** Medication Administration Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/medication-administrations/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/medication-administrations/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/medication-administrations/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/medication-administrations/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/medication-administrations/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/medication-administrations/**").hasRole("ADMIN")
 
                         // *** Product Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "PHARMACIST")
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/products/**").hasAnyRole("ADMIN", "PHARMACIST")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/products/**").hasRole("ADMIN")
 
                         // *** Patient Product Usage Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/product-usage/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/product-usage/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "PHARMACIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/product-usage/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/product-usage/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/product-usage/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/product-usage/**").hasRole("ADMIN")
 
                         // *** Procedure Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/procedures/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/procedures/**")
                         .hasAnyRole("ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/procedures/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/procedures/**").hasAnyRole("ADMIN", "DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/procedures/**").hasRole("ADMIN")
 
                         // *** Vital Sign Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/vital-signs/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/vital-signs/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/vital-signs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/vital-signs/**").hasRole("ADMIN")
 
                         // *** Unit Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/units/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/units/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/units/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/units/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/units/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/units/**").hasRole("ADMIN")
 
                         // *** Billing Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/billings/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/billings/**")
                         .hasAnyRole("ADMIN", "ACCOUNTANT", "RECEPTIONIST")
-                        .requestMatchers(HttpMethod.POST, "/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.PUT, "/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers(HttpMethod.DELETE, "/api/billings/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/billings/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/billings/**").hasRole("ADMIN")
 
                         // *** Care Plan Goals Endpoints ***
-                        .requestMatchers(HttpMethod.GET, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "DOCTOR", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/carePlanGoals/**")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/carePlanGoals/**")
                         .hasAnyRole("ADMIN", "NURSE", "HEAD_NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/carePlanGoals/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/carePlanGoals/**").hasRole("ADMIN")
 
                         // *** Nurse Specific Permissions
-                        .requestMatchers(HttpMethod.GET, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.POST, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.PUT, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.GET, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.POST, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.PUT, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
+                        .requestMatchers(HttpMethod.DELETE, "http://localhost:8080/api/nurses/**").hasAnyRole("ADMIN", "HEAD_NURSE", "NURSE")
 
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -38890,7 +38890,7 @@ server {
         index  index.html index.htm;
         try_files $uri $uri/ /index.html;
     }
-    location /api {
+    location http://localhost:8080/api {
             proxy_pass http://backend:8080;
      }
     # Add this new location
@@ -51363,7 +51363,7 @@ const AssessmentList = ({ darkMode }) => {
 	const [editorInitialized, setEditorInitialized] = useState(false);
 
 	const { user } = useAuthStore();
-	const API_BASE_URL = `http://192.168.8.9:8080/api/assessments`;
+	const API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/assessments`;
 
 	useEffect(() => {
 		fetchAssessments();
@@ -54851,7 +54851,7 @@ const VitalSignList = () => {
 	const { createVitalSign, updateVitalSign, deleteVitalSign, loading, setVitalSigns, vitalSigns } = useVitalSignStore();
 
 	const user = useAuthStore((state) => state.user);
-	const API_BASE_URL = `http://192.168.8.9:8080/api/vital-signs`;
+	const API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/vital-signs`;
 
 	useEffect(() => {
 		fetchVitalSignsData();
@@ -59983,7 +59983,7 @@ import axios from "axios";
 
 const { Title } = Typography;
 const { Option } = Select;
-const PROCEDURE_LOG_API_BASE_URL = `http://192.168.8.9:8080/api/procedure-logs`;
+const PROCEDURE_LOG_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/procedure-logs`;
 const formatRelativeTime = (localDateTime) => {
 	if (!localDateTime) return "N/A";
 
@@ -60070,7 +60070,7 @@ const ProcedureLogList = () => {
 		setLoading(true);
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.get(`http://192.168.8.9:8080/api/medication-administrations/patient`, {
+			const response = await axios.get(`http://192.168.8.9:8080http://localhost:8080/api/medication-administrations/patient`, {
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
 				},
@@ -60442,7 +60442,7 @@ const LabResultPage = () => {
 	const { labTests, fetchLabTests } = useLabStore();
 
 	const user = useAuthStore((state) => state.user);
-	const API_BASE_URL = `http://192.168.8.9:8080/api/lab-results`;
+	const API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/lab-results`;
 
 	useEffect(() => {
 		fetchLabResults();
@@ -63777,7 +63777,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const MEDICATION_ADMINISTRATION_API_BASE_URL = `http://192.168.8.9:8080/api/medication-administrations`;
+const MEDICATION_ADMINISTRATION_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/medication-administrations`;
 
 export const useMedicationAdministrationStore = create((set, get) => ({
 	medicationAdministrations: [],
@@ -63921,7 +63921,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_PRODUCT_USAGE_API_BASE_URL = `http://192.168.8.9:8080/api/product-usage`;
+const PATIENT_PRODUCT_USAGE_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/product-usage`;
 
 export const usePatientProductUsageStore = create((set, get) => ({
 	patientProductUsages: [],
@@ -64065,9 +64065,9 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
 import { notification } from "antd";
 
-const IMAGE_REPORT_API_BASE_URL = `http://192.168.8.9:8080/api/imagereports`;
-const PATIENT_API_BASE_URL = `http://192.168.8.9:8080/api/patients`;
-const USER_API_BASE_URL = `http://192.168.8.9:8080/api/users`;
+const IMAGE_REPORT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/imagereports`;
+const PATIENT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/patients`;
+const USER_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/users`;
 
 export const useImageReportStore = create((set, get) => ({
 	imageReports: [],
@@ -64256,10 +64256,10 @@ export const useImageReportStore = create((set, get) => ({
 │   ├── user.service.js:```
 import { create } from "zustand";
 import { notification } from "antd";
-import userApi from "./api"; // Import userApi instance
+import userApi from ".http://localhost:8080/api"; // Import userApi instance
 import { useAuthStore } from "./auth.service";
 
-const USER_API_BASE_URL = `http://192.168.8.9:8080/api/users`;
+const USER_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/users`;
 
 export const useUserStore = create((set, get) => ({
 	users: [],
@@ -64572,7 +64572,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const NURSE_API_BASE_URL = `http://192.168.8.9:8080/api/nurses`;
+const NURSE_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/nurses`;
 
 export const useNurseStore = create((set, get) => ({
 	nurses: [],
@@ -65016,7 +65016,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const PRESCRIBED_MEDICATION_API_BASE_URL = `http://192.168.8.9:8080/api/prescribed-medications`;
+const PRESCRIBED_MEDICATION_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/prescribed-medications`;
 
 export const usePrescribedMedicationStore = create((set, get) => ({
 	prescribedMedications: [],
@@ -65125,8 +65125,8 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_DATA_URL = `http://192.168.8.9:8080/api/patients-data`;
-const IMAGE_REPORT_API_BASE_URL = `http://192.168.8.9:8080/api/imagereports`;
+const PATIENT_API_BASE_DATA_URL = `http://192.168.8.9:8080http://localhost:8080/api/patients-data`;
+const IMAGE_REPORT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/imagereports`;
 
 export const usePatientDetailStore = create((set, get) => ({
 	loading: false,
@@ -65389,7 +65389,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
 import { notification } from "antd";
 
-const IMAGE_REPORT_TYPE_API_BASE_URL = `http://192.168.8.9:8080/api/imagereporttypes`;
+const IMAGE_REPORT_TYPE_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/imagereporttypes`;
 
 export const useImageReportTypeStore = create((set, get) => ({
 	imageReportTypes: [],
@@ -65505,8 +65505,8 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const ASSESSMENT_API_BASE_URL = `http://192.168.8.9:8080/api/assessments`;
-const PATIENT_API_BASE_URL = `http://192.168.8.9:8080/api/patients`;
+const ASSESSMENT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/assessments`;
+const PATIENT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/patients`;
 
 export const useAssessmentStore = create((set, get) => ({
 	assessments: [],
@@ -65640,7 +65640,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const PATIENT_API_BASE_URL = `http://192.168.8.9:8080/api/patients`;
+const PATIENT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/patients`;
 
 export const usePatientStore = create((set, get) => ({
 	patients: [],
@@ -65832,7 +65832,7 @@ export const usePatientStore = create((set, get) => ({
 import axios from "axios";
 import { useAuthStore } from "./auth.service";
 
-const USER_API_BASE_URL = `http://192.168.8.9:8080/api/users`;
+const USER_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/users`;
 
 const userApi = axios.create({
 	baseURL: USER_API_BASE_URL,
@@ -65860,7 +65860,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const NURSE_ACTIVITY_API_BASE_URL = `http://192.168.8.9:8080/api/nurses`;
+const NURSE_ACTIVITY_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/nurses`;
 
 export const useNurseActivityStore = create((set, get) => ({
 	activities: [],
@@ -65995,7 +65995,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const UNIT_API_BASE_URL = `http://192.168.8.9:8080/api/units`;
+const UNIT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/units`;
 
 export const useUnitStore = create((set, get) => ({
 	units: [],
@@ -66157,7 +66157,7 @@ export const useUnitStore = create((set, get) => ({
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = `http://192.168.8.9:8080/api/auth`;
+const API_URL = `http://192.168.8.9:8080http://localhost:8080/api/auth`;
 
 // Zustand store setup
 export const useAuthStore = create((set) => ({
@@ -66239,7 +66239,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const MEDICATION_API_BASE_URL = `http://192.168.8.9:8080/api/medications`;
+const MEDICATION_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/medications`;
 
 export const useMedicationStore = create((set, get) => ({
 	medications: [],
@@ -66408,7 +66408,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PROCEDURE_API_BASE_URL = `http://192.168.8.9:8080/api/procedures`;
+const PROCEDURE_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/procedures`;
 
 export const useProcedureStore = create((set, get) => ({
 	procedures: [],
@@ -66598,7 +66598,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PRODUCT_API_BASE_URL = `http://192.168.8.9:8080/api/products`;
+const PRODUCT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/products`;
 
 export const useProductStore = create((set, get) => ({
 	products: [],
@@ -66765,7 +66765,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const ADMISSION_API_BASE_URL = `http://192.168.8.9:8080/api/admissions`;
+const ADMISSION_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/admissions`;
 
 export const useAdmissionStore = create((set, get) => ({
 	admissions: [],
@@ -66957,8 +66957,8 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const LAB_TEST_API_BASE_URL = `http://192.168.8.9:8080/api/lab-tests`;
-const LAB_RESULT_API_BASE_URL = `http://192.168.8.9:8080/api/lab-results`;
+const LAB_TEST_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/lab-tests`;
+const LAB_RESULT_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/lab-results`;
 
 export const useLabStore = create((set, get) => ({
 	labTests: [],
@@ -67098,7 +67098,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const VITAL_SIGNS_API_BASE_URL = `http://192.168.8.9:8080/api/vital-signs`;
+const VITAL_SIGNS_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/vital-signs`;
 
 export const useVitalSignStore = create((set, get) => ({
 	vitalSigns: [],
@@ -67206,7 +67206,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PRESCRIPTION_API_BASE_URL = `http://192.168.8.9:8080/api/prescriptions`;
+const PRESCRIPTION_API_BASE_URL = `http://192.168.8.9:8080http://localhost:8080/api/prescriptions`;
 
 export const usePrescriptionStore = create((set, get) => ({
 	prescriptions: [],

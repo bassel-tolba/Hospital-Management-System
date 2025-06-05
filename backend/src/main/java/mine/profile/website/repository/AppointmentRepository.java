@@ -83,4 +83,5 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             Pageable pageable);
 
     List<Appointment> findByPatientId(Long patientId); // This was duplicated!
+
 }

@@ -671,6 +671,9 @@
 	},
 	"common": {},
 	"assessmentTypeForm": {
+		"rules": {
+			"panelHeader": "Guidelines for Creating HTML Templates"
+		},
 		"spinTipUpdate": "Updating Template...",
 		"spinTipCreate": "Creating Template...",
 		"displayName": {
@@ -735,5 +738,121 @@
 			"loadingDetailsTip": "Loading template details..."
 		}
 	},
-	"common.noMatch": "No Match"
+	"common.noMatch": "No Match",
+	"search-procedures-placeholder": "Search by code or name...",
+	"add-new-procedure-button": "Add New Procedure",
+
+	"procedure-column-code": "Code",
+	"procedure-column-name": "Name",
+	"procedure-column-price": "Price",
+	"procedure-column-actions": "Actions",
+	"not-applicable": "N/A",
+
+	"edit-procedure-modal-title": "Edit Procedure",
+	"add-procedure-modal-title": "Add Procedure",
+
+	"modal-button-cancel": "Cancel",
+	"modal-button-update": "Update",
+	"modal-button-save": "Save",
+
+	"form-label-code": "Code",
+	"form-label-name": "Name",
+	"form-label-price": "Price",
+
+	"form-validation-code-required": "Please input the code!",
+	"form-validation-name-required": "Please input the name!",
+	"form-validation-price-required": "Please input the price!",
+	"form-validation-price-must-be-number": "Price must be a number",
+
+	"delete-procedure-confirm-title": "Are you sure you want to delete this procedure?",
+	"delete-procedure-confirm-content": "This action cannot be undone.",
+	"delete-procedure-confirm-ok": "Yes, Delete",
+	"delete-procedure-confirm-cancel": "No",
+
+	"permission-denied-view-procedures": "You do not have permission to view procedures.",
+	"permission-denied-create-procedure": "You do not have permission to create procedures.",
+	"permission-denied-update-procedure": "You do not have permission to update procedures.",
+	"permission-denied-delete-procedure": "You do not have permission to delete procedures.",
+	"delete-procedure-failed": "Failed to delete procedure. Please try again.",
+
+	"vitals-page-title": "Vital Signs Management",
+	"vitals-search-patient-placeholder": "Search and select patient to view/add vitals",
+	"vitals-add-new-button": "Add New Vital Sign",
+	"vitals-select-patient-prompt": "Please search for and select a patient to view their vital signs.",
+
+	"vitals-column-timestamp": "Timestamp",
+	"vitals-column-heart-rate": "Heart Rate",
+	"vitals-column-bp-systolic": "Blood Pressure (Systolic)",
+	"vitals-column-bp-diastolic": "Blood Pressure (Diastolic)",
+	"vitals-column-temperature": "Temperature",
+	"vitals-column-respiratory-rate": "Respiratory Rate",
+	"vitals-column-oxygen-saturation": "Oxygen Saturation",
+	"vitals-column-pain-level": "Pain Level",
+	"vitals-column-height": "Height",
+	"vitals-column-weight": "Weight",
+	"vitals-column-glucose": "Glucose",
+	"vitals-column-posture": "Posture",
+	"vitals-column-capillary-refill": "Capillary Refill Time",
+	"vitals-column-notes": "Notes",
+	"vitals-column-method": "Method",
+	"vitals-column-actions": "Actions",
+	"vitals-action-edit": "Edit",
+	"vitals-action-delete": "Delete",
+
+	"vitals-modal-edit-title": "Edit Vital Sign",
+	"vitals-modal-add-title": "Add Vital Sign",
+
+	"vitals-form-label-patient": "Patient",
+	"vitals-form-validation-patient-required": "Please select a patient",
+	"vitals-form-search-patient-placeholder": "Search for a patient",
+	"vitals-form-label-timestamp": "Timestamp",
+	"vitals-form-validation-timestamp-required": "Please select the timestamp",
+	"vitals-form-label-heart-rate": "Heart Rate",
+	"vitals-form-label-bp-systolic": "Blood Pressure (Systolic)",
+	"vitals-form-label-bp-diastolic": "Blood Pressure (Diastolic)",
+	"vitals-form-label-temperature": "Temperature",
+	"vitals-form-label-respiratory-rate": "Respiratory Rate",
+	"vitals-form-label-oxygen-saturation": "Oxygen Saturation",
+	"vitals-form-label-pain-level": "Pain Level",
+	"vitals-form-label-height": "Height",
+	"vitals-form-label-weight": "Weight",
+	"vitals-form-label-glucose": "Glucose",
+	"vitals-form-label-posture": "Posture",
+	"vitals-form-label-capillary-refill": "Capillary Refill Time (sec)",
+	"vitals-form-label-notes": "Notes",
+	"vitals-form-label-method": "Method",
+
+	"unit-cm": "cm",
+	"unit-in": "in",
+	"unit-kg": "kg",
+	"unit-lb": "lb",
+	"unit-mg-dl": "mg/dL",
+	"unit-mmol-l": "mmol/L",
+
+	"notification-permission-denied-title": "Permission Denied",
+	"notification-error-title": "Error",
+	"notification-success-title": "Success",
+	"notification-permission-denied-view-vitals-patient": "You do not have permission to view vital signs for this patient.",
+	"notification-failed-fetch-vitals": "Failed to fetch vital signs: {{message}}",
+	"notification-permission-denied-edit-vitals": "You do not have permission to edit vital signs.",
+	"notification-permission-denied-add-vitals": "You do not have permission to add vital signs.",
+	"notification-permission-denied-save-changes": "You do not have permission to save these changes.",
+	"notification-failed-save-vitals": "Failed to save vital sign: {{message}}",
+	"notification-permission-denied-delete-vitals": "You do not have permission to delete vital signs.",
+	"notification-vitals-deleted-success": "Vital sign record deleted successfully.",
+	"notification-failed-delete-vitals": "Failed to delete vital sign: {{message}}",
+	"notification-cannot-populate-data-permission": "Cannot populate data as saving is not permitted.",
+
+	"delete-vitals-confirm-title": "Are you sure you want to delete this vital sign record?",
+	"delete-vitals-confirm-content": "This action cannot be undone.",
+	"delete-vitals-confirm-ok": "Yes, Delete",
+	"delete-vitals-confirm-cancel": "No",
+
+	"modal-button-cancel": "Cancel",
+	"modal-button-update": "Update",
+	"modal-button-save": "Save",
+	"not-applicable": "N/A",
+	"download-active-info": "Download Active Info",
+	"download-all-info": "Download All Info",
+	"generate-patient-file-html": "Generate Patient File (HTML)"
 }

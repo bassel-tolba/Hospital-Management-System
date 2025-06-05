@@ -1,3 +1,4 @@
+// PatientDataService.java
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,8 @@ import mine.profile.website.models.Billing;
 import mine.profile.website.models.Patient;
 import mine.profile.website.models.QuickNote;
 import mine.profile.website.repository.AdmissionRepository;
+// AppointmentRepository might still be needed if there are other direct uses, but not for the primary getAppointmentsByPatientId flow.
+// For now, keeping it, but it's not used in the modified getAppointmentsByPatientId.
 import mine.profile.website.repository.AppointmentRepository;
 import mine.profile.website.repository.AssessmentRepository;
 import mine.profile.website.repository.BedRepository;
@@ -59,7 +62,7 @@ public class PatientDataService {
     @Autowired
     private AdmissionRepository admissionRepository;
     @Autowired
-    private AppointmentRepository appointmentRepository;
+    private AppointmentRepository appointmentRepository; // Kept for now, ensure it's actually needed elsewhere.
     @Autowired
     private AssessmentRepository assessmentRepository;
     @Autowired
@@ -95,6 +98,9 @@ public class PatientDataService {
     @Autowired
     private QuickNoteRepository quickNoteRepository;
 
+    @Autowired
+    private AppointmentService appointmentService;
+
     @Transactional(readOnly = true)
     public PatientDTO getPatientById(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
@@ -105,7 +111,6 @@ public class PatientDataService {
     @Transactional(readOnly = true)
     public Page<AdmissionDTO> getAdmissionsByPatientId(Long patientId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        // Use the new method with sorting
         Page<Admission> admissions = admissionRepository.findByPatientIdOrderByAdmissionDateDesc(patientId, pageable);
         return admissions.map(entityMapper::toDto);
     }
@@ -115,24 +120,26 @@ public class PatientDataService {
             boolean filterByAdmission) {
         Pageable pageable = PageRequest.of(page, size);
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found with id: " + patientId));
+
         if (filterByAdmission) {
             Optional<Admission> currentAdmission = patient.getCurrentAdmission();
             if (currentAdmission.isPresent()) {
-                return appointmentRepository
-                        .findByPatientIdAndAppointmentDateTimeAfter(patientId,
-                                currentAdmission.get().getAdmissionDate(), pageable)
-                        .map(entityMapper::toDto);
+                // <<<< MODIFIED TO USE AppointmentService >>>>
+                return appointmentService.getAppointmentsByPatientIdAndAppointmentDateTimeAfter(patientId,
+                        currentAdmission.get().getAdmissionDate(), pageable);
             } else {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
-            return appointmentRepository.findByPatientIdOrderByAppointmentDateTimeDesc(patientId, pageable)
-                    .map(entityMapper::toDto);
+            // <<<< ALREADY MODIFIED TO USE AppointmentService >>>>
+            // This uses the AppointmentService method that also sorts by
+            // AppointmentDateTimeDesc
+            return appointmentService.getAppointmentsByPatientId(patientId, pageable);
         }
     }
 
+    // ... other methods remain the same ...
     @Transactional(readOnly = true)
     public Page<AssessmentDTO> getAssessmentsByPatientId(Long patientId, int page, int size,
             boolean filterByAdmission) {
@@ -150,7 +157,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return assessmentRepository.findByPatientIdOrderByAssessmentDateTimeDesc(patientId, pageable)
                     .map(entityMapper::toDto);
         }
@@ -175,7 +181,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             Page<Billing> billings = billingRepository.findByPatientIdOrderByBillDateDesc(patientId, pageable);
             return billings.map(billing -> BillingDTO.toDto(billing, paymentRepository, procedureLogRepository,
                     patientProductUsageRepository, labResultRepository, imageReportRepository, productRepository,
@@ -201,7 +206,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return nursingCarePlanRepository.findByPatientIdOrderByStartDateDesc(patientId, pageable)
                     .map(entityMapper::toDto);
         }
@@ -224,7 +228,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting and patient object
             return prescriptionRepository.findByPatientOrderByPrescriptionDateDesc(patient, pageable)
                     .map(PrescriptionDTO::toDto);
         }
@@ -246,7 +249,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return vitalSignRepository.findByPatientIdOrderByTimestampDesc(patientId, pageable)
                     .map(VitalSignDTO::toDto);
         }
@@ -269,7 +271,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return imageReportRepository.findByPatientIdOrderByReportDateTimeDesc(patientId, pageable)
                     .map(entityMapper::toDto);
         }
@@ -292,7 +293,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return documentRepository.findByPatientIdOrderByUploadDateDesc(patientId, pageable)
                     .map(DocumentDTO::toDto);
         }
@@ -315,7 +315,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return patientProductUsageRepository.findByPatientIdOrderByStartTimeDesc(patientId, pageable)
                     .map(PatientProductUsageDTO::toDto);
         }
@@ -338,7 +337,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return medicationAdministrationRepository.findByPatientIdOrderByAdministrationTimeDesc(patientId, pageable)
                     .map(MedicationAdministrationDTO::toDto);
         }
@@ -360,7 +358,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return labResultRepository.findByPatientIdOrderByResultDateTimeDesc(patientId, pageable)
                     .map(LabResultDTO::fromEntity);
         }
@@ -384,7 +381,6 @@ public class PatientDataService {
                 return Page.empty(pageable);
             }
         } else {
-            // Use the new method with sorting
             return procedureLogRepository.findByPatientIdOrderByStartTimeDesc(patientId, pageable)
                     .map(ProcedureLogDTO::toDto);
         }
@@ -399,16 +395,13 @@ public class PatientDataService {
                 .map(entityMapper::toDto);
     }
 
-    // Add QuickNote methods
     @Transactional(readOnly = true)
     public Page<QuickNoteDTO> getQuickNotesByPatientId(Long patientId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        // Use the new method with sorting
         Page<QuickNote> quickNotes = quickNoteRepository.findByPatientIdOrderByCreatedAtDesc(patientId, pageable);
-        return quickNotes.map(QuickNoteDTO::toDto); // You'll need a toDto method in QuickNoteDTO
+        return quickNotes.map(QuickNoteDTO::toDto);
     }
 
-    // Create QuickNote
     @Transactional
     public QuickNoteDTO createQuickNote(Long patientId, QuickNoteDTO quickNoteDTO) {
         Patient patient = patientRepository.findById(patientId)
@@ -417,33 +410,27 @@ public class PatientDataService {
         QuickNote quickNote = new QuickNote();
         quickNote.setNoteText(quickNoteDTO.getNoteText());
         quickNote.setCreatedAt(LocalDateTime.now());
-        quickNote.setPatient(patient); // Associate with the patient
+        quickNote.setPatient(patient);
         quickNote.setAddedByUser(quickNoteDTO.getAddedByUser());
 
-        // No need to manually add to the list, JPA handles it
         QuickNote savedQuickNote = quickNoteRepository.save(quickNote);
         return QuickNoteDTO.toDto(savedQuickNote);
     }
 
-    // Delete QuickNote (using soft delete)
     @Transactional
     public void deleteQuickNote(Long quickNoteId) {
-        quickNoteRepository.deleteById(quickNoteId); // Or implement soft delete if QuickNote has a deleted flag.
+        quickNoteRepository.deleteById(quickNoteId);
     }
 
-    // Update QuickNote
     @Transactional
     public QuickNoteDTO updateQuickNote(Long quickNoteId, QuickNoteDTO quickNoteDTO) {
         QuickNote quickNote = quickNoteRepository.findById(quickNoteId)
                 .orElseThrow(() -> new EntityNotFoundException("QuickNote not found with id: " + quickNoteId));
 
         quickNote.setNoteText(quickNoteDTO.getNoteText());
-        // quickNote.setCreatedAt(quickNoteDTO.getCreatedAt()); //don't allow update
-        // created time
         quickNote.setAddedByUser(quickNoteDTO.getAddedByUser());
-        // patient association should not be changed
 
-        QuickNote updatedQuickNote = quickNoteRepository.save(quickNote); // save updates
-        return QuickNoteDTO.toDto(updatedQuickNote); // return DTO
+        QuickNote updatedQuickNote = quickNoteRepository.save(quickNote);
+        return QuickNoteDTO.toDto(updatedQuickNote);
     }
 }

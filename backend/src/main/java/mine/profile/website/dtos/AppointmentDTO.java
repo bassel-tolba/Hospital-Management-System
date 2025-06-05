@@ -1,5 +1,4 @@
-
-// AppointmentDTO.java (DTO - Add status)
+// AppointmentDTO.java
 package mine.profile.website.dtos;
 
 import java.time.LocalDateTime;
@@ -8,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import mine.profile.website.models.Appointment;
+import mine.profile.website.models.Product; // Import Product for ProductType
 
 @Data
 @NoArgsConstructor
@@ -27,6 +27,7 @@ public class AppointmentDTO {
     private String userLastName;
     private String productCode; // keep it for other uses.
     private String productName;
+    private Product.ProductType productType; // <<<< ADDED Product Type
     private Appointment.AppointmentStatus status; // Add status to DTO
 
     // Convert from Entity to DTO
@@ -40,14 +41,20 @@ public class AppointmentDTO {
         dto.setAppointmentDateTime(appointment.getAppointmentDateTime());
         dto.setStartTime(appointment.getStartTime());
         dto.setEndTime(appointment.getEndTime());
-        dto.setPatientId(appointment.getPatient().getId());
-        dto.setUserId(appointment.getUser().getId());
-        dto.setPatientFirstName(appointment.getPatient().getFirstName());
-        dto.setPatientLastName(appointment.getPatient().getLastName());
-        dto.setUserFirstName(appointment.getUser().getFirstName());
-        dto.setUserLastName(appointment.getUser().getLastName());
+        if (appointment.getPatient() != null) {
+            dto.setPatientId(appointment.getPatient().getId());
+            dto.setPatientFirstName(appointment.getPatient().getFirstName());
+            dto.setPatientLastName(appointment.getPatient().getLastName());
+        }
+        if (appointment.getUser() != null) {
+            dto.setUserId(appointment.getUser().getId());
+            dto.setUserFirstName(appointment.getUser().getFirstName());
+            dto.setUserLastName(appointment.getUser().getLastName());
+        }
         dto.setStatus(appointment.getStatus()); // Set status
-
+        // Note: productId, productCode, productName, productType are NOT set here.
+        // They are set in the service layer by methods like mapToDtoWithProductDetails
+        // or directly in createAppointment for the response.
         return dto;
     }
 
@@ -65,6 +72,7 @@ public class AppointmentDTO {
         appointment.setStatus(dto.getStatus());
         // You'll need to fetch the Patient and User entities
         // from the database based on their IDs in the service layer.
+        // Product is not directly part of Appointment entity in current model.
         return appointment;
     }
 }

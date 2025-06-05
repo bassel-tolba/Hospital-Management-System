@@ -3,10 +3,12 @@ import { Table, Input, Button, Modal, Form, InputNumber, Space, Pagination, Spin
 import { SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useProcedureStore } from "../../services/procedure.service";
 import { useAuthStore } from "../../services/auth.service"; // Import useAuthStore
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
-const { Option } = Select;
+const { Option } = Select; // Keep if needed, though not used in this specific file's visible code
 
 const ProcedureList = () => {
+	const { t } = useTranslation(); // Initialize translation function
 	const { procedures, loading, total, searchProcedures, deleteProcedure, createProcedure, updateProcedure } = useProcedureStore();
 	const { user, hasAuthority } = useAuthStore(); // Use the auth hook
 	const [isModalVisible, setIsModalVisible] = useState(false);
@@ -20,14 +22,8 @@ const ProcedureList = () => {
 	});
 
 	useEffect(() => {
-		// Check for READ_PROCEDURE before fetching, though ideally routing handles this
-		// if (user && hasAuthority('READ_PROCEDURE')) {
 		fetchProcedures();
-		// } else {
-		// Optionally handle unauthorized access here if needed
-		// console.warn("User lacks READ_PROCEDURE permission.");
-		// }
-	}, [pagination, searchQuery, user]); // Add user dependency if check uncommented
+	}, [pagination, searchQuery, user]);
 
 	const fetchProcedures = async (params) => {
 		const page = pagination?.current ? pagination.current - 1 : 0;
@@ -41,26 +37,23 @@ const ProcedureList = () => {
 				size: size,
 				query: query,
 			};
-			// Assuming the API enforces READ_PROCEDURE on the backend
 			await searchProcedures(fetchParams);
 		} catch (error) {
 			console.error("fetchProcedures - Error:", error);
-			// Handle potential 403 Forbidden errors if necessary
 		} finally {
 			setTableLoading(false);
 		}
 	};
 
-	// Only show modal if the user has the relevant permission for the action
 	const showAddModal = () => {
 		if (user && hasAuthority("CREATE_PROCEDURE")) {
 			setSelectedProcedure(null);
-			form.resetFields(); // Reset fields for add
-			form.setFieldsValue({ code: "", name: "", price: "" }); // Explicitly clear
+			form.resetFields();
+			form.setFieldsValue({ code: "", name: "", price: "" });
 			setIsModalVisible(true);
 		} else {
 			console.warn("User lacks CREATE_PROCEDURE permission.");
-			// Optionally show a notification/message
+			// Consider message.error(t('permission-denied-create-procedure'));
 		}
 	};
 
@@ -71,7 +64,7 @@ const ProcedureList = () => {
 			setIsModalVisible(true);
 		} else {
 			console.warn("User lacks UPDATE_PROCEDURE permission.");
-			// Optionally show a notification/message
+			// Consider message.error(t('permission-denied-update-procedure'));
 		}
 	};
 
@@ -85,55 +78,48 @@ const ProcedureList = () => {
 		try {
 			const values = await form.validateFields();
 			if (selectedProcedure) {
-				// Double check permission before submitting (though button disablement should prevent this)
 				if (user && hasAuthority("UPDATE_PROCEDURE")) {
 					await updateProcedure(selectedProcedure.id, values);
 				} else {
 					console.error("Attempted to update procedure without permission.");
-					// Handle error, e.g., show message
-					return; // Prevent further action
+					return;
 				}
 			} else {
-				// Double check permission before submitting
 				if (user && hasAuthority("CREATE_PROCEDURE")) {
 					await createProcedure(values);
 				} else {
 					console.error("Attempted to create procedure without permission.");
-					// Handle error
-					return; // Prevent further action
+					return;
 				}
 			}
-			await fetchProcedures(); // Refresh list
-			handleCancel(); // Close modal and reset
+			await fetchProcedures();
+			handleCancel();
 		} catch (error) {
-			// This catches form validation errors or API call errors
 			console.error("handleFormSubmit - Error:", error.info || error);
 		}
 	};
 
 	const handleDelete = async (procedureId) => {
-		// Double check permission before attempting delete
 		if (!user || !hasAuthority("DELETE_PROCEDURE")) {
 			console.warn("User lacks DELETE_PROCEDURE permission.");
-			// Optionally show a notification/message
+			// Consider message.error(t('permission-denied-delete-procedure'));
 			return;
 		}
-		// Consider adding a confirmation dialog here
 		Modal.confirm({
-			title: "Are you sure you want to delete this procedure?",
-			content: "This action cannot be undone.",
-			okText: "Yes, Delete",
+			title: t("delete-procedure-confirm-title"),
+			content: t("delete-procedure-confirm-content"),
+			okText: t("delete-procedure-confirm-ok"),
 			okType: "danger",
-			cancelText: "No",
+			cancelText: t("delete-procedure-confirm-cancel"),
 			onOk: async () => {
 				try {
-					setTableLoading(true); // Indicate loading during delete
+					setTableLoading(true);
 					await deleteProcedure(procedureId);
-					await fetchProcedures(); // Refresh list after successful delete
+					await fetchProcedures();
 				} catch (error) {
 					console.error("handleDelete - Error:", error);
-					// Handle potential errors (e.g., show notification)
-					setTableLoading(false); // Ensure loading stops on error
+					// Consider message.error(t('delete-procedure-failed'));
+					setTableLoading(false);
 				}
 			},
 		});
@@ -142,7 +128,7 @@ const ProcedureList = () => {
 	const handleSearch = (e) => {
 		const value = e.target.value;
 		setSearchQuery(value);
-		setPagination({ ...pagination, current: 1 }); // Reset to first page on new search
+		setPagination({ ...pagination, current: 1 });
 	};
 
 	const handleTableChange = (page, pageSize) => {
@@ -151,32 +137,30 @@ const ProcedureList = () => {
 
 	const columns = [
 		{
-			title: "Code",
+			title: t("procedure-column-code"),
 			dataIndex: "code",
 			key: "code",
 		},
 		{
-			title: "Name",
+			title: t("procedure-column-name"),
 			dataIndex: "name",
 			key: "name",
 		},
 		{
-			title: "Price",
+			title: t("procedure-column-price"),
 			dataIndex: "price",
 			key: "price",
-			render: (price) => (price ? price.toFixed(2) : "N/A"), // Basic price formatting
+			render: (price) => (price ? price.toFixed(2) : t("not-applicable")), // Added translation for N/A
 		},
 		{
-			title: "Actions",
+			title: t("procedure-column-actions"),
 			key: "actions",
 			align: "right",
 			render: (_, procedure) => (
 				<Space size="small">
-					{/* Edit Button: Visible only if user has UPDATE_PROCEDURE */}
 					{user && hasAuthority("UPDATE_PROCEDURE") && (
 						<Button icon={<EditOutlined />} onClick={() => showEditModal(procedure)} type="primary" />
 					)}
-					{/* Delete Button: Visible only if user has DELETE_PROCEDURE */}
 					{user && hasAuthority("DELETE_PROCEDURE") && (
 						<Button icon={<DeleteOutlined />} onClick={() => handleDelete(procedure.id)} type="primary" danger />
 					)}
@@ -185,30 +169,26 @@ const ProcedureList = () => {
 		},
 	];
 
-	// Determine if the user can perform create or update for the modal save button
 	const canSubmitModal = user && (selectedProcedure ? hasAuthority("UPDATE_PROCEDURE") : hasAuthority("CREATE_PROCEDURE"));
 
 	// Optional: Prevent rendering the whole component if user lacks read permission
 	// if (!user || !hasAuthority('READ_PROCEDURE')) {
-	//     return <div>You do not have permission to view procedures.</div>;
+	//     return <div>{t('permission-denied-view-procedures')}</div>;
 	// }
 
 	return (
 		<div>
 			<div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 				<Input
-					placeholder="Search by code or name..."
+					placeholder={t("search-procedures-placeholder")}
 					prefix={<SearchOutlined />}
 					value={searchQuery}
 					onChange={handleSearch}
 					style={{ width: "300px" }}
-					// Disable search if user cannot read? Not usually necessary as API enforces it.
-					// disabled={!user || !hasAuthority('READ_PROCEDURE')}
 				/>
-				{/* Add Button: Visible only if user has CREATE_PROCEDURE */}
 				{user && hasAuthority("CREATE_PROCEDURE") && (
 					<Button type="primary" onClick={showAddModal}>
-						Add New Procedure
+						{t("add-new-procedure-button")}
 					</Button>
 				)}
 			</div>
@@ -220,11 +200,11 @@ const ProcedureList = () => {
 				<Table
 					columns={columns}
 					dataSource={procedures}
-					rowKey="id" // Ensure rowKey is set for stability
+					rowKey="id"
 					pagination={false}
-					loading={loading} // Use the store's loading state for initial load/fetch errors
+					loading={loading}
 					footer={() =>
-						total > 0 && ( // Only show pagination if there's data
+						total > 0 && (
 							<Pagination
 								current={pagination.current}
 								pageSize={pagination.pageSize}
@@ -240,37 +220,34 @@ const ProcedureList = () => {
 			)}
 
 			<Modal
-				title={selectedProcedure ? "Edit Procedure" : "Add Procedure"}
+				title={selectedProcedure ? t("edit-procedure-modal-title") : t("add-procedure-modal-title")}
 				open={isModalVisible}
 				onCancel={handleCancel}
-				destroyOnClose // Reset form state when modal is closed
+				destroyOnClose
 				footer={[
-					// Custom footer for better control
 					<Button key="back" onClick={handleCancel}>
-						Cancel
+						{t("modal-button-cancel")}
 					</Button>,
 					<Button key="submit" type="primary" loading={loading} onClick={handleFormSubmit} disabled={!canSubmitModal}>
-						{selectedProcedure ? "Update" : "Save"}
+						{selectedProcedure ? t("modal-button-update") : t("modal-button-save")}
 					</Button>,
 				]}>
 				<Form form={form} layout="vertical" name="procedureForm">
-					<Form.Item name="code" label="Code" rules={[{ required: true, message: "Please input the code!" }]}>
+					<Form.Item name="code" label={t("form-label-code")} rules={[{ required: true, message: t("form-validation-code-required") }]}>
 						<Input disabled={!canSubmitModal} />
-						{/* Disable fields if user cannot submit */}
 					</Form.Item>
-					<Form.Item name="name" label="Name" rules={[{ required: true, message: "Please input the name!" }]}>
+					<Form.Item name="name" label={t("form-label-name")} rules={[{ required: true, message: t("form-validation-name-required") }]}>
 						<Input disabled={!canSubmitModal} />
 					</Form.Item>
 					<Form.Item
 						name="price"
-						label="Price"
+						label={t("form-label-price")}
 						rules={[
-							{ required: true, message: "Please input the price!" },
-							{ type: "number", message: "Price must be a number" },
+							{ required: true, message: t("form-validation-price-required") },
+							{ type: "number", message: t("form-validation-price-must-be-number") },
 						]}>
 						<InputNumber style={{ width: "100%" }} min={0} precision={2} disabled={!canSubmitModal} />
 					</Form.Item>
-					{/* Removed the original Form.Item wrapping the buttons */}
 				</Form>
 			</Modal>
 		</div>

@@ -43,21 +43,24 @@ public class GeminiNavigationController {
     // private static final Gson gson = new Gson();
 
     // Keep your existing prompt
-    private static final String NAVIGATION_PROMPT = "You are a navigation assistant within a hospital application. " +
-            "The user will describe the page they want to navigate to, and you must return ONLY a JSON object " +
-            "containing the 'pageName' and 'success' boolean fields. Do not add any explanations or markdown formatting like ```json. "
+    private static final String NAVIGATION_PROMPT = "You are an intelligent navigation assistant for a hospital management application. "
             +
-            "The app uses these pages: Login, Register, Profile, Patients, Activities, Procedures, Vital Signs, Assessments, Procedure Logs, Units, Rooms, Beds, Admissions, Users, Medications, Medication History, Prescriptions, Medication Administrations, Product Usages, Products, Billings, Image Reports, Image Report Types, Documents, Document Types, Lab Tests, Lab Results, All Features, Roles Permissions.\n"
+            "The user will speak or describe the page they want to go to. " +
+            "Your task is to return ONLY a JSON object with two fields: 'pageName' (the exact name of the page as listed below) and 'success' (a boolean). "
             +
-            "If you are confident about the page that user says respond in this JSON format:\n" +
+            "Do NOT include any explanations, extra text, or markdown formatting such as ```json. " +
+            "The available pages in the app are: " +
+            "Login, Register, Profile, Patients, Activities, Procedures, Vital Signs, Assessments, Procedure Logs, Units, Rooms, Beds, Admissions, Users, Medications, Medication History, Prescriptions, Medication Administrations, Product Usages, Products, Billings, Image Reports, Image Report Types, Documents, Document Types, Lab Tests, Lab Results, All Features, Roles Permissions, Dashboard, About Us. "
+            +
+            "If you are confident about which page the user means, respond with:\n" +
             "{\n" +
-            "   \"pageName\": \"name of page\",\n" +
-            "   \"success\": true\n" +
+            "  \"pageName\": \"<exact page name from the list above>\",\n" +
+            "  \"success\": true\n" +
             "}\n" +
-            "else if you are not confident or not sure respond in this format:\n" +
+            "If you are not confident or the request does not match any page, respond with:\n" +
             "{\n" +
-            "   \"pageName\": \"\",\n" +
-            "   \"success\": false\n" +
+            "  \"pageName\": \"\",\n" +
+            "  \"success\": false\n" +
             "}";
 
     private static final Pattern JSON_EXTRACT_PATTERN = Pattern.compile("```(?:json)?\\s*(\\{.*\\})\\s*```|(\\{.*\\})",

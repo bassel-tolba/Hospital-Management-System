@@ -1,7 +1,8 @@
+// PatientDetails.js
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
 	Layout,
-	Menu, // Keep for potential future use if structure changes, but not primary nav now
+	// Menu, // Not used for primary nav -> Now used for Dropdown
 	Card,
 	Tabs,
 	Typography,
@@ -22,8 +23,11 @@ import {
 	Statistic,
 	Tooltip,
 	List,
-	Grid, // Keep Grid import
-	FloatButton, // Import FloatButton
+	Grid,
+	FloatButton,
+	theme as antdTheme, // THEME: Import antdTheme
+	Dropdown, // Added Dropdown
+	Menu, // Added Menu
 } from "antd";
 import {
 	CalendarOutlined,
@@ -44,38 +48,38 @@ import {
 	MailOutlined,
 	EnvironmentOutlined,
 	UserOutlined,
-	EditOutlined, // For quick note-taking
-	FilterOutlined, // For filtering records
+	EditOutlined,
+	FilterOutlined,
 	DeleteOutlined,
-	PushpinOutlined, // Icon for quick notes button
-	ClockCircleOutlined, // Icon for the created time
-	AudioOutlined, // For the microphone icon
+	PushpinOutlined,
+	ClockCircleOutlined,
+	AudioOutlined,
 	AudioMutedOutlined,
 	FileDoneOutlined,
-	DashboardOutlined, // Icon for Overview tab
-	ManOutlined, // Example Icon for Gender
-	WomanOutlined, // Example Icon for Gender
-	InfoCircleOutlined, // Icon for MRN
-	WarningOutlined, // Icon for Allergies
+	DashboardOutlined,
+	ManOutlined,
+	WomanOutlined,
+	InfoCircleOutlined,
+	WarningOutlined,
 } from "@ant-design/icons";
-import MiniCreateActivityForm from "./MiniCreateActivityForm"; // Assuming this exists in the same directory
-import LabResultDetailsModal from "./LabResultDetailsModal"; // Assuming this exists in the same directory
-import ImageSlider from "./ImageSlider"; // Assuming this exists in the same directory
+import MiniCreateActivityForm from "./MiniCreateActivityForm";
+import LabResultDetailsModal from "./LabResultDetailsModal";
+import ImageSlider from "./ImageSlider";
 import { useParams } from "react-router-dom";
-import { usePatientDetailStore } from "../../services/patientDetail.service"; // Adjust path as needed
-import { useLabStore } from "../../services/lab.service"; // Adjust path as needed
+import { usePatientDetailStore } from "../../services/patientDetail.service";
+import { useLabStore } from "../../services/lab.service";
 import moment from "moment";
-import PdfGenerator from "./PdfGenerator"; // Assuming this exists in the same directory
-import { useTranslation } from "react-i18next"; // Adjust path as needed
-import { useAuthStore } from "../../services/auth.service"; // Adjust path as needed
+import HtmlReportGenerator from "./HtmlReportGenerator";
+import { useTranslation } from "react-i18next";
+import { useAuthStore } from "../../services/auth.service";
 import WaveSurfer from "wavesurfer.js";
 
-const { Header, Content, Footer } = Layout; // Keep standard Layout
+const { Header, Content /*, Footer */ } = Layout;
 const { TabPane } = Tabs;
 const { Text, Title, Paragraph } = Typography;
-const { useBreakpoint } = Grid; // Use the useBreakpoint hook
+const { useBreakpoint } = Grid;
 
-// Helper function to generate valid image URL (Keep as is)
+// Helper function to generate valid image URL
 const generateImageUrl = (url) => {
 	if (!url) return null;
 	const processedUrl = `${
@@ -85,17 +89,17 @@ const generateImageUrl = (url) => {
 				: url
 			: "/" + (url.startsWith("./") ? url.substring(1) : url)
 	}`;
-	return `${processedUrl}`;
+	return `http://localhost:8080${processedUrl}`;
 };
-// Helper function to generate valid document URL (Keep as is)
+// Helper function to generate valid document URL
 const generateDocumentUrl = (url) => {
 	if (!url) return null;
 	const processedUrl = url.startsWith("./") ? url.substring(1) : url;
-	return `${processedUrl.startsWith("/") ? processedUrl : "/" + processedUrl}`;
+	return `http://localhost:8080${processedUrl.startsWith("/") ? processedUrl : "/" + processedUrl}`;
 };
 
 // -----------------------------------------------------------------------------
-// Reusable Table Component (Keep as is, ensure overflowX is still there)
+// Reusable Table Component
 // -----------------------------------------------------------------------------
 const PaginatedTable = ({ columns, data, loading, currentPage, onPageChange, totalCount }) => {
 	return (
@@ -107,12 +111,10 @@ const PaginatedTable = ({ columns, data, loading, currentPage, onPageChange, tot
 				pagination={false}
 				rowKey="id"
 				style={{
-					// border: "1px solid #e8e8e8", // Removed border for cleaner look within tab card
-					// borderRadius: "4px", // Removed border radius
 					marginBottom: "16px",
-					overflowX: "auto", // Keep horizontal scroll for wide tables
+					overflowX: "auto",
 				}}
-				scroll={{ x: "max-content" }} // Ensures horizontal scroll works reliably
+				scroll={{ x: "max-content" }}
 			/>
 			<Pagination
 				current={currentPage + 1}
@@ -120,14 +122,14 @@ const PaginatedTable = ({ columns, data, loading, currentPage, onPageChange, tot
 				total={totalCount}
 				onChange={(page) => onPageChange(page - 1)}
 				style={{ marginTop: 15, display: "flex", justifyContent: "center" }}
-				showSizeChanger={false} // Simplify pagination
+				showSizeChanger={false}
 			/>
 		</>
 	);
 };
 
 // -----------------------------------------------------------------------------
-// Reusable Detail Modal Component (Keep as is, ensure responsiveness)
+// Reusable Detail Modal Component
 // -----------------------------------------------------------------------------
 const DetailModal = ({ title, isOpen, onClose, children }) => {
 	const screens = useBreakpoint();
@@ -146,7 +148,7 @@ const DetailModal = ({ title, isOpen, onClose, children }) => {
 };
 
 // -----------------------------------------------------------------------------
-// Utility function for rendering Detail (Keep as is)
+// Utility function for rendering Detail
 // -----------------------------------------------------------------------------
 const renderDetail = (label, value) => (
 	<div style={{ marginBottom: 8 }}>
@@ -155,13 +157,13 @@ const renderDetail = (label, value) => (
 	</div>
 );
 // -----------------------------------------------------------------------------
-// Utility function for rendering notes (Keep as is)
+// Utility function for rendering notes
 // -----------------------------------------------------------------------------
 const renderAssessmentNotes = (notes) => (
 	<div dangerouslySetInnerHTML={{ __html: notes }} style={{ backgroundColor: "#f0f0f0", padding: 15, borderRadius: 10 }} />
 );
 // -----------------------------------------------------------------------------
-// Utility function for rendering medication list (Keep as is)
+// Utility function for rendering medication list
 // -----------------------------------------------------------------------------
 const renderMedicationList = (medications, t) => {
 	return (
@@ -182,7 +184,7 @@ const renderMedicationList = (medications, t) => {
 };
 
 // -----------------------------------------------------------------------------
-// Utility function for rendering image list (Keep as is)
+// Utility function for rendering image list
 // -----------------------------------------------------------------------------
 const renderImagesList = (images) => (
 	<ul style={{ paddingLeft: 20 }}>
@@ -199,14 +201,12 @@ const renderImagesList = (images) => (
 	</ul>
 );
 // -----------------------------------------------------------------------------
-// Expanded Row Details Component (Keep as is)
+// Expanded Row Details Component
 // -----------------------------------------------------------------------------
 const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
-	const { t } = useTranslation(); // Initialize useTranslation here
+	const { t } = useTranslation();
 	if (!expandedRow) return null;
-
 	const { type, ...data } = expandedRow;
-
 	return (
 		<DetailModal title={t("detailed-info", { type: t(type.toLowerCase().replace(/ /g, "-")) })} isOpen={isModalOpen} onClose={handleCloseModal}>
 			{type === "Admission" && (
@@ -225,7 +225,25 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 			{type === "Appointment" && (
 				<>
 					<Col xs={24} sm={12}>
-						{renderDetail(t("appointment-date"), data.appointmentDate ? moment(data.appointmentDate).format("YYYY-MM-DD HH:mm") : "N/A")}
+						{renderDetail(
+							t("appointment-date-time"),
+							data.appointmentDateTime ? moment(data.appointmentDateTime).format("YYYY-MM-DD HH:mm") : "N/A"
+						)}
+					</Col>
+					<Col xs={24} sm={12}>
+						{renderDetail(t("service"), data.productName)}
+					</Col>
+					<Col xs={24} sm={12}>
+						{renderDetail(t("provider"), `${data.userFirstName || ""} ${data.userLastName || ""}`.trim() || "N/A")}
+					</Col>
+					<Col xs={24} sm={12}>
+						{renderDetail(t("status"), data.status)}
+					</Col>
+					<Col xs={24} sm={12}>
+						{renderDetail(t("start-time"), data.startTime ? moment(data.startTime).format("YYYY-MM-DD HH:mm") : "N/A")}
+					</Col>
+					<Col xs={24} sm={12}>
+						{renderDetail(t("end-time"), data.endTime ? moment(data.endTime).format("YYYY-MM-DD HH:mm") : "N/A")}
 					</Col>
 				</>
 			)}
@@ -247,7 +265,6 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 					<Col xs={24} sm={12}>
 						{renderDetail(t("billing-date"), data.billDate ? moment(data.billDate).format("YYYY-MM-DD HH:mm") : "N/A")}
 					</Col>
-
 					<Col xs={24} sm={24}>
 						{renderAssessmentNotes(data.bill)}
 					</Col>
@@ -401,13 +418,11 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 					</Col>
 				</>
 			)}
-
 			{type === "Procedure Log" && (
 				<>
 					<Col xs={24} sm={12}>
 						{renderDetail(t("start-time"), data.startTime ? moment(data.startTime).format("YYYY-MM-DD HH:mm") : "N/A")}
 					</Col>
-
 					<Col xs={24} sm={12}>
 						{renderDetail(t("done-by"), data.userName)}
 					</Col>
@@ -426,11 +441,12 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 	);
 };
 // -----------------------------------------------------------------------------
-// Patient Avatar Modal Component (Keep as is, ensure responsiveness)
+// Patient Avatar Modal Component
 // -----------------------------------------------------------------------------
 const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
+	const { token } = antdTheme.useToken();
 	return (
 		<Modal
 			title={t("patient-profile-image")}
@@ -438,7 +454,12 @@ const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 			onCancel={onClose}
 			footer={null}
 			width={screens.xs ? "95%" : "90%"}
-			style={{ maxWidth: screens.xs ? "95vw" : "400px", borderColor: "gold", border: "2px solid" }}
+			style={{
+				maxWidth: screens.xs ? "95vw" : "400px",
+				borderColor: token.colorPrimary,
+				borderWidth: "2px",
+				borderStyle: "solid",
+			}}
 			bodyStyle={{ padding: screens.xs ? "16px" : "24px", textAlign: "center" }}>
 			{imageUrl ? (
 				<Image src={generateImageUrl(imageUrl)} alt="Patient Profile" style={{ width: "100%", maxWidth: "350px", objectFit: "contain" }} />
@@ -449,7 +470,7 @@ const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 	);
 };
 
-// Quick Notes Modal - (Keep as is, includes WaveSurfer etc.)
+// Quick Notes Modal
 // -----------------------------------------------------------------------------
 const QuickNotesModal = ({
 	isOpen,
@@ -474,36 +495,32 @@ const QuickNotesModal = ({
 
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
+	const { token } = antdTheme.useToken();
 
 	const handleSave = () => {
 		onSave();
-		// Keep modal open if list mode, close otherwise
-		if (quickNotesModalMode !== "list") {
-			onClose();
-		}
+		// if (quickNotesModalMode !== "list") { // Decided to keep modal open for add/edit
+		// }
 	};
 
 	const startRecording = async () => {
 		try {
 			setRecordingError(null);
 			setIsTranscribing(false);
-			setAudioBlobUrl(null); // Clear previous audio
+			setAudioBlobUrl(null);
 			if (wavesurfer.current.current) {
-				wavesurfer.current.current.empty(); // Clear waveform
+				wavesurfer.current.current.empty();
 			}
-
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			const recorder = new MediaRecorder(stream);
 			setMediaRecorder(recorder);
 			setIsRecording(true);
 			chunks.current = [];
-
 			recorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
 					chunks.current.push(event.data);
 				}
 			};
-
 			recorder.onstop = () => {
 				const blob = new Blob(chunks.current, { type: "audio/webm" });
 				const url = URL.createObjectURL(blob);
@@ -512,29 +529,21 @@ const QuickNotesModal = ({
 					wavesurfer.current.current.load(url);
 				}
 				sendAudioToBackend(blob);
-				stream.getTracks().forEach((track) => track.stop()); // Stop stream tracks here
+				stream.getTracks().forEach((track) => track.stop());
 			};
-
 			recorder.onerror = (error) => {
 				console.error("Recording error:", error);
 				setRecordingError(t("recording-error"));
-				notification.error({
-					message: t("error"),
-					description: t("recording-error"),
-				});
+				notification.error({ message: t("error"), description: t("recording-error") });
 				setIsRecording(false);
 				stream.getTracks().forEach((track) => track.stop());
 				setMediaRecorder(null);
 			};
-
 			recorder.start();
 		} catch (error) {
 			console.error("Error starting recording:", error);
 			setRecordingError(t("microphone-access-denied"));
-			notification.error({
-				message: t("error"),
-				description: t("microphone-access-denied"),
-			});
+			notification.error({ message: t("error"), description: t("microphone-access-denied") });
 			setIsRecording(false);
 		}
 	};
@@ -542,7 +551,6 @@ const QuickNotesModal = ({
 	const stopRecording = () => {
 		if (mediaRecorder && mediaRecorder.state !== "inactive") {
 			mediaRecorder.stop();
-			// Tracks are stopped in recorder.onstop
 			setIsRecording(false);
 		}
 	};
@@ -551,42 +559,30 @@ const QuickNotesModal = ({
 		setIsTranscribing(true);
 		const formData = new FormData();
 		formData.append("audio", blob, "recording.webm");
-
 		try {
-			const response = await fetch("/api/gemini/soundtotext", {
-				method: "POST",
-				body: formData,
-				// Add Authorization header if needed by your backend
-				// headers: { Authorization: `Bearer ${useAuthStore.getState().user?.token}` }
-			});
-
+			const response = await fetch("/api/gemini/soundtotext", { method: "POST", body: formData });
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({ message: "Transcription failed with status " + response.status }));
 				throw new Error(errorData.message || "Transcription failed");
 			}
-
 			const transcribedText = await response.text();
 			setQuickNoteText((prevText) => (prevText ? prevText + " " + transcribedText : transcribedText));
 			notification.success({ message: t("success"), description: t("transcription-successful") });
 		} catch (error) {
 			console.error("Error transcribing audio:", error);
-			notification.error({
-				message: t("error"),
-				description: t("transcription-failed") + ": " + error.message,
-			});
+			notification.error({ message: t("error"), description: t("transcription-failed") + ": " + error.message });
 		} finally {
 			setIsTranscribing(false);
 		}
 	};
 
 	useEffect(() => {
-		// Initialize WaveSurfer
 		if (waveformRef.current && !wavesurfer.current.current) {
 			wavesurfer.current.current = WaveSurfer.create({
 				container: waveformRef.current,
-				waveColor: "violet",
-				progressColor: "purple",
-				cursorColor: "navy",
+				waveColor: token.colorFillContent,
+				progressColor: token.colorPrimary,
+				cursorColor: token.colorText,
 				barWidth: 2,
 				barGap: 1,
 				responsive: true,
@@ -594,14 +590,11 @@ const QuickNotesModal = ({
 				normalize: true,
 			});
 		}
-
-		// Cleanup function
 		return () => {
 			if (wavesurfer.current.current) {
 				wavesurfer.current.current.destroy();
 				wavesurfer.current.current = null;
 			}
-			// Stop recording and revoke URL on component unmount
 			if (mediaRecorder && mediaRecorder.state !== "inactive") {
 				mediaRecorder.stop();
 				mediaRecorder.stream.getTracks().forEach((track) => track.stop());
@@ -610,9 +603,8 @@ const QuickNotesModal = ({
 				URL.revokeObjectURL(audioBlobUrl);
 			}
 		};
-	}, []); // Empty dependency array ensures this runs only on mount and unmount
+	}, [token]); // Removed mediaRecorder, audioBlobUrl from deps to avoid re-creating WaveSurfer unnecessarily
 
-	// Reset state when modal opens for create/edit mode
 	useEffect(() => {
 		if (isOpen && (quickNotesModalMode === "create" || quickNotesModalMode === "edit")) {
 			setAudioBlobUrl(null);
@@ -626,15 +618,13 @@ const QuickNotesModal = ({
 	}, [isOpen, quickNotesModalMode]);
 
 	const sortedQuickNotes = [...quickNotes].sort((a, b) => moment(b.createdAt).valueOf() - moment(a.createdAt).valueOf());
-
 	const playAudio = () => {
 		if (wavesurfer.current.current && audioBlobUrl) {
 			wavesurfer.current.current.playPause();
 		}
 	};
 
-	// Determine modal title based on mode
-	let modalTitle = t("quick-notes"); // Default for list mode
+	let modalTitle = t("quick-notes");
 	if (quickNotesModalMode === "create") modalTitle = t("add-quick-note");
 	if (quickNotesModalMode === "edit") modalTitle = t("edit-quick-note");
 
@@ -643,13 +633,12 @@ const QuickNotesModal = ({
 			title={modalTitle}
 			open={isOpen}
 			onCancel={onClose}
-			width={quickNotesModalMode === "list" ? (screens.xs ? "95%" : "60%") : screens.xs ? "95%" : "500px"} // Adjusted width for create/edit
+			width={quickNotesModalMode === "list" ? (screens.xs ? "95%" : "60%") : screens.xs ? "95%" : "500px"}
 			style={{ maxWidth: screens.xs ? "95vw" : quickNotesModalMode === "list" ? "800px" : "500px" }}
 			bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}
 			footer={
 				quickNotesModalMode === "list"
 					? [
-							// Add footer for list mode to have "Add New Note" button
 							<Button key="add" type="primary" onClick={() => onEdit(null)}>
 								{t("add-new-note")}
 							</Button>,
@@ -665,9 +654,8 @@ const QuickNotesModal = ({
 								key="submit"
 								type="primary"
 								onClick={handleSave}
-								loading={loading || isTranscribing} // Show loading state
-								disabled={isRecording || isTranscribing} // Disable while recording/transcribing
-							>
+								loading={loading || isTranscribing}
+								disabled={isRecording || isTranscribing}>
 								{quickNotesModalMode === "create" ? t("create-note") : t("update-note")}
 							</Button>,
 					  ]
@@ -701,7 +689,6 @@ const QuickNotesModal = ({
 					)}
 				/>
 			) : (
-				// Create or Edit Mode
 				<>
 					<Space direction="vertical" style={{ width: "100%", marginBottom: 16 }}>
 						<Space>
@@ -711,7 +698,7 @@ const QuickNotesModal = ({
 									type={isRecording ? "danger" : "primary"}
 									onClick={isRecording ? stopRecording : startRecording}
 									disabled={isTranscribing}
-									ghost={isRecording} // Make stop button ghost
+									ghost={isRecording}
 								/>
 							</Tooltip>
 							<Tooltip title={t("play-pause-audio")}>
@@ -730,14 +717,13 @@ const QuickNotesModal = ({
 							ref={waveformRef}
 							style={{
 								width: "100%",
-								height: "60px", // Fixed height for waveform
+								height: "60px",
 								display: isRecording || audioBlobUrl ? "block" : "none",
-								background: "#f0f0f0", // Background for empty state
-								borderRadius: "4px",
+								background: token.colorBgLayout,
+								borderRadius: token.borderRadiusLG,
 							}}></div>
 						{isTranscribing && <Spin size="small" style={{ marginLeft: 8 }} />}
 					</Space>
-
 					<Input.TextArea
 						value={quickNoteText}
 						onChange={(e) => setQuickNoteText(e.target.value)}
@@ -752,17 +738,18 @@ const QuickNotesModal = ({
 };
 
 // -----------------------------------------------------------------------------
-// Patient Details Component - REVISED LAYOUT
+// Patient Details Component
 // -----------------------------------------------------------------------------
 const PatientDetails = () => {
 	const { id: patientId } = useParams();
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
-	const isMobile = screens.xs; // Simplified check for mobile layout adjustments
+	const isMobile = screens.xs;
+
+	const { token } = antdTheme.useToken();
 
 	const {
 		fetchPatientData,
-		// fetchProcedureLogs, // Now handled by fetchPatientData
 		fetchQuickNotes,
 		createQuickNote,
 		updateQuickNote,
@@ -776,7 +763,6 @@ const PatientDetails = () => {
 		carePlans,
 		prescriptions,
 		vitalSigns,
-		// latestVitalSign, // Available if needed for overview tab
 		productUsages,
 		medicationAdministrations,
 		imageReports,
@@ -789,7 +775,6 @@ const PatientDetails = () => {
 		filters,
 	} = usePatientDetailStore();
 
-	// --- State ---
 	const [admissionsPage, setAdmissionsPage] = useState(0);
 	const [appointmentsPage, setAppointmentsPage] = useState(0);
 	const [assessmentsPage, setAssessmentsPage] = useState(0);
@@ -802,13 +787,11 @@ const PatientDetails = () => {
 	const [imageReportsPage, setImageReportsPage] = useState(0);
 	const [labResultsPage, setLabResultsPage] = useState(0);
 	const [documentsPage, setDocumentsPage] = useState(0);
-	const [quickNotesPage, setQuickNotesPage] = useState(0); // Still needed if overview uses its own pagination
 	const [procedureLogsPage, setProcedureLogsPage] = useState(0);
 
-	const [searchTerm, setSearchTerm] = useState(""); // Keep search if backend supports it across fields
-	const [activeTab, setActiveTab] = useState("profile"); // Default to profile tab
+	const [searchTerm, setSearchTerm] = useState(""); // Keep if search functionality is planned
+	const [activeTab, setActiveTab] = useState("profile");
 
-	// Modal States
 	const [expandedRow, setExpandedRow] = useState(null);
 	const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 	const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -819,32 +802,20 @@ const PatientDetails = () => {
 	const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 	const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(null);
 	const [isQuickNotesModalOpen, setIsQuickNotesModalOpen] = useState(false);
-	const [quickNotesModalMode, setQuickNotesModalMode] = useState("list"); // Default to list view
+	const [quickNotesModalMode, setQuickNotesModalMode] = useState("list");
 	const [editingQuickNoteId, setEditingQuickNoteId] = useState(null);
 	const [quickNoteText, setQuickNoteText] = useState("");
 
-	// Other States
-	const [activityCreated, setActivityCreated] = useState(false); // To trigger refetch after creation
+	const [activityCreated, setActivityCreated] = useState(false);
 	const { fetchLabTests, labTests } = useLabStore();
 	const { user: loggedInUser } = useAuthStore();
 
-	// --- Responsive Helpers ---
-	const getResponsivePadding = (defaultValue = "24px") => {
-		if (screens.xs) return "12px";
-		if (screens.sm) return "16px";
-		return defaultValue;
-	};
+	const getResponsivePadding = (defaultValue = "24px") => (screens.xs ? "12px" : screens.sm ? "16px" : defaultValue);
+	const getResponsiveMargin = () => (screens.xs ? "8px" : screens.sm ? "12px" : "16px");
 
-	const getResponsiveMargin = () => {
-		if (screens.xs) return "8px";
-		if (screens.sm) return "12px";
-		return "16px"; // Reduced default margin
-	};
-
-	// --- Modal Handlers ---
 	const handleOpenServiceModal = () => setIsServiceModalOpen(true);
 	const handleCloseServiceModal = () => setIsServiceModalOpen(false);
-	const handleActivityCreated = () => setActivityCreated((prev) => !prev); // Trigger refetch
+	const handleActivityCreated = () => setActivityCreated((prev) => !prev);
 	const handleOpenLabResultModal = (labResult) => {
 		setSelectedLabResult(labResult);
 		setIsLabResultModalOpen(true);
@@ -854,7 +825,6 @@ const PatientDetails = () => {
 		setSelectedLabResult(null);
 	};
 	const handleOpenSlider = (imageReport) => {
-		// Ensure imageUrls are processed before opening
 		const processedUrls = imageReport.imageUrls?.map(generateImageUrl) || [];
 		setSelectedImageData({ ...imageReport, imageUrls: processedUrls });
 		setIsSliderOpen(true);
@@ -880,7 +850,6 @@ const PatientDetails = () => {
 		setIsAvatarModalOpen(false);
 	};
 
-	// Quick Notes Modal Handlers
 	const handleOpenQuickNotesModal = (mode = "list", note = null) => {
 		setQuickNotesModalMode(mode);
 		if (mode === "edit" && note) {
@@ -890,16 +859,13 @@ const PatientDetails = () => {
 			setEditingQuickNoteId(null);
 			setQuickNoteText("");
 		}
-		// Fetch notes if opening list view and they might be stale
-		if (mode === "list" && !quickNotes.length) {
-			// Example condition
-			fetchQuickNotes(patientId, 1, 10);
+		if (mode === "list" && (!quickNotes || quickNotes.length === 0)) {
+			fetchQuickNotes(patientId, 1, 10); // Fetch initial page if list is empty
 		}
 		setIsQuickNotesModalOpen(true);
 	};
 	const handleCloseQuickNotesModal = () => {
 		setIsQuickNotesModalOpen(false);
-		// Reset state, important for WaveSurfer cleanup potentially
 		setQuickNotesModalMode("list");
 		setEditingQuickNoteId(null);
 		setQuickNoteText("");
@@ -917,12 +883,12 @@ const PatientDetails = () => {
 				await updateQuickNote(editingQuickNoteId, quickNoteText, loggedInUser.id);
 				notification.success({ message: t("success"), description: t("quick-note-updated") });
 			}
-			// After save, switch back to list mode within the modal if desired, or close
-			// Let's switch back to list mode to see the update/creation
 			setQuickNotesModalMode("list");
-			// No need to close here, handleCloseQuickNotesModal handles closing
+			setQuickNoteText("");
+			setEditingQuickNoteId(null);
+			// fetchQuickNotes will be called by the store actions if needed
 		} catch (error) {
-			// Error handled in store
+			// Error should be handled in store actions with notifications
 		}
 	};
 	const handleDeleteQuickNote = async (quickNoteId) => {
@@ -936,8 +902,6 @@ const PatientDetails = () => {
 				try {
 					await deleteQuickNote(quickNoteId);
 					notification.success({ message: t("success"), description: t("quick-note-deleted") });
-					// Stay in list mode
-					setQuickNotesModalMode("list");
 				} catch (error) {
 					// Error handled in store
 				}
@@ -945,57 +909,27 @@ const PatientDetails = () => {
 		});
 	};
 	const handleEditQuickNote = (quickNote) => {
-		// This function is called by the Edit button in the list view
 		if (quickNote) {
-			// Editing existing
 			handleOpenQuickNotesModal("edit", quickNote);
 		} else {
-			// Adding new (called from "Add New Note" button in list footer)
 			handleOpenQuickNotesModal("create");
 		}
 	};
 
-	// --- Data Fetching ---
 	useEffect(() => {
-		// Fetch lab tests once on mount
 		fetchLabTests();
 	}, [fetchLabTests]);
 
 	useEffect(() => {
-		// Fetch initial patient data when ID changes
 		if (patientId) {
-			// Fetch patient details + data for the *initially active tab* (Profile/Overview don't need initial fetch like this)
-			// Let's fetch patient + admissions initially as an example, or adjust as needed
-			// The store's fetchPatientData fetches the patient regardless
-			fetchPatientData(patientId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10);
-			// Fetch quick notes initially for the overview tab/modal
-			fetchQuickNotes(patientId, 1, 10);
+			fetchPatientData(patientId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10); // Initial fetch for patient, and first page of admissions
+			fetchQuickNotes(patientId, 1, 10); // Initial fetch for quick notes
 		}
-	}, [patientId, fetchPatientData, fetchQuickNotes]); // Removed activityCreated from initial fetch
+	}, [patientId, fetchPatientData, fetchQuickNotes, activityCreated]);
 
-	// Generic fetch function adapted for tab-based loading
 	const fetchPaginatedDataForTab = async (dataType, pageState) => {
 		if (!patientId) return;
-		const pageNum = pageState + 1; // API uses 1-based usually, state is 0-based
-
-		// Map dataType to the correct page argument position in fetchPatientData
-		const pageArgs = {
-			admissions: admissionsPage,
-			appointments: appointmentsPage,
-			assessments: assessmentsPage,
-			billings: billingsPage,
-			carePlans: carePlansPage,
-			prescriptions: prescriptionsPage,
-			vitalSigns: vitalSignsPage,
-			productUsages: productUsagesPage,
-			medicationAdministrations: medicationAdministrationsPage,
-			imageReports: imageReportsPage,
-			labResults: labResultsPage,
-			documents: documentsPage,
-			quickNotes: quickNotesPage, // Keep if needed for separate pagination
-			procedureLogs: procedureLogsPage,
-		};
-
+		const pageNum = pageState + 1;
 		try {
 			await fetchPatientData(
 				patientId,
@@ -1011,97 +945,92 @@ const PatientDetails = () => {
 				dataType === "imageReports" ? pageNum : 0,
 				dataType === "labResults" ? pageNum : 0,
 				dataType === "documents" ? pageNum : 0,
-				dataType === "quickNotes" ? pageNum : 0, // Keep if paginating notes separately
+				0, // quickNotes are handled by their own modal/fetch
 				dataType === "procedureLogs" ? pageNum : 0,
-				10 // pageSize
+				10
 			);
 		} catch (error) {
 			console.error(`Error fetching ${dataType}:`, error.message);
-			// Notification handled in store
+			// Notification is handled by the store
 		}
 	};
 
-	// useEffect hooks for specific tabs (triggered by tab change, page change, filter change, activity creation)
 	useEffect(() => {
 		if (activeTab === "3" && patientId) fetchPaginatedDataForTab("admissions", admissionsPage);
-	}, [activeTab, patientId, admissionsPage, activityCreated, searchTerm]); // Filter not applicable to admissions
-
+	}, [activeTab, patientId, admissionsPage, activityCreated, filters.admissions]); // Added filters dependency
 	useEffect(() => {
 		if (activeTab === "4" && patientId) fetchPaginatedDataForTab("appointments", appointmentsPage);
-	}, [activeTab, patientId, appointmentsPage, filters.appointments, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, appointmentsPage, filters.appointments, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "5" && patientId) fetchPaginatedDataForTab("assessments", assessmentsPage);
-	}, [activeTab, patientId, assessmentsPage, filters.assessments, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, assessmentsPage, filters.assessments, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "6" && patientId) fetchPaginatedDataForTab("billings", billingsPage);
-	}, [activeTab, patientId, billingsPage, filters.billings, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, billingsPage, filters.billings, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "7" && patientId) fetchPaginatedDataForTab("carePlans", carePlansPage);
-	}, [activeTab, patientId, carePlansPage, filters.carePlans, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, carePlansPage, filters.carePlans, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "8" && patientId) fetchPaginatedDataForTab("prescriptions", prescriptionsPage);
-	}, [activeTab, patientId, prescriptionsPage, filters.prescriptions, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, prescriptionsPage, filters.prescriptions, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "9" && patientId) fetchPaginatedDataForTab("vitalSigns", vitalSignsPage);
-	}, [activeTab, patientId, vitalSignsPage, filters.vitalSigns, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, vitalSignsPage, filters.vitalSigns, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "10" && patientId) fetchPaginatedDataForTab("productUsages", productUsagesPage);
-	}, [activeTab, patientId, productUsagesPage, filters.productUsages, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, productUsagesPage, filters.productUsages, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "11" && patientId) fetchPaginatedDataForTab("medicationAdministrations", medicationAdministrationsPage);
-	}, [activeTab, patientId, medicationAdministrationsPage, filters.medicationAdministrations, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, medicationAdministrationsPage, filters.medicationAdministrations, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "12" && patientId) fetchPaginatedDataForTab("imageReports", imageReportsPage);
-	}, [activeTab, patientId, imageReportsPage, filters.imageReports, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, imageReportsPage, filters.imageReports, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "13" && patientId) fetchPaginatedDataForTab("labResults", labResultsPage);
-	}, [activeTab, patientId, labResultsPage, filters.labResults, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, labResultsPage, filters.labResults, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "14" && patientId) fetchPaginatedDataForTab("documents", documentsPage);
-	}, [activeTab, patientId, documentsPage, filters.documents, activityCreated, searchTerm]);
-
+	}, [activeTab, patientId, documentsPage, filters.documents, activityCreated]);
 	useEffect(() => {
 		if (activeTab === "15" && patientId) fetchPaginatedDataForTab("procedureLogs", procedureLogsPage);
-	}, [activeTab, patientId, procedureLogsPage, filters.procedureLogs, activityCreated, searchTerm]);
-
-	// Note: Quick Notes fetching might be handled primarily by the modal logic now.
-	// If you need the main list populated for the Overview tab, trigger fetchQuickNotes here based on activeTab === 'overview'
-	// useEffect(() => {
-	// 	if (activeTab === 'overview' && patientId) fetchQuickNotes(patientId, 1, 10); // Fetch first page for overview
-	// }, [activeTab, patientId, fetchQuickNotes]);
+	}, [activeTab, patientId, procedureLogsPage, filters.procedureLogs, activityCreated]);
 
 	const handleTabChange = (key) => {
 		setActiveTab(key);
-		// Reset page numbers when switching tabs? Optional, could be annoying.
-		// Let's not reset pages on tab switch for now.
+		setAdmissionsPage(0);
+		setAppointmentsPage(0);
+		setAssessmentsPage(0);
+		setBillingsPage(0);
+		setCarePlansPage(0);
+		setPrescriptionsPage(0);
+		setVitalSignsPage(0);
+		setProductUsagesPage(0);
+		setMedicationAdministrationsPage(0);
+		setImageReportsPage(0);
+		setLabResultsPage(0);
+		setDocumentsPage(0);
+		setProcedureLogsPage(0);
 	};
 
-	// --- Column Definitions (Memoized and Responsive) ---
-
-	const commonActionColumn = (type, pdfType, pdfPrefix, recordProcessor = (r) => r) => ({
+	const commonActionColumn = (type, htmlReportType, htmlReportPrefix, recordProcessor = (r) => r) => ({
 		title: t("actions"),
 		key: "actions",
-		fixed: isMobile ? false : "right", // Fix actions column on desktop
-		width: isMobile ? 110 : 130, // Adjust width as needed
+		fixed: isMobile ? false : "right",
+		width: isMobile ? 110 : 130,
 		render: (text, record) => (
 			<Space size={isMobile ? "small" : "middle"} wrap={isMobile}>
 				<Tooltip title={t("view-details")}>
 					<Button size="small" type="primary" icon={<EyeOutlined />} onClick={() => handleOpenDetailModal(record, type)} />
 				</Tooltip>
-				<Tooltip title={t("export-pdf")}>
-					<PdfGenerator type={pdfType} mode="single" data={recordProcessor(record)} fileNamePrefix={pdfPrefix} labTests={labTests}>
+				<Tooltip title={t("export-html-report")}>
+					<HtmlReportGenerator
+						type={htmlReportType}
+						mode="single"
+						data={recordProcessor(record)}
+						fileNamePrefix={htmlReportPrefix}
+						labTests={labTests}>
 						<Button size="small" type="default" icon={<DownloadOutlined />} />
-					</PdfGenerator>
+					</HtmlReportGenerator>
 				</Tooltip>
 			</Space>
 		),
@@ -1125,28 +1054,45 @@ const PatientDetails = () => {
 			},
 			{ title: t("bed-id"), dataIndex: "bedId", key: "bedId", width: 100 },
 		];
-		const actionsCol = commonActionColumn("Admission", "admission", "admission");
-
 		return isMobile
-			? [baseColumns[0], actionsCol] // Show Date + Actions on mobile
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]); // Added t and handler dependencies
+			? [baseColumns[0], commonActionColumn("Admission", "admission", "admission")]
+			: [...baseColumns, commonActionColumn("Admission", "admission", "admission")];
+	}, [isMobile, t, labTests]);
 
 	const appointmentsColumns = useMemo(() => {
 		const baseColumns = [
 			{
-				title: t("appointment-date"),
-				dataIndex: "appointmentDate",
-				key: "appointmentDate",
+				title: t("appointment-date-time"),
+				dataIndex: "appointmentDateTime",
+				key: "appointmentDateTime",
 				width: 160,
 				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
 			},
-			// Add other relevant columns if available, e.g., Doctor, Status
+			{
+				title: t("service"),
+				dataIndex: "productName",
+				key: "productName",
+				ellipsis: true,
+			},
+			{
+				title: t("provider"),
+				key: "provider",
+				render: (text, record) => `${record.userFirstName || ""} ${record.userLastName || ""}`.trim() || "N/A",
+				ellipsis: true,
+			},
+			{
+				title: t("status"),
+				dataIndex: "status",
+				key: "status",
+				width: 120,
+				render: (status) =>
+					status ? <Tag color={status === "COMPLETED" ? "green" : status === "SCHEDULED" ? "blue" : "default"}>{status}</Tag> : "N/A",
+			},
 		];
-		const actionsCol = commonActionColumn("Appointment", "appointment", "appointment");
-
-		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+		return isMobile
+			? [baseColumns[0], baseColumns[3], commonActionColumn("Appointment", "appointment", "appointment")] // DateTime, Status, Actions
+			: [...baseColumns, commonActionColumn("Appointment", "appointment", "appointment")];
+	}, [isMobile, t, labTests]);
 
 	const assessmentsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1161,14 +1107,14 @@ const PatientDetails = () => {
 				title: t("notes"),
 				dataIndex: "notes",
 				key: "notes",
-				ellipsis: true, // Add ellipsis for long notes
-				render: (text) => <div dangerouslySetInnerHTML={{ __html: text?.substring(0, 100) + (text?.length > 100 ? "..." : "") }} />, // Show preview
+				ellipsis: true,
+				render: (text) => <div dangerouslySetInnerHTML={{ __html: text?.substring(0, 100) + (text?.length > 100 ? "..." : "") }} />,
 			},
 		];
-		const actionsCol = commonActionColumn("Assessment", "assessment", "assessment");
-
-		return isMobile ? [baseColumns[0], actionsCol] : [baseColumns[0], baseColumns[1], actionsCol]; // Show Date, Notes Preview, Actions on desktop
-	}, [isMobile, t, handleOpenDetailModal]);
+		return isMobile
+			? [baseColumns[0], commonActionColumn("Assessment", "assessment", "assessment")]
+			: [baseColumns[0], baseColumns[1], commonActionColumn("Assessment", "assessment", "assessment")];
+	}, [isMobile, t, labTests]);
 
 	const billingColumns = useMemo(() => {
 		const baseColumns = [
@@ -1179,15 +1125,13 @@ const PatientDetails = () => {
 				width: 160,
 				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
 			},
-			{ title: t("description"), dataIndex: "description", key: "description", ellipsis: true }, // Assuming description exists
-			{ title: t("amount"), dataIndex: "amount", key: "amount", width: 100, render: (text) => (text ? `$${text.toFixed(2)}` : "N/A") }, // Assuming amount exists
+			{ title: t("description"), dataIndex: "description", key: "description", ellipsis: true },
+			{ title: t("amount"), dataIndex: "amount", key: "amount", width: 100, render: (text) => (text ? `$${Number(text).toFixed(2)}` : "N/A") },
 		];
-		const actionsCol = commonActionColumn("Billing", "billing", "billing");
-
 		return isMobile
-			? [baseColumns[0], baseColumns[2] ?? null, actionsCol].filter(Boolean) // Date, Amount (if exists), Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+			? [baseColumns[0], baseColumns[2], commonActionColumn("Billing", "billing", "billing")]
+			: [...baseColumns, commonActionColumn("Billing", "billing", "billing")];
+	}, [isMobile, t, labTests]);
 
 	const carePlansColumns = useMemo(() => {
 		const baseColumns = [
@@ -1201,10 +1145,10 @@ const PatientDetails = () => {
 			{ title: t("goal"), dataIndex: "goal", key: "goal", ellipsis: true },
 			{ title: t("interventions"), dataIndex: "interventions", key: "interventions", ellipsis: true },
 		];
-		const actionsCol = commonActionColumn("Care Plan", "carePlan", "care_plan");
-
-		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+		return isMobile
+			? [baseColumns[0], commonActionColumn("Care Plan", "carePlan", "care_plan")]
+			: [...baseColumns, commonActionColumn("Care Plan", "carePlan", "care_plan")];
+	}, [isMobile, t, labTests]);
 
 	const prescriptionsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1220,18 +1164,14 @@ const PatientDetails = () => {
 				title: t("prescribed-medications"),
 				key: "prescribedMedications",
 				ellipsis: true,
-				render: (text, record) => {
-					const medications = record?.prescribedMedications ?? [];
-					return medications.length > 0
-						? medications.map((m) => m.medicationName).join(", ") // Simple preview
-						: t("no-medications-prescribed");
-				},
+				render: (text, record) =>
+					(record?.prescribedMedications ?? []).map((m) => m.medicationName).join(", ") || t("no-medications-prescribed"),
 			},
 		];
-		const actionsCol = commonActionColumn("Prescription", "prescription", "prescription");
-
-		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+		return isMobile
+			? [baseColumns[0], commonActionColumn("Prescription", "prescription", "prescription")]
+			: [...baseColumns, commonActionColumn("Prescription", "prescription", "prescription")];
+	}, [isMobile, t, labTests]);
 
 	const vitalSignsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1256,12 +1196,10 @@ const PatientDetails = () => {
 			{ title: t("rr"), dataIndex: "respiratoryRate", key: "respiratoryRate", width: 60 },
 			{ title: t("spo2"), dataIndex: "oxygenSaturation", key: "oxygenSaturation", width: 60 },
 		];
-		const actionsCol = commonActionColumn("Vital Sign", "vitalSign", "vital_sign");
-
 		return isMobile
-			? [baseColumns[0], baseColumns[3], actionsCol] // Date, BP, Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+			? [baseColumns[0], baseColumns[3], commonActionColumn("Vital Sign", "vitalSign", "vital_sign")]
+			: [...baseColumns, commonActionColumn("Vital Sign", "vitalSign", "vital_sign")];
+	}, [isMobile, t, labTests]);
 
 	const productUsagesColumns = useMemo(() => {
 		const baseColumns = [
@@ -1272,17 +1210,14 @@ const PatientDetails = () => {
 				width: 160,
 				render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
 			},
-			// { title: t("end-time"), dataIndex: "endTime", key: "endTime", width: 160, render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A") }, // Often same as start or less critical
 			{ title: t("product-name"), dataIndex: "productName", key: "productName", ellipsis: true },
 			{ title: t("qty"), dataIndex: "quantity", key: "quantity", width: 60 },
-			{ title: t("price"), dataIndex: "price", key: "price", width: 80, render: (text) => (text ? `$${text.toFixed(2)}` : "N/A") },
+			{ title: t("price"), dataIndex: "price", key: "price", width: 80, render: (text) => (text ? `$${Number(text).toFixed(2)}` : "N/A") },
 		];
-		const actionsCol = commonActionColumn("Product Usage", "productUsage", "product_usage");
-
 		return isMobile
-			? [baseColumns[0], baseColumns[1], actionsCol] // Date, Product, Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+			? [baseColumns[0], baseColumns[1], commonActionColumn("Product Usage", "productUsage", "product_usage")]
+			: [...baseColumns, commonActionColumn("Product Usage", "productUsage", "product_usage")];
+	}, [isMobile, t, labTests]);
 
 	const medicationAdministrationsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1295,14 +1230,11 @@ const PatientDetails = () => {
 			},
 			{ title: t("medication"), dataIndex: "medicationName", key: "medicationName", ellipsis: true },
 			{ title: t("amount"), dataIndex: "amount", key: "amount", width: 80 },
-			// { title: t("calc-price"), dataIndex: "calculatedPrice", key: "calculatedPrice", width: 100, render: (text) => text ? `$${text.toFixed(2)}` : 'N/A' },
 		];
-		const actionsCol = commonActionColumn("Medication Administration", "medicationAdministration", "med_admin");
-
 		return isMobile
-			? [baseColumns[0], baseColumns[1], actionsCol] // Time, Med Name, Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+			? [baseColumns[0], baseColumns[1], commonActionColumn("Medication Administration", "medicationAdministration", "med_admin")]
+			: [...baseColumns, commonActionColumn("Medication Administration", "medicationAdministration", "med_admin")];
+	}, [isMobile, t, labTests]);
 
 	const imageReportsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1315,33 +1247,37 @@ const PatientDetails = () => {
 			},
 			{ title: t("image-type"), dataIndex: "imageType", key: "imageType", width: 120 },
 			{ title: t("description"), dataIndex: "description", key: "description", ellipsis: true },
-			// { title: t("report-text"), dataIndex: "reportText", key: "reportText", ellipsis: true },
 			{
 				title: t("images"),
 				key: "images",
 				width: 100,
-				render: (text, record) => {
-					if (!record.imageUrls || record.imageUrls.length === 0) {
-						return <Text type="secondary">{t("no-images")}</Text>;
-					}
-					return (
+				render: (text, record) =>
+					!record.imageUrls || record.imageUrls.length === 0 ? (
+						<Text type="secondary">{t("no-images")}</Text>
+					) : (
 						<Tooltip title={t("view-images")}>
 							<Button size="small" type="dashed" icon={<PictureOutlined />} onClick={() => handleOpenSlider(record)} />
 						</Tooltip>
-					);
-				},
+					),
 			},
 		];
-		// Modify action column processor to handle image URLs
-		const actionsCol = commonActionColumn("Image Report", "imageReport", "image_report", (record) => ({
-			...record,
-			imageUrls: record.imageUrls?.map(generateImageUrl) || [],
-		}));
-
 		return isMobile
-			? [baseColumns[0], baseColumns[1], actionsCol] // Date, Type, Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal, handleOpenSlider]); // Added handleOpenSlider dependency
+			? [
+					baseColumns[0],
+					baseColumns[1],
+					commonActionColumn("Image Report", "imageReport", "image_report", (record) => ({
+						...record,
+						imageUrls: record.imageUrls?.map(generateImageUrl) || [],
+					})),
+			  ]
+			: [
+					...baseColumns,
+					commonActionColumn("Image Report", "imageReport", "image_report", (record) => ({
+						...record,
+						imageUrls: record.imageUrls?.map(generateImageUrl) || [],
+					})),
+			  ];
+	}, [isMobile, t, labTests]);
 
 	const labResultsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1360,38 +1296,31 @@ const PatientDetails = () => {
 			},
 			{ title: t("notes"), dataIndex: "notes", key: "notes", ellipsis: true },
 		];
-		// Custom Actions Column for Lab Results (Uses different modal)
 		const actionsCol = {
 			title: t("actions"),
 			key: "actions",
 			fixed: isMobile ? false : "right",
 			width: isMobile ? 110 : 130,
-			render: (text, record) => {
-				const labTestDetails = labTests.find((test) => test.id === record.labTestId);
-				return (
-					<Space size={isMobile ? "small" : "middle"} wrap={isMobile}>
-						<Tooltip title={t("view-details")}>
-							<Button size="small" type="primary" icon={<EyeOutlined />} onClick={() => handleOpenLabResultModal(record)} />
-						</Tooltip>
-						<Tooltip title={t("export-pdf")}>
-							<PdfGenerator
-								type="labResult"
-								mode="single"
-								data={{ ...record, labTestDetails: labTestDetails }}
-								fileNamePrefix="lab_result"
-								labTests={labTests}>
-								<Button size="small" type="default" icon={<DownloadOutlined />} />
-							</PdfGenerator>
-						</Tooltip>
-					</Space>
-				);
-			},
+			render: (text, record) => (
+				<Space size={isMobile ? "small" : "middle"} wrap={isMobile}>
+					<Tooltip title={t("view-details")}>
+						<Button size="small" type="primary" icon={<EyeOutlined />} onClick={() => handleOpenLabResultModal(record)} />
+					</Tooltip>
+					<Tooltip title={t("export-html-report")}>
+						<HtmlReportGenerator
+							type="labResult"
+							mode="single"
+							data={{ ...record, labTestDetails: labTests.find((lt) => lt.id === record.labTestId) }}
+							fileNamePrefix="lab_result"
+							labTests={labTests}>
+							<Button size="small" type="default" icon={<DownloadOutlined />} />
+						</HtmlReportGenerator>
+					</Tooltip>
+				</Space>
+			),
 		};
-
-		return isMobile
-			? [baseColumns[0], baseColumns[1], actionsCol] // Date, Test Name, Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, labTests, handleOpenLabResultModal]); // Added labTests and handler dependencies
+		return isMobile ? [baseColumns[0], baseColumns[1], actionsCol] : [...baseColumns, actionsCol];
+	}, [isMobile, t, labTests]);
 
 	const documentsColumns = useMemo(() => {
 		const baseColumns = [
@@ -1405,7 +1334,6 @@ const PatientDetails = () => {
 			},
 			{ title: t("uploaded-by"), dataIndex: "uploadedByName", key: "uploadedByName", width: 150, ellipsis: true },
 		];
-		// Custom Actions for Documents (Download only)
 		const actionsCol = {
 			title: t("actions"),
 			key: "actions",
@@ -1423,20 +1351,16 @@ const PatientDetails = () => {
 								notification.error({ message: t("error"), description: t("invalid-document-path") });
 								return;
 							}
-							fetch(downloadUrl) // Assuming relative path works from frontend host or CORS is set up
+							fetch(downloadUrl)
 								.then((response) => {
-									if (!response.ok) {
-										throw new Error(`Failed to fetch file: ${response.statusText}`);
-									}
+									if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 									return response.blob();
 								})
 								.then((blob) => {
 									const url = window.URL.createObjectURL(blob);
 									const link = document.createElement("a");
 									link.href = url;
-									// Extract filename from path or use documentName
-									const filename = record.documentPath?.split("/").pop() || record.documentName || "downloaded_file";
-									link.download = filename;
+									link.download = record.documentPath?.split("/").pop() || record.documentName || "downloaded_file";
 									document.body.appendChild(link);
 									link.click();
 									document.body.removeChild(link);
@@ -1447,15 +1371,12 @@ const PatientDetails = () => {
 									notification.error({ message: t("error"), description: `${t("download-failed")}: ${error.message}` });
 								});
 						}}>
-						{!isMobile && t("download")} {/* Show text only on desktop */}
+						{!isMobile && t("download")}
 					</Button>
 				</Tooltip>
 			),
 		};
-
-		return isMobile
-			? [baseColumns[0], actionsCol] // Name, Actions
-			: [...baseColumns, actionsCol];
+		return isMobile ? [baseColumns[0], actionsCol] : [...baseColumns, actionsCol];
 	}, [isMobile, t]);
 
 	const procedureLogsColumns = useMemo(() => {
@@ -1471,153 +1392,120 @@ const PatientDetails = () => {
 			{ title: t("done-by"), dataIndex: "userName", key: "userName", width: 150, ellipsis: true },
 			{ title: t("notes"), dataIndex: "notes", key: "notes", ellipsis: true },
 		];
-		const actionsCol = commonActionColumn("Procedure Log", "procedureLog", "procedure_log");
-
 		return isMobile
-			? [baseColumns[0], baseColumns[1], actionsCol] // Time, Name, Actions
-			: [...baseColumns, actionsCol];
-	}, [isMobile, t, handleOpenDetailModal]);
+			? [baseColumns[0], baseColumns[1], commonActionColumn("Procedure Log", "procedureLog", "procedure_log")]
+			: [...baseColumns, commonActionColumn("Procedure Log", "procedureLog", "procedure_log")];
+	}, [isMobile, t, labTests]);
 
-	// Handle search (Placeholder - Adapt based on backend capability)
 	const handleSearch = (value) => {
-		console.log("Search triggered (implement backend search):", value);
+		console.log("Search triggered:", value);
 		setSearchTerm(value);
-		// Resetting pages on search might be desired
-		setActiveTab("profile"); // Go back to profile after search? Or stay? TBD.
-		// setAdmissionsPage(0); ... reset all pages
 	};
-
-	// Handle filter toggle
 	const handleFilterToggle = (dataType) => {
 		toggleFilter(dataType);
-		// Reset pagination for the specific tab when its filter changes
-		switch (dataType) {
-			case "appointments":
-				setAppointmentsPage(0);
-				break;
-			case "assessments":
-				setAssessmentsPage(0);
-				break;
-			case "billings":
-				setBillingsPage(0);
-				break;
-			case "carePlans":
-				setCarePlansPage(0);
-				break;
-			case "prescriptions":
-				setPrescriptionsPage(0);
-				break;
-			case "vitalSigns":
-				setVitalSignsPage(0);
-				break;
-			case "productUsages":
-				setProductUsagesPage(0);
-				break;
-			case "medicationAdministrations":
-				setMedicationAdministrationsPage(0);
-				break;
-			case "imageReports":
-				setImageReportsPage(0);
-				break;
-			case "labResults":
-				setLabResultsPage(0);
-				break;
-			case "documents":
-				setDocumentsPage(0);
-				break;
-			case "procedureLogs":
-				setProcedureLogsPage(0);
-				break;
-			default:
-				break;
-		}
+		const pageSetters = {
+			admissions: setAdmissionsPage, // Added admissions filter toggle
+			appointments: setAppointmentsPage,
+			assessments: setAssessmentsPage,
+			billings: setBillingsPage,
+			carePlans: setCarePlansPage,
+			prescriptions: setPrescriptionsPage,
+			vitalSigns: setVitalSignsPage,
+			productUsages: setProductUsagesPage,
+			medicationAdministrations: setMedicationAdministrationsPage,
+			imageReports: setImageReportsPage,
+			labResults: setLabResultsPage,
+			documents: setDocumentsPage,
+			procedureLogs: setProcedureLogsPage,
+		};
+		if (pageSetters[dataType]) pageSetters[dataType](0);
 	};
 
-	// --- Render ---
+	const patientFileMenu = (
+		<Menu
+			items={[
+				{
+					key: "active",
+					label: (
+						<HtmlReportGenerator mode="patientFile" data={patient} labTests={labTests} reportScope="active">
+							{t("download-active-info")}
+						</HtmlReportGenerator>
+					),
+				},
+				{
+					key: "all",
+					label: (
+						<HtmlReportGenerator mode="patientFile" data={patient} labTests={labTests} reportScope="all">
+							{t("download-all-info")}
+						</HtmlReportGenerator>
+					),
+				},
+			]}
+		/>
+	);
+
 	return (
-		<Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
-			{" "}
-			{/* Light background */}
-			{/* Main Page Header - For global actions */}
+		<Layout style={{ minHeight: "100vh", background: token.colorBgLayout }}>
 			<Header
 				style={{
 					padding: `0 ${getResponsivePadding()}`,
-					background: "#fff",
+					background: token.colorBgContainer,
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
-					borderBottom: "1px solid #f0f0f0",
-					height: 56, // Slightly smaller header
+					borderBottom: `1px solid ${token.colorBorderSecondary}`,
+					height: 56,
 				}}>
-				<Title level={4} style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+				<Title
+					level={4}
+					style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: token.colorTextHeading }}>
 					{t("patient-details")}
 				</Title>
 				<Space>
-					{/* Search Input - Optional */}
-					{/* <Input.Search
-						placeholder={t("search-records")}
-						onSearch={handleSearch}
-						style={{ width: 200 }}
-						allowClear
-					/> */}
 					<Tooltip title={t("add-service")}>
 						<Button type="primary" shape="circle" icon={<PlusOutlined />} onClick={handleOpenServiceModal} />
 					</Tooltip>
 					{!loading && patient && (
-						<Tooltip title={t("generate-patient-file-pdf")}>
-							<PdfGenerator
-								mode="patientFile"
-								data={patient}
-								labTests={labTests}
-								fileNamePrefix={`patient_${patient?.lastName || "file"}`}>
+						<Dropdown overlay={patientFileMenu} placement="bottomRight">
+							<Tooltip title={t("generate-patient-file-html")}>
 								<Button type="default" shape="circle" icon={<DownloadOutlined />} />
-							</PdfGenerator>
-						</Tooltip>
+							</Tooltip>
+						</Dropdown>
 					)}
 				</Space>
 			</Header>
 			<Content style={{ margin: `${getResponsiveMargin()} ${getResponsivePadding()}` }}>
 				{loading && !patient && <Spin tip={t("loading-patient-details")} style={{ display: "block", marginTop: 50 }} />}
-
-				{/* Compact Patient Header - Sticky */}
 				{patient && (
 					<div
 						style={{
 							padding: getResponsivePadding(),
-							background: "#fff",
-							border: "1px solid #e8e8e8", // Use border instead of shadow for subtlety
-							borderRadius: "8px",
+							background: token.colorBgContainer,
+							border: `1px solid ${token.colorBorder}`,
+							borderRadius: token.borderRadiusLG,
 							marginBottom: getResponsiveMargin(),
-							position: "sticky", // Make header sticky
-							top: 0, // Stick to top (adjust if main header has different height)
-							zIndex: 10, // Ensure it's above scrolling content
+							position: "sticky",
+							top: 0,
+							zIndex: 10,
 						}}>
 						<Row gutter={[16, 16]} align="middle">
-							{/* Avatar Column */}
 							<Col xs={24} sm={4} md={3} style={{ textAlign: isMobile ? "center" : "left" }}>
 								<Avatar
 									size={isMobile ? 64 : 80}
 									src={generateImageUrl(patient.profilePictureURL)}
 									alt={`${patient.firstName} ${patient.lastName}`}
-									icon={<UserOutlined />} // Fallback icon
-									style={{
-										cursor: "pointer",
-										border: "2px solid #eee",
-									}}
+									icon={<UserOutlined />}
+									style={{ cursor: "pointer", border: `2px solid ${token.colorBorder}` }}
 									onClick={() => handleOpenAvatarModal(patient.profilePictureURL)}
 								/>
 							</Col>
-
-							{/* Info Column */}
 							<Col xs={24} sm={20} md={21}>
 								<Row gutter={[16, isMobile ? 8 : 12]}>
-									{/* Name */}
 									<Col xs={24} md={12} lg={8}>
-										<Title level={5} style={{ marginBottom: 0 }}>
+										<Title level={5} style={{ marginBottom: 0, color: token.colorTextHeading }}>
 											{patient.firstName} {patient.lastName}
 										</Title>
 									</Col>
-									{/* MRN */}
 									<Col xs={12} md={6} lg={4}>
 										<Text type="secondary">
 											<InfoCircleOutlined style={{ marginRight: 4 }} />
@@ -1625,7 +1513,6 @@ const PatientDetails = () => {
 										</Text>{" "}
 										<Text strong>{patient.medicalRecordNumber}</Text>
 									</Col>
-									{/* Age & DOB */}
 									<Col xs={12} md={6} lg={4}>
 										<Text type="secondary">
 											<UserOutlined style={{ marginRight: 4 }} />
@@ -1634,66 +1521,50 @@ const PatientDetails = () => {
 										<Text strong>{moment().diff(patient.dateOfBirth, "years")}</Text>
 										{!isMobile && <Text style={{ marginLeft: 8 }}>({moment(patient.dateOfBirth).format("YYYY-MM-DD")})</Text>}
 									</Col>
-									{/* Gender */}
 									<Col xs={12} md={6} lg={4}>
 										<Text type="secondary">
 											{patient.gender === "Male" ? (
 												<ManOutlined style={{ marginRight: 4 }} />
 											) : (
 												<WomanOutlined style={{ marginRight: 4 }} />
-											)}{" "}
+											)}
 											{t("gender")}:
 										</Text>{" "}
 										<Text strong>{patient.gender}</Text>
 									</Col>
-									{/* Allergies */}
 									<Col xs={12} md={6} lg={4}>
 										<Text type="secondary">
 											<WarningOutlined style={{ marginRight: 4 }} />
 											{t("allergies")}:
 										</Text>{" "}
-										<Tag color="red" style={{ margin: 0 }}>
+										<Tag color={token.colorErrorBg} style={{ margin: 0, color: token.colorErrorText }}>
 											{patient.allergies || t("none")}
 										</Tag>
 									</Col>
-
-									{/* Quick Stats Integrated - Example: Last Visit & Next Appt */}
 									{admissions && admissions.length > 0 && !admissions[0].dischargeDate && (
 										<Col xs={12} md={6} lg={4}>
 											<Statistic
 												title={<Text type="secondary">{t("current-visit")}</Text>}
-												value={moment(admissions[0].admissionDate).format("ll")} // Short format
-												valueStyle={{ fontSize: isMobile ? 14 : 16, color: "#3f8600" }}
+												value={moment(admissions[0].admissionDate).format("ll")}
+												valueStyle={{ fontSize: isMobile ? 14 : 16, color: token.colorSuccess }}
 												prefix={<CalendarOutlined />}
-												style={{ lineHeight: 1.2 }} // Reduce line height
+												style={{ lineHeight: 1.2 }}
 											/>
 										</Col>
 									)}
-									{/* Consider adding Next Appointment here if important */}
-									{/* <Col xs={12} md={6} lg={4}>
-										 <Statistic title={t("next-appointment")} ... />
-									 </Col> */}
 								</Row>
 							</Col>
 						</Row>
 					</div>
 				)}
-
-				{/* Tabs Section */}
 				{patient && (
-					<Card
-						className="patient-details-tabs" // Class for CSS targeting
-						bordered={false} // Remove card border, rely on page background
-						bodyStyle={{ padding: `0 ${getResponsivePadding()}` }} // No padding around tabs themselves
-					>
+					<Card className="patient-details-tabs" bodyStyle={{ padding: `0 ${getResponsivePadding()}` }}>
 						<Tabs
 							activeKey={activeTab}
 							onChange={handleTabChange}
-							type="card" // Card style tabs
+							type="card"
 							size={isMobile ? "small" : "default"}
-							tabBarStyle={{ marginBottom: getResponsivePadding("16px") }} // Space below tab bar
-						>
-							{/* --- Profile Tab --- */}
+							tabBarStyle={{ marginBottom: getResponsivePadding("16px") }}>
 							<TabPane
 								tab={
 									<span>
@@ -1702,33 +1573,30 @@ const PatientDetails = () => {
 								}
 								key="profile">
 								<Row gutter={[24, 16]} style={{ padding: `${getResponsivePadding()} 0` }}>
-									{" "}
-									{/* Padding inside tab content */}
-									{/* Contact Information */}
 									<Col xs={24} md={12} lg={8}>
-										<Title level={5} style={{ marginBottom: 12 }}>
+										<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
 											{t("contact-information")}
 										</Title>
 										<Space direction="vertical" size="small">
 											<Text>
-												<EnvironmentOutlined style={{ marginRight: 8, color: "#1890ff" }} /> {patient.address || "N/A"}
+												<EnvironmentOutlined style={{ marginRight: 8, color: token.colorPrimary }} />{" "}
+												{patient.address || "N/A"}
 											</Text>
 											<Text>
-												<PhoneOutlined style={{ marginRight: 8, color: "#1890ff" }} /> {patient.phoneNumber || "N/A"}
+												<PhoneOutlined style={{ marginRight: 8, color: token.colorPrimary }} /> {patient.phoneNumber || "N/A"}
 											</Text>
 											<Text>
-												<MailOutlined style={{ marginRight: 8, color: "#1890ff" }} /> {patient.email || "N/A"}
+												<MailOutlined style={{ marginRight: 8, color: token.colorPrimary }} /> {patient.email || "N/A"}
 											</Text>
 										</Space>
 									</Col>
-									{/* Medical Information */}
 									<Col xs={24} md={12} lg={8}>
-										<Title level={5} style={{ marginBottom: 12 }}>
+										<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
 											{t("medical-information")}
 										</Title>
 										<Space direction="vertical" size="small">
 											<Text>
-												<HeartOutlined style={{ marginRight: 8, color: "#cf1322" }} /> {t("blood-type")}:{" "}
+												<HeartOutlined style={{ marginRight: 8, color: token.colorError }} /> {t("blood-type")}:{" "}
 												<Text strong>{patient.bloodType || "N/A"}</Text>
 											</Text>
 											<div>
@@ -1739,13 +1607,11 @@ const PatientDetails = () => {
 											</div>
 										</Space>
 									</Col>
-									{/* Quick Stats (If Option B chosen) */}
 									<Col xs={24} md={24} lg={8}>
-										<Title level={5} style={{ marginBottom: 12 }}>
+										<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
 											{t("vital-stats")}
 										</Title>
 										<Row gutter={[16, 16]}>
-											{/* Example: Placing stats here */}
 											<Col xs={12} sm={12}>
 												<Statistic
 													title={t("age")}
@@ -1758,10 +1624,10 @@ const PatientDetails = () => {
 													<Statistic
 														title={t("last-visit")}
 														value={moment(admissions[0].dischargeDate).fromNow()}
-														valueStyle={{ color: "#52c41a" }}
+														valueStyle={{ color: token.colorSuccess }}
 														prefix={<CalendarOutlined />}
 													/>
-												) : !loading ? ( // Show N/A only if not loading
+												) : !loading ? (
 													<Statistic title={t("last-visit")} value={"N/A"} prefix={<CalendarOutlined />} />
 												) : null}
 											</Col>
@@ -1769,8 +1635,6 @@ const PatientDetails = () => {
 									</Col>
 								</Row>
 							</TabPane>
-
-							{/* --- Overview Tab --- */}
 							<TabPane
 								tab={
 									<span>
@@ -1779,13 +1643,13 @@ const PatientDetails = () => {
 								}
 								key="overview">
 								<div style={{ padding: `${getResponsivePadding()} 0` }}>
-									<Title level={5} style={{ marginBottom: 12 }}>
+									<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
 										{t("recent-quick-notes")}
 									</Title>
 									<List
 										itemLayout="horizontal"
-										dataSource={quickNotes.slice(0, 5)} // Show latest 5 notes
-										loading={loading && quickNotes.length === 0} // Show loading only if notes aren't loaded yet
+										dataSource={quickNotes.slice(0, 5)}
+										loading={loading && quickNotes.length === 0}
 										renderItem={(item) => (
 											<List.Item
 												actions={[
@@ -1815,366 +1679,200 @@ const PatientDetails = () => {
 										</Button>
 									)}
 									{quickNotes.length === 0 && !loading && <Text type="secondary">{t("no-quick-notes-available")}</Text>}
-									{/* Add other overview elements here - e.g., latest vitals graph, upcoming appts */}
 								</div>
 							</TabPane>
-
-							{/* --- Data Tabs --- */}
-							<TabPane
-								tab={
-									<span>
-										<ProfileOutlined />
-										{t("admissions")}
-									</span>
-								}
-								key="3">
-								<PaginatedTable
-									columns={admissionsColumns}
-									data={admissions}
-									loading={loading && activeTab === "3"}
-									currentPage={admissionsPage}
-									onPageChange={setAdmissionsPage}
-									totalCount={totalCounts?.admissions || 0}
-								/>
-								{/* Add Table PDF Export if needed */}
-								{/* <PdfGenerator mode="table" type="admission" data={admissions} columns={admissionsColumns} fileNamePrefix="admissions">
-									<Button type="primary">{t("export-table-pdf")}</Button>
-								</PdfGenerator> */}
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<CalendarOutlined /> {t("appointments")}
-										<Tooltip title={filters.appointments ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.appointments}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("appointments")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="4">
-								<PaginatedTable
-									columns={appointmentsColumns}
-									data={appointments}
-									loading={loading && activeTab === "4"}
-									currentPage={appointmentsPage}
-									onPageChange={setAppointmentsPage}
-									totalCount={totalCounts?.appointments || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<FileTextOutlined /> {t("assessments")}
-										<Tooltip title={filters.assessments ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.assessments}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("assessments")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="5">
-								<PaginatedTable
-									columns={assessmentsColumns}
-									data={assessments}
-									loading={loading && activeTab === "5"}
-									currentPage={assessmentsPage}
-									onPageChange={setAssessmentsPage}
-									totalCount={totalCounts?.assessments || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<DollarOutlined /> {t("billings")}
-										<Tooltip title={filters.billings ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.billings}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("billings")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="6">
-								<PaginatedTable
-									columns={billingColumns}
-									data={billings}
-									loading={loading && activeTab === "6"}
-									currentPage={billingsPage}
-									onPageChange={setBillingsPage}
-									totalCount={totalCounts?.billings || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<UnorderedListOutlined /> {t("care-plans")}
-										<Tooltip title={filters.carePlans ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.carePlans}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("carePlans")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="7">
-								<PaginatedTable
-									columns={carePlansColumns}
-									data={carePlans}
-									loading={loading && activeTab === "7"}
-									currentPage={carePlansPage}
-									onPageChange={setCarePlansPage}
-									totalCount={totalCounts?.carePlans || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<MedicineBoxOutlined /> {t("prescriptions")}
-										<Tooltip title={filters.prescriptions ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.prescriptions}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("prescriptions")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="8">
-								<PaginatedTable
-									columns={prescriptionsColumns}
-									data={prescriptions}
-									loading={loading && activeTab === "8"}
-									currentPage={prescriptionsPage}
-									onPageChange={setPrescriptionsPage}
-									totalCount={totalCounts?.prescriptions || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<HeartOutlined /> {t("vital-signs")}
-										<Tooltip title={filters.vitalSigns ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.vitalSigns}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("vitalSigns")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="9">
-								<PaginatedTable
-									columns={vitalSignsColumns}
-									data={vitalSigns}
-									loading={loading && activeTab === "9"}
-									currentPage={vitalSignsPage}
-									onPageChange={setVitalSignsPage}
-									totalCount={totalCounts?.vitalSigns || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<ShoppingCartOutlined /> {t("product-usages")}
-										<Tooltip title={filters.productUsages ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.productUsages}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("productUsages")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="10">
-								<PaginatedTable
-									columns={productUsagesColumns}
-									data={productUsages}
-									loading={loading && activeTab === "10"}
-									currentPage={productUsagesPage}
-									onPageChange={setProductUsagesPage}
-									totalCount={totalCounts?.productUsages || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<MedicineBoxOutlined /> {t("med-admin")} {/* Shortened Name */}
-										<Tooltip title={filters.medicationAdministrations ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.medicationAdministrations}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("medicationAdministrations")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="11">
-								<PaginatedTable
-									columns={medicationAdministrationsColumns}
-									data={medicationAdministrations}
-									loading={loading && activeTab === "11"}
-									currentPage={medicationAdministrationsPage}
-									onPageChange={setMedicationAdministrationsPage}
-									totalCount={totalCounts?.medicationAdministrations || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<PictureOutlined /> {t("image-reports")}
-										<Tooltip title={filters.imageReports ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.imageReports}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("imageReports")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="12">
-								<PaginatedTable
-									columns={imageReportsColumns}
-									data={imageReports}
-									loading={loading && activeTab === "12"}
-									currentPage={imageReportsPage}
-									onPageChange={setImageReportsPage}
-									totalCount={totalCounts?.imageReports || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<ExperimentOutlined /> {t("lab-results")}
-										<Tooltip title={filters.labResults ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.labResults}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("labResults")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="13">
-								<PaginatedTable
-									columns={labResultsColumns}
-									data={labResults}
-									loading={loading && activeTab === "13"}
-									currentPage={labResultsPage}
-									onPageChange={setLabResultsPage}
-									totalCount={totalCounts?.labResults || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<FileTextOutlined /> {t("documents")}
-										<Tooltip title={filters.documents ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.documents}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("documents")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="14">
-								<PaginatedTable
-									columns={documentsColumns}
-									data={documents}
-									loading={loading && activeTab === "14"}
-									currentPage={documentsPage}
-									onPageChange={setDocumentsPage}
-									totalCount={totalCounts?.documents || 0}
-								/>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<FileDoneOutlined /> {t("procedure-logs")}
-										<Tooltip title={filters.procedureLogs ? t("show-all") : t("filter-by-admission")}>
-											<Button
-												type="text"
-												size="small"
-												danger={filters.procedureLogs}
-												icon={<FilterOutlined />}
-												onClick={() => handleFilterToggle("procedureLogs")}
-												style={{ marginLeft: 4, padding: "0 4px" }}
-											/>
-										</Tooltip>
-									</span>
-								}
-								key="15">
-								<PaginatedTable
-									columns={procedureLogsColumns}
-									data={procedureLogs}
-									loading={loading && activeTab === "15"}
-									currentPage={procedureLogsPage}
-									onPageChange={setProcedureLogsPage}
-									totalCount={totalCounts?.procedureLogs || 0}
-								/>
-							</TabPane>
+							{[
+								{
+									key: "3",
+									title: t("admissions"),
+									icon: <ProfileOutlined />,
+									columns: admissionsColumns,
+									data: admissions,
+									page: admissionsPage,
+									setPage: setAdmissionsPage,
+									count: totalCounts?.admissions,
+									filterType: "admissions", // Allow filtering admissions tab if needed
+								},
+								{
+									key: "4",
+									title: t("appointments"),
+									icon: <CalendarOutlined />,
+									columns: appointmentsColumns,
+									data: appointments,
+									page: appointmentsPage,
+									setPage: setAppointmentsPage,
+									count: totalCounts?.appointments,
+									filterType: "appointments",
+								},
+								{
+									key: "5",
+									title: t("assessments"),
+									icon: <FileTextOutlined />,
+									columns: assessmentsColumns,
+									data: assessments,
+									page: assessmentsPage,
+									setPage: setAssessmentsPage,
+									count: totalCounts?.assessments,
+									filterType: "assessments",
+								},
+								{
+									key: "6",
+									title: t("billings"),
+									icon: <DollarOutlined />,
+									columns: billingColumns,
+									data: billings,
+									page: billingsPage,
+									setPage: setBillingsPage,
+									count: totalCounts?.billings,
+									filterType: "billings",
+								},
+								{
+									key: "7",
+									title: t("care-plans"),
+									icon: <UnorderedListOutlined />,
+									columns: carePlansColumns,
+									data: carePlans,
+									page: carePlansPage,
+									setPage: setCarePlansPage,
+									count: totalCounts?.carePlans,
+									filterType: "carePlans",
+								},
+								{
+									key: "8",
+									title: t("prescriptions"),
+									icon: <MedicineBoxOutlined />,
+									columns: prescriptionsColumns,
+									data: prescriptions,
+									page: prescriptionsPage,
+									setPage: setPrescriptionsPage,
+									count: totalCounts?.prescriptions,
+									filterType: "prescriptions",
+								},
+								{
+									key: "9",
+									title: t("vital-signs"),
+									icon: <HeartOutlined />,
+									columns: vitalSignsColumns,
+									data: vitalSigns,
+									page: vitalSignsPage,
+									setPage: setVitalSignsPage,
+									count: totalCounts?.vitalSigns,
+									filterType: "vitalSigns",
+								},
+								{
+									key: "10",
+									title: t("product-usages"),
+									icon: <ShoppingCartOutlined />,
+									columns: productUsagesColumns,
+									data: productUsages,
+									page: productUsagesPage,
+									setPage: setProductUsagesPage,
+									count: totalCounts?.productUsages,
+									filterType: "productUsages",
+								},
+								{
+									key: "11",
+									title: t("med-admin"),
+									icon: <MedicineBoxOutlined />,
+									columns: medicationAdministrationsColumns,
+									data: medicationAdministrations,
+									page: medicationAdministrationsPage,
+									setPage: setMedicationAdministrationsPage,
+									count: totalCounts?.medicationAdministrations,
+									filterType: "medicationAdministrations",
+								},
+								{
+									key: "12",
+									title: t("image-reports"),
+									icon: <PictureOutlined />,
+									columns: imageReportsColumns,
+									data: imageReports,
+									page: imageReportsPage,
+									setPage: setImageReportsPage,
+									count: totalCounts?.imageReports,
+									filterType: "imageReports",
+								},
+								{
+									key: "13",
+									title: t("lab-results"),
+									icon: <ExperimentOutlined />,
+									columns: labResultsColumns,
+									data: labResults,
+									page: labResultsPage,
+									setPage: setLabResultsPage,
+									count: totalCounts?.labResults,
+									filterType: "labResults",
+								},
+								{
+									key: "14",
+									title: t("documents"),
+									icon: <FileTextOutlined />,
+									columns: documentsColumns,
+									data: documents,
+									page: documentsPage,
+									setPage: setDocumentsPage,
+									count: totalCounts?.documents,
+									filterType: "documents",
+								},
+								{
+									key: "15",
+									title: t("procedure-logs"),
+									icon: <FileDoneOutlined />,
+									columns: procedureLogsColumns,
+									data: procedureLogs,
+									page: procedureLogsPage,
+									setPage: setProcedureLogsPage,
+									count: totalCounts?.procedureLogs,
+									filterType: "procedureLogs",
+								},
+							].map((tab) => (
+								<TabPane
+									key={tab.key}
+									tab={
+										<span>
+											{tab.icon} {tab.title}
+											{tab.filterType && ( // Ensure filterType exists before showing button
+												<Tooltip title={filters[tab.filterType] ? t("show-all") : t("filter-by-admission")}>
+													<Button
+														type="text"
+														size="small"
+														danger={filters[tab.filterType]} // 'danger' indicates filter is active
+														icon={<FilterOutlined />}
+														onClick={(e) => {
+															e.stopPropagation(); // Prevent tab change
+															handleFilterToggle(tab.filterType);
+														}}
+														style={{ marginLeft: 4, padding: "0 4px" }}
+													/>
+												</Tooltip>
+											)}
+										</span>
+									}>
+									<PaginatedTable
+										columns={tab.columns}
+										data={tab.data}
+										loading={loading && activeTab === tab.key}
+										currentPage={tab.page}
+										onPageChange={tab.setPage}
+										totalCount={tab.count || 0}
+									/>
+								</TabPane>
+							))}
 						</Tabs>
 					</Card>
 				)}
-
 				{!patient && !loading && (
 					<Card style={{ textAlign: "center", padding: 50 }}>
 						<Text type="secondary">{t("patient-not-found")}</Text>
 					</Card>
 				)}
 			</Content>
-			{/* Footer (Optional) */}
-			{/* <Footer style={{ textAlign: "center", padding: getResponsivePadding("12px") }}>
-				Patient Record System ©{new Date().getFullYear()}
-			</Footer> */}
-			{/* --- Floating Action Buttons --- */}
 			<FloatButton.Group shape="circle" style={{ right: isMobile ? 16 : 24, bottom: isMobile ? 60 : 24 }}>
 				<Tooltip title={t("quick-notes")}>
 					<FloatButton icon={<PushpinOutlined />} onClick={() => handleOpenQuickNotesModal("list")} />
 				</Tooltip>
 				<FloatButton.BackTop visibilityHeight={100} />
 			</FloatButton.Group>
-			{/* --- Modals --- */}
 			<Modal
 				title={t("request-service")}
 				open={isServiceModalOpen}
@@ -2183,45 +1881,18 @@ const PatientDetails = () => {
 				width={screens.xs ? "95%" : "90%"}
 				style={{ maxWidth: screens.xs ? "95vw" : "600px" }}
 				bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}>
-				{/* Ensure MiniCreateActivityForm is adaptable */}
 				<MiniCreateActivityForm onActivityCreated={handleActivityCreated} patientId={patientId} />
 			</Modal>
-			{/* Detail Modal */}
-			<ExpandedRowDetails
-				// t={t} // Already has its own t
-				expandedRow={expandedRow}
-				isModalOpen={isDetailModalOpen}
-				handleCloseModal={handleCloseDetailModal}
-			/>
-			{/* Lab Result Details Modal */}
+			<ExpandedRowDetails expandedRow={expandedRow} isModalOpen={isDetailModalOpen} handleCloseModal={handleCloseDetailModal} />
 			<LabResultDetailsModal
-				// t={t} // Already has its own t
 				isOpen={isLabResultModalOpen}
 				onClose={handleCloseLabResultModal}
 				labResult={selectedLabResult}
 				labTests={labTests}
-				// width={screens.xs ? "95%" : "90%"} // Handled inside component potentially
-				// bodyStyle={{ padding: screens.xs ? "16px" : "24px" }} // Handled inside component potentially
 			/>
-			{/* Image Slider Modal */}
-			{isSliderOpen && selectedImageData && (
-				<ImageSlider
-					// t={t} // Already has its own t
-					open={isSliderOpen}
-					data={selectedImageData}
-					onClose={handleCloseSlider}
-				/>
-			)}
-			{/* Patient Avatar Modal */}
-			<PatientAvatarModal
-				// t={t} // Already has its own t
-				imageUrl={selectedAvatarUrl}
-				isOpen={isAvatarModalOpen}
-				onClose={handleCloseAvatarModal}
-			/>
-			{/* Quick Notes Modal */}
+			{isSliderOpen && selectedImageData && <ImageSlider open={isSliderOpen} data={selectedImageData} onClose={handleCloseSlider} />}
+			<PatientAvatarModal imageUrl={selectedAvatarUrl} isOpen={isAvatarModalOpen} onClose={handleCloseAvatarModal} />
 			<QuickNotesModal
-				// t={t} // Already has its own t
 				isOpen={isQuickNotesModalOpen}
 				onClose={handleCloseQuickNotesModal}
 				onSave={handleSaveQuickNotes}
@@ -2230,8 +1901,8 @@ const PatientDetails = () => {
 				setQuickNoteText={setQuickNoteText}
 				quickNotes={quickNotes}
 				onDelete={handleDeleteQuickNote}
-				onEdit={handleEditQuickNote} // Pass the function to handle switching to edit/create mode
-				loading={loading && quickNotesModalMode === "list"} // Show loading only in list mode potentially
+				onEdit={handleEditQuickNote}
+				loading={loading && (quickNotesModalMode === "list" || quickNotesModalMode === "create" || quickNotesModalMode === "edit")}
 			/>
 		</Layout>
 	);

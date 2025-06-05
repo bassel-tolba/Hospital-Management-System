@@ -3,7 +3,6 @@
 // --- Core React/Router Imports ---
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
-// Animation imports removed
 
 // --- State Management & Services ---
 import { useAuthStore } from "./services/auth.service";
@@ -24,21 +23,26 @@ import {
 	Space,
 	Grid,
 	Input,
-	// Card,
-	notification,
 	Avatar,
 	Radio,
 	Divider,
 	Typography,
+	Dropdown,
+	Badge,
+	Modal, // Kept for potential other uses, though SearchOverlay is removed
+	Tooltip,
+	Affix,
+	Segmented,
+	List,
+	Card,
+	notification, // Added for Voice Navigation
 } from "antd";
 import {
 	MenuOutlined,
 	SettingOutlined,
-	// BulbOutlined, // Keep if used elsewhere, not directly in menu icons below
-	// LockOutlined, // Keep if used elsewhere
 	HeartOutlined,
-	// ShoppingCartOutlined, // Keep if used elsewhere
 	LoginOutlined,
+	LogoutOutlined,
 	UserAddOutlined,
 	UserOutlined,
 	TeamOutlined,
@@ -60,13 +64,20 @@ import {
 	ShopOutlined,
 	AccountBookOutlined,
 	FileImageOutlined,
-	FileSearchOutlined,
+	FileSearchOutlined, // Still used for menu items, removing from header
 	FolderOutlined,
 	ProfileOutlined,
 	ExperimentTwoTone,
 	CheckCircleOutlined,
 	KeyOutlined,
 	ApiOutlined,
+	LeftOutlined,
+	RightOutlined,
+	DashboardOutlined,
+	MoreOutlined,
+	EnvironmentOutlined, // For "On Duty" if kept, removing for now
+	ClockCircleOutlined, // For "Shift Time" if kept, removing for now
+	MessageOutlined,
 } from "@ant-design/icons";
 import enUS from "antd/es/locale/en_US";
 import faIR from "antd/es/locale/fa_IR";
@@ -74,18 +85,16 @@ import arEG from "antd/es/locale/ar_EG";
 import "antd/dist/reset.css";
 
 // --- Styling Imports ---
-import styled /* { keyframes, css } */ from "styled-components"; // keyframes, css might be unused now
+import styled from "styled-components";
 
 // --- Components & Pages ---
-// (Keep necessary imports based on routes.js and components used in App.js structure)
 import Profile from "./components/auth/Profile";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import PatientList from "./components/patients/PatientList";
-// ... other page/component imports ...
 import AboutUs from "./components/AboutUs";
 import VoiceNavigation from "./VoiceNavigation";
-import Dashboard from "./components/dashboard/Dashboard"; // Keep dashboard import
+import Dashboard from "./components/dashboard/Dashboard";
 
 // --- Routes & Config ---
 import { appRoutes } from "./routes";
@@ -95,220 +104,312 @@ import { colorTokens, darkKillerTheme, ComplexThemeProvider, g2Themes } from "./
 const { Header, Content, Footer, Sider } = Layout;
 const { defaultAlgorithm, darkAlgorithm } = antdTheme;
 const { useBreakpoint } = Grid;
-const { Search } = Input;
-const { Text } = Typography;
+const { Text, Title, Paragraph } = Typography; // Paragraph might be unused if SearchOverlay is fully removed
 const GEMINI_API_CONFIG_URL = `/api/gemini/configure-key`;
 
-// --- Styled Components --- (No changes needed here)
+// --- Styled Components ---
 const AppWrapper = styled.div`
 	min-height: 100vh;
 	position: relative;
 	z-index: 1;
 	display: flex;
 	flex-direction: column;
+	background-color: ${(props) => props.theme?.token?.colorBgLayout || "#f0f2f5"};
 `;
+
 const StyledLayout = styled(Layout)`
 	min-height: 100vh;
+	background-color: transparent !important;
 `;
-const StyledContent = styled(Content)`
-	margin: 12px;
-	padding: 16px;
-	min-height: 280px;
-	border-radius: 8px;
-	transition: box-shadow 0.3s ease;
-	z-index: 2;
-	flex: 1;
-	background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"};
-	&:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	}
-	@media (max-width: 768px) {
-		margin: 8px;
-		padding: 12px;
-	}
-	/* Removed fade animation classes */
-`;
-const LogoImage = styled.img`
-	height: 40px;
-	width: auto;
-	margin-right: 1rem;
-	vertical-align: middle;
-	@media (max-width: 576px) {
-		height: 32px;
-		margin-right: 0.5rem;
-	}
-`;
-const StyledHeader = styled(Header)`
+
+const StyledAppHeader = styled(Header)`
 	position: sticky;
 	top: 0;
 	z-index: 1001;
-	transition: background-color 0.3s ease, box-shadow 0.3s ease;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding-inline: 1rem;
-	background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"};
+	height: 64px;
+	padding: 0 24px;
+	background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"} !important;
 	border-bottom: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "#f0f0f0"};
-	@media (max-width: 768px) {
-		padding-inline: 0.75rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	.logo-area {
+		display: flex;
+		align-items: center;
+		gap: 16px;
 	}
-`;
-const StyledSider = styled(Sider)`
-	background: ${(props) => props.theme?.token?.colorBgLayout || "#001529"} !important;
-	height: 100vh;
-	position: sticky !important;
-	top: 0;
-	overflow: auto;
-	.ant-menu {
-		background: transparent;
-		border-right: none !important;
-	}
-	.ant-menu-item,
-	.ant-menu-submenu-title {
-		margin: 4px 8px;
-		width: calc(100% - 16px);
-		border-radius: ${(props) => props.theme?.token?.borderRadius || 6}px;
-		color: ${(props) => props.theme?.token?.colorTextSecondary};
-		&:hover {
-			background: ${(props) => props.theme?.token?.colorBgTextHover || "rgba(255, 255, 255, 0.1)"};
-			color: ${(props) => props.theme?.token?.colorText};
-		}
-		&.ant-menu-item-selected {
-			background: ${(props) => props.theme?.token?.colorPrimaryBg || "rgba(255, 255, 255, 0.2)"} !important;
-			color: ${(props) => props.theme?.token?.colorPrimary || "#fff"} !important;
-		}
-	}
-	.ant-menu-submenu-arrow {
-		color: ${(props) => props.theme?.token?.colorTextSecondary};
-	}
-	.ant-layout-sider-trigger {
-		background: ${(props) => props.theme?.token?.colorBgContainer};
-		color: ${(props) => props.theme?.token?.colorText};
-	}
-	&::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
-	&::-webkit-scrollbar-track {
-		background: ${(props) => props.theme?.token?.colorBgContainer || "#f0f0f0"};
-		border-radius: 3px;
-	}
-	&::-webkit-scrollbar-thumb {
-		background: ${(props) => props.theme?.token?.colorBorder || "#d9d9d9"};
-		border-radius: 3px;
-		&:hover {
-			background: ${(props) => props.theme?.token?.colorBorderSecondary || "#bfbfbf"};
-		}
-	}
-	scrollbar-width: thin;
-	scrollbar-color: ${(props) => `${props.theme?.token?.colorBorder || "#d9d9d9"} ${props.theme?.token?.colorBgContainer || "#f0f0f0"}`};
-`;
-const MobileMenuButton = styled(Button)`
-	display: none;
-	@media (max-width: 767px) {
-		display: inline-flex;
+	.header-center {
+		flex-grow: 1;
+		text-align: center;
+		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 18px;
+		gap: 16px;
+		overflow: hidden;
+		.ant-typography {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+	}
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+	@media (max-width: 767px) {
+		padding: 0 16px;
+		height: 56px;
+		.logo-area {
+			gap: 8px;
+			flex-shrink: 0;
+		}
+		.header-center {
+			display: flex;
+			justify-content: flex-start;
+			flex-grow: 1;
+			margin-left: 8px;
+			text-align: left;
+		}
+		.ant-breadcrumb {
+			display: none;
+		}
+		.header-right {
+			gap: 8px;
+		}
 	}
 `;
-const StyledDrawer = styled(Drawer)`
-	/* Default width for larger screens (optional, could rely on prop) */
-	/* width: 500px; // Example default */
 
-	/* Styles for mobile */
+const LogoImage = styled.img`
+	height: 32px;
+	width: auto;
+	vertical-align: middle;
 	@media (max-width: 767px) {
-		// Adjust breakpoint as needed
-		/* Target the root drawer element for width */
-		&.ant-drawer {
-			// Use the actual class antd applies to the root
-			width: 85% !important; // Override width for mobile
-			// or width: 100% !important;
-		}
-
-		/* Adjust menu item width for smaller drawer if needed */
-		.ant-menu-item,
-		.ant-menu-submenu-title {
-			width: 90%; /* Maybe make menu items wider % inside the narrower drawer */
-			margin-left: 5%;
-			margin-right: 5%;
-		}
+		height: 28px;
 	}
+`;
 
-	// --- Your existing styles ---
-	.ant-drawer-content {
-		background: ${(props) => props.theme?.token?.colorBgElevated || "rgba(0, 21, 41, 0.9)"} !important;
-	}
-	.ant-drawer-header {
-		background: ${(props) => props.theme?.token?.colorBgElevated || "rgba(0, 21, 41, 0.9)"};
+const StyledAppSidebar = styled(Sider)`
+	height: calc(100vh - 64px);
+	position: sticky !important;
+	top: 64px;
+	left: 0;
+	background: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"} !important;
+	border-right: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "#f0f0f0"};
+	box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+
+	.user-context-section {
+		padding: 16px;
 		border-bottom: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary};
-	}
-	.ant-drawer-title,
-	.ant-drawer-close {
-		color: ${(props) => props.theme?.token?.colorText};
-	}
-	.ant-drawer-body {
-		padding: 0;
-		background: transparent;
-		&::-webkit-scrollbar {
-			width: 6px;
-			height: 6px;
+		.user-info {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			margin-bottom: 8px;
 		}
-		&::-webkit-scrollbar-track {
-			background: ${(props) => props.theme?.token?.colorBgContainer || "#f0f0f0"};
-			border-radius: 3px;
-		}
-		&::-webkit-scrollbar-thumb {
-			background: ${(props) => props.theme?.token?.colorBorder || "#d9d9d9"};
-			border-radius: 3px;
-			&:hover {
-				background: ${(props) => props.theme?.token?.colorBorderSecondary || "#bfbfbf"};
+		/* Removed .shift-status, .time-date styles as elements are removed */
+	}
+	.quick-actions-panel {
+		padding: 16px;
+		border-bottom: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary};
+		.ant-btn {
+			width: 100%;
+			margin-bottom: 8px;
+			&:last-child {
+				margin-bottom: 0;
 			}
 		}
-		scrollbar-width: thin;
-		scrollbar-color: ${(props) => `${props.theme?.token?.colorBorder || "#d9d9d9"} ${props.theme?.token?.colorBgContainer || "#f0f0f0"}`};
 	}
 	.ant-menu {
+		flex-grow: 1;
 		background: transparent;
 		border-right: none !important;
+		padding: 8px 0;
 	}
 	.ant-menu-item,
 	.ant-menu-submenu-title {
-		margin: 4px 8px;
-		width: 100%; // This might look narrow on mobile, consider adjusting in media query above
-		border-radius: ${(props) => props.theme?.token?.borderRadius || 6}px;
-		color: ${(props) => props.theme?.token?.colorTextSecondary};
+		margin: 4px 12px;
+		width: calc(100% - 24px);
+		border-radius: ${(props) => props.theme?.token?.borderRadiusLG || 8}px;
 		&:hover {
-			background: ${(props) => props.theme?.token?.colorBgTextHover || "rgba(255, 255, 255, 0.1)"};
-			color: ${(props) => props.theme?.token?.colorText};
+			background-color: ${(props) => props.theme.token.controlItemBgHover};
 		}
 		&.ant-menu-item-selected {
-			background: ${(props) => props.theme?.token?.colorPrimaryBg || "rgba(255, 255, 255, 0.2)"} !important;
-			color: ${(props) => props.theme?.token?.colorPrimary || "#fff"} !important;
+			background-color: ${(props) => props.theme.token.colorPrimaryBg};
+			color: ${(props) => props.theme.token.colorPrimary};
+			.ant-menu-item-icon {
+				color: ${(props) => props.theme.token.colorPrimary};
+			}
 		}
 	}
-	.ant-menu-submenu-arrow {
-		color: ${(props) => props.theme?.token?.colorTextSecondary};
+	.ant-menu-item-group-title {
+		padding: 12px 16px 4px 16px;
+		font-size: 0.8em;
+		font-weight: 600;
+		color: ${(props) => props.theme.token.colorTextDescription};
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-top: 8px;
+	}
+	.sidebar-collapse-toggle {
+		border-top: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary};
+		padding: 12px 16px;
+		button {
+			width: 100%;
+		}
+	}
+
+	&.ant-layout-sider-collapsed {
+		.user-context-section {
+			padding: 12px 0;
+			text-align: center;
+			.user-info {
+				justify-content: center;
+			}
+			.ant-avatar {
+				margin: 0 auto;
+			}
+			.user-name-role,
+			.shift-status, /* Ensure these are not referenced if removed */
+			.time-date, /* Ensure these are not referenced if removed */
+			.ant-typography {
+				/* This is general, be careful */
+				display: none;
+			}
+		}
+		.quick-actions-panel {
+			display: none;
+		}
+		.ant-menu-item-group-title {
+			display: none;
+		}
+		.ant-menu-item .ant-menu-title-content {
+			display: none;
+		}
+		.ant-menu-item {
+			padding: 0 !important;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 40px;
+			margin: 4px auto !important;
+			width: 40px !important;
+		}
+	}
+
+	&::-webkit-scrollbar {
+		width: 6px;
+	}
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	&::-webkit-scrollbar-thumb {
+		background: ${(props) => props.theme.token.colorBorder};
+		border-radius: 3px;
+	}
+	scrollbar-width: thin;
+	scrollbar-color: ${(props) => props.theme.token.colorBorder} transparent;
+`;
+
+const StyledContentWrapper = styled(Layout)`
+	padding: 0;
+	overflow-x: hidden;
+	background-color: transparent !important;
+	@media (max-width: 767px) {
+		padding-bottom: 56px;
 	}
 `;
-const StyledFooter = styled(Footer)`
-	background: ${(props) => props.theme?.token?.colorBgLayout || "rgba(0, 0, 0, 0.1)"};
-	border-top: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "rgba(255, 255, 255, 0.1)"};
-	text-align: center;
-	padding: 12px 24px;
+
+const StyledAppContent = styled(Content)`
+	margin: 24px;
+	padding: 24px;
+	min-height: calc(100vh - 64px - 48px - 48px);
+	background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"};
+	border-radius: ${(props) => props.theme?.token?.borderRadiusLG || 8}px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	flex: 1;
+	position: relative;
+	@media (max-width: 767px) {
+		margin: 16px;
+		padding: 16px;
+		border-radius: ${(props) => props.theme?.token?.borderRadius || 6}px;
+		min-height: calc(100vh - 56px - 56px - 32px);
+	}
+`;
+
+const StyledAppFooter = styled(Footer)`
+	height: 48px;
+	padding: 0 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	/* FIX: Apply a background from the theme, e.g., colorBgLayout or colorBgContainer */
+	background-color: ${(props) => props.theme?.token?.colorBgLayout || "#f0f2f5"};
 	color: ${(props) => props.theme?.token?.colorTextSecondary};
+	border-top: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "#f0f0f0"};
+	font-size: 0.85em;
+	@media (max-width: 767px) {
+		display: none;
+	}
+`;
+
+const StyledBottomNav = styled(Affix)`
+	.ant-segmented {
+		width: 100%;
+		height: 56px;
+		background-color: ${(props) => props.theme?.token?.colorBgContainer || "#ffffff"};
+		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+		border-top: 1px solid ${(props) => props.theme?.token?.colorBorderSecondary || "#f0f0f0"};
+		padding: 0;
+
+		.ant-segmented-item {
+			flex: 1;
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 4px 0 !important;
+		}
+		.ant-segmented-item-icon {
+			font-size: 20px;
+			margin-bottom: 2px;
+		}
+		.ant-segmented-item-label {
+			font-size: 10px;
+		}
+		.ant-segmented-item-selected {
+			.ant-segmented-item-icon,
+			.ant-segmented-item-label {
+				color: ${(props) => props.theme.token.colorPrimary};
+			}
+		}
+	}
+`;
+
+const StyledSettingsDrawer = styled(Drawer)`
+	.ant-drawer-content-wrapper {
+		max-width: 320px;
+	}
+	.ant-space-item:last-child {
+		width: 100%;
+	}
 `;
 
 // --- Helper Functions ---
 const getMenuIcon = (path) => {
-	const iconStyle = { fontSize: "16px", marginRight: "8px" };
+	const iconStyle = { fontSize: "18px" }; // Matched to new design if it was 18px
 	const icons = {
 		"/login": <LoginOutlined style={iconStyle} />,
 		"/register": <UserAddOutlined style={iconStyle} />,
 		"/profile": <UserOutlined style={iconStyle} />,
 		"/patients": <TeamOutlined style={iconStyle} />,
 		"/appointments": <CalendarOutlined style={iconStyle} />,
-		"/activities": <CalendarOutlined style={iconStyle} />, // Consider different icon?
+		"/activities": <CalendarOutlined style={iconStyle} />,
 		"/procedures": <MedicineBoxOutlined style={iconStyle} />,
 		"/vital-signs": <MonitorOutlined style={iconStyle} />,
 		"/assessments": <FileTextOutlined style={iconStyle} />,
@@ -332,9 +433,10 @@ const getMenuIcon = (path) => {
 		"/lab-results": <CheckCircleOutlined style={iconStyle} />,
 		"/all-features": <AppstoreOutlined style={iconStyle} />,
 		"/roles-permissions": <KeyOutlined style={iconStyle} />,
-		"/dashboard": <HeartOutlined style={iconStyle} />,
+		"/dashboard": <DashboardOutlined style={iconStyle} />,
 		"/about-us": <InfoCircleOutlined style={iconStyle} />,
 		"/": <HomeOutlined style={iconStyle} />,
+		"/more": <MoreOutlined style={iconStyle} />,
 	};
 	const basePath = path.split("/:")[0];
 	return icons[path] || icons[basePath] || <SettingOutlined style={iconStyle} />;
@@ -350,514 +452,462 @@ const transformImageUrl = (url) => {
 	return `${baseUrl}${imagePath}`;
 };
 
-// --- NavigationMenu Component ---
-const NavigationMenu = React.memo(({ onClose, isMobile, collapsed }) => {
+// --- Child Components ---
+
+const NavigationMenu = React.memo(({ onClose, isMobile, mode = "inline", inDrawer = false, collapsed = false }) => {
 	const { user, hasAuthority } = useAuthStore();
-	const [openKeys, setOpenKeys] = useState([]);
-	const [searchTerm, setSearchTerm] = useState("");
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { t } = useTranslation();
 	const { token } = antdTheme.useToken();
+
 	const handleMenuItemClick = useCallback(
 		(path) => {
 			navigate(path);
-			if (isMobile && onClose) {
-				onClose();
-			}
+			if (onClose) onClose();
 		},
-		[navigate, onClose, isMobile]
-	);
-	const onOpenChange = useCallback(
-		(keys) => {
-			const latestOpenKey = keys.find((key) => !openKeys.includes(key));
-			setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
-		},
-		[openKeys]
+		[navigate, onClose]
 	);
 
-	const menuPermissions = useMemo(
+	const menuConfig = useMemo(
 		() => ({
-			// Uses route paths as keys
-			"/login": [],
-			"/register": [],
-			"/about-us": [],
-			"/all-features": [],
-			"/profile": [],
-			"/dashboard": ["READ_DASHBOARD"],
-			"/patients": ["READ_PATIENT"],
-			"/appointments": ["READ_APPOINTMENT"],
-			"/activities": ["READ_USER_ACTIVITY"],
-			"/procedures": ["READ_PROCEDURE"],
-			"/vital-signs": ["READ_VITAL_SIGN"],
-			"/assessments": ["READ_ASSESSMENT"],
-			"/procedure-logs": ["READ_PROCEDURE_LOG"],
-			"/units": ["READ_UNIT"],
-			"/rooms": ["READ_ROOM"],
-			"/beds": ["READ_BED"],
-			"/admissions": ["READ_ADMISSION"],
-			"/users": ["READ_USER"],
-			"/medications": ["READ_MEDICATION"],
-			"/prescriptions": ["READ_PRESCRIPTION"],
-			"/medication-administrations": ["READ_MEDICATION_ADMINISTRATION"],
-			"/products": ["READ_PRODUCT"],
-			"/product-usages": ["READ_PATIENT_PRODUCT_USAGE"],
-			"/billings": ["READ_BILLING"],
-			"/image-reports": ["READ_IMAGE_REPORT"],
-			"/image-report-types": ["READ_IMAGE_REPORT_TYPE"],
-			"/documents": ["READ_DOCUMENT"],
-			"/document-types": ["READ_DOCUMENT_TYPE"],
-			"/lab-tests": ["READ_LAB_TEST"],
-			"/lab-results": ["READ_LAB_RESULT"],
-			"/roles-permissions": ["MANAGE_PERMISSIONS", "MANAGE_ROLES"],
-			"/": [],
+			dashboard: [{ path: "/dashboard", labelKey: "dashboard", permissions: ["READ_DASHBOARD"], authOnly: true }],
+			"patient-management": [
+				{ path: "/patients", labelKey: "patients", permissions: ["READ_PATIENT"], authOnly: true },
+				{ path: "/appointments", labelKey: "appointments", permissions: ["READ_APPOINTMENT"], authOnly: true },
+				{ path: "/admissions", labelKey: "admissions", permissions: ["READ_ADMISSION"], authOnly: true },
+			],
+			"medical-records-diagnostics": [
+				{ path: "/vital-signs", labelKey: "vital-signs", permissions: ["READ_VITAL_SIGN"], authOnly: true },
+				{ path: "/assessments", labelKey: "assessments", permissions: ["READ_ASSESSMENT"], authOnly: true },
+				{ path: "/lab-tests", labelKey: "lab-tests", permissions: ["READ_LAB_TEST"], authOnly: true },
+				{ path: "/lab-results", labelKey: "lab-results", permissions: ["READ_LAB_RESULT"], authOnly: true },
+				{ path: "/image-reports", labelKey: "image-reports", permissions: ["READ_IMAGE_REPORT"], authOnly: true },
+			],
+			"medication-inventory": [
+				{ path: "/medications", labelKey: "medications", permissions: ["READ_MEDICATION"], authOnly: true },
+				{ path: "/prescriptions", labelKey: "prescriptions", permissions: ["READ_PRESCRIPTION"], authOnly: true },
+				{ path: "/products", labelKey: "products", permissions: ["READ_PRODUCT"], authOnly: true },
+			],
+			administration: [
+				{ path: "/users", labelKey: "users", permissions: ["READ_USER"], authOnly: true },
+				{ path: "/units", labelKey: "units", permissions: ["READ_UNIT"], authOnly: true },
+				{ path: "/rooms", labelKey: "rooms", permissions: ["READ_ROOM"], authOnly: true },
+				{ path: "/beds", labelKey: "beds", permissions: ["READ_BED"], authOnly: true },
+			],
+			"billing-finance": [{ path: "/billings", labelKey: "billings", permissions: ["READ_BILLING"], authOnly: true }],
+			security: [
+				{ path: "/roles-permissions", labelKey: "roles-permissions", permissions: ["MANAGE_PERMISSIONS", "MANAGE_ROLES"], authOnly: true },
+			],
+			general: [
+				{ path: "/about-us", labelKey: "about-us", public: true },
+				{ path: "/all-features", labelKey: "all-features", public: true },
+			],
+			authentication: [
+				{ path: "/login", labelKey: "login", showIfLoggedOut: true },
+				{ path: "/register", labelKey: "register", showIfLoggedOut: true },
+			],
 		}),
 		[]
 	);
 
-	const allMenuItems = useMemo(() => {
-		return Object.keys(menuPermissions).map((path) => {
-			// *** CORRECTED KEY GENERATION: Use path directly (minus slash) as key ***
-			// This assumes keys in JSON match path names (e.g., "roles-permissions" for "/roles-permissions")
-			let labelKey = path.substring(1); // Remove leading slash
-			if (path === "/") labelKey = "home"; // Special case for root
+	const generateMenuItems = useCallback(() => {
+		const items = [];
+		for (const categoryKey in menuConfig) {
+			const categoryItems = menuConfig[categoryKey]
+				.filter((item) => {
+					if (item.showIfLoggedOut) return !user;
+					if (item.public && !item.authOnly) return true;
+					if (item.authOnly && !user) return false;
+					if (user && item.permissions && item.permissions.length > 0) return item.permissions.some((p) => hasAuthority(p));
+					return user; // Show if authOnly and user exists, and no specific permissions required
+				})
+				.map((item) => ({
+					key: item.path,
+					icon: getMenuIcon(item.path),
+					label: t(item.labelKey, { defaultValue: item.labelKey.replace(/-/g, " ") }),
+					onClick: () => handleMenuItemClick(item.path),
+				}));
 
-			// --- Permission Logic (Unchanged) ---
-			const permissions = menuPermissions[path] || [];
-			const isPublicAuth = ["/login", "/register"].includes(path);
-			const isGeneralPublic = ["/about-us", "/all-features", "/"].includes(path);
-			const needsAuth = !isPublicAuth && !isGeneralPublic;
-			let show = false;
-			if (isPublicAuth) {
-				show = !user;
-			} else if (isGeneralPublic) {
-				show = path === "/" && user ? false : true;
-			} else if (needsAuth && user) {
-				show = permissions.length === 0 || permissions.some((p) => hasAuthority(p));
-			} else if (path === "/profile" && user) {
-				show = true;
-			}
-
-			// *** CORRECTED CATEGORY KEYS to match JSON (using hyphens where needed) ***
-			let categoryKey = "general"; // Default
-			if (["/login", "/register", "/profile"].includes(path)) categoryKey = "authentications"; // Matches JSON key
-			else if (["/patients", "/appointments", "/activities", "/procedures", "/vital-signs", "/assessments", "/procedure-logs"].includes(path))
-				categoryKey = "patient-management"; // Matches JSON key
-			else if (["/units", "/rooms", "/beds", "/admissions", "/users"].includes(path)) categoryKey = "administration"; // Matches JSON key
-			else if (["/medications", "/prescriptions", "/medication-administrations"].includes(path))
-				categoryKey = "medication-&-orders"; // Matches JSON key
-			else if (["/products", "/product-usages", "/billings"].includes(path))
-				categoryKey = "inventory-billing"; // Matches JSON key (if this key exists - CHECK YOUR JSON) - otherwise use "billing-&-finance"?
-			else if (["/image-reports", "/image-report-types", "/documents", "/document-types", "/lab-tests", "/lab-results"].includes(path))
-				categoryKey = "diagnostics-labs-docs"; // Matches JSON key
-			else if (["/roles-permissions"].includes(path)) categoryKey = "security"; // Matches JSON key
-			else if (["/dashboard"].includes(path)) categoryKey = "dashboard"; // Matches JSON key
-			// General category remains for /about-us, /all-features, /
-
-			return { path, labelKey, show, categoryKey };
-		});
-	}, [user, hasAuthority, menuPermissions]); // Dependencies
-
-	const groupedAndFilteredMenuItems = useMemo(() => {
-		const grouped = {};
-		allMenuItems
-			.filter((item) => item.show)
-			.forEach((item) => {
-				// *** Use default value in t() function as fallback ***
-				const translatedLabel = t(item.labelKey, { defaultValue: item.labelKey.replace(/-/g, " ") }) || item.labelKey.replace(/-/g, " ");
-				if (!searchTerm || translatedLabel.toLowerCase().includes(searchTerm.toLowerCase()) || item.path.includes(searchTerm)) {
-					const category = item.categoryKey || "other";
-					if (!grouped[category]) {
-						grouped[category] = [];
+			if (categoryItems.length > 0) {
+				if (
+					mode === "inline" &&
+					!inDrawer &&
+					!collapsed &&
+					categoryKey !== "authentication" &&
+					categoryKey !== "dashboard" /* dashboard is usually standalone */
+				) {
+					items.push({
+						type: "group",
+						label: t(`category-${categoryKey}`, { defaultValue: categoryKey.replace(/-/g, " ").toUpperCase() }),
+						key: `group-${categoryKey}`,
+						children: categoryItems,
+					});
+				} else {
+					items.push(...categoryItems);
+					if (
+						categoryKey !== Object.keys(menuConfig)[Object.keys(menuConfig).length - 1] &&
+						mode === "vertical" && // typically for drawers or mobile menus
+						categoryItems.length > 0 &&
+						!collapsed
+					) {
+						items.push({ type: "divider", key: `divider-${categoryKey}` });
 					}
-					grouped[category].push({ ...item, translatedLabel });
 				}
-			});
-
-		// *** CORRECTED CATEGORY ORDER KEYS to match JSON/Assigned Keys ***
-		const categoryOrder = [
-			"dashboard",
-			"patient-management",
-			"medication-&-orders",
-			"inventory-billing", // Ensure inventory-billing is a valid JSON key
-			"diagnostics-labs-docs",
-			"administration",
-			"security",
-			"authentications",
-			"general",
-			"other",
-		];
-
-		const sortedCategories = Object.keys(grouped).sort((a, b) => {
-			const indexA = categoryOrder.indexOf(a);
-			const indexB = categoryOrder.indexOf(b);
-			// *** Use default value for category comparison fallback ***
-			if (indexA === -1 && indexB === -1) return t(a, { defaultValue: a }).localeCompare(t(b, { defaultValue: b }));
-			if (indexA === -1) return 1;
-			if (indexB === -1) return -1;
-			return indexA - indexB;
-		});
-
-		const result = {};
-		sortedCategories.forEach((key) => {
-			result[key] = grouped[key].sort((a, b) => a.translatedLabel.localeCompare(b.translatedLabel));
-		});
-		return result;
-	}, [allMenuItems, searchTerm, t]);
-
-	const handleSearch = useCallback((e) => {
-		setSearchTerm(e.target.value);
-	}, []);
+			}
+		}
+		return items;
+	}, [user, hasAuthority, t, menuConfig, handleMenuItemClick, mode, inDrawer, collapsed]);
 
 	const selectedKeys = useMemo(() => {
-		// (Selection Logic unchanged - relies on paths)
 		const currentPath = location.pathname;
-		let bestMatch = "/";
+		let bestMatch = null;
 		let maxMatchLength = 0;
-
-		Object.keys(menuPermissions).forEach((menuPath) => {
-			if (menuPath === "/" && currentPath !== "/") return;
-			if (currentPath.startsWith(menuPath)) {
-				if (menuPath.length > maxMatchLength) {
-					maxMatchLength = menuPath.length;
-					bestMatch = menuPath;
-				}
-			}
-		});
-
-		if (user && currentPath === "/") {
-			// Default to dashboard or profile if logged in on root
-			const dashboardItem = allMenuItems.find((item) => item.path === "/dashboard");
-			const profileItem = allMenuItems.find((item) => item.path === "/profile");
-			if (dashboardItem?.show) return ["/dashboard"];
-			if (profileItem?.show) return ["/profile"];
-		} else if (currentPath === "/") {
-			return ["/"];
-		}
-
-		const matchedItem = allMenuItems.find((item) => item.path === bestMatch);
-		if (matchedItem && matchedItem.show) {
-			return [bestMatch];
-		}
-		return [currentPath];
-	}, [location.pathname, menuPermissions, allMenuItems, user]);
-
-	const renderMenuItem = useCallback(
-		(menuItem) => (
-			<AntMenu.Item key={menuItem.path} icon={getMenuIcon(menuItem.path)} onClick={() => handleMenuItemClick(menuItem.path)}>
-				{menuItem.translatedLabel}
-			</AntMenu.Item>
-		),
-		[handleMenuItemClick] // removed 't' as it's not directly used here anymore
-	);
-
-	return (
-		<>
-			{!isMobile && !collapsed && (
-				<Search
-					allowClear
-					placeholder={t("search-features")} // *** CORRECTED key ***
-					onChange={handleSearch}
-					value={searchTerm}
-					style={{ margin: "16px 8px", width: "calc(100% - 16px)" }}
-				/>
-			)}
-			<AntMenu
-				mode={isMobile ? "vertical" : "inline"}
-				theme={
-					token.Layout?.sider?.colorBgLayout === "#001529" ||
-					token.Layout?.sider?.colorBgLayout?.startsWith("rgb(0,") ||
-					token.Layout?.sider?.colorBgLayout?.startsWith("#0")
-						? "dark"
-						: "light"
-				}
-				openKeys={openKeys}
-				onOpenChange={onOpenChange}
-				style={{ borderRight: 0, height: collapsed || isMobile ? "100%" : "calc(100% - 60px)", overflowY: "auto", overflowX: "hidden" }}
-				inlineCollapsed={!isMobile && collapsed}
-				selectedKeys={selectedKeys}>
-				{user && groupedAndFilteredMenuItems["dashboard"] && groupedAndFilteredMenuItems["dashboard"].map(renderMenuItem)}
-
-				{Object.entries(groupedAndFilteredMenuItems)
-					.filter(([categoryKey]) => categoryKey !== "dashboard")
-					.map(([categoryKey, items]) => (
-						<AntMenu.SubMenu key={categoryKey} title={t(categoryKey, { defaultValue: categoryKey.replace(/-/g, " ") })}>
-							{" "}
-							{/* Fallback for category title */}
-							{items.map(renderMenuItem)}
-						</AntMenu.SubMenu>
-					))}
-			</AntMenu>
-		</>
-	);
-});
-
-// --- HeaderContent Component ---
-const HeaderContent = React.memo(({ onDesktopToggle, onMobileToggle }) => {
-	const { user } = useAuthStore();
-	const screens = Grid.useBreakpoint();
-	const isSmallScreen = !screens.md;
-	const { t } = useTranslation();
-	const navigate = useNavigate();
-	const { token } = antdTheme.useToken();
-
-	const handleNavigation = useCallback(
-		(pageName) => {
-			const routeMap = appRoutes.reduce(
-				(acc, route) => {
-					// *** Use path itself (minus slash) as potential key ***
-					let key = route.path.substring(1);
-					if (route.path === "/") key = "home";
-
-					if (key && !acc[key]) {
-						// Map variations (hyphenated, spaced if applicable)
-						acc[key] = route.path; // e.g., roles-permissions -> /roles-permissions
-						acc[key.replace(/-/g, " ")] = route.path; // e.g., roles permissions -> /roles-permissions
+		Object.values(menuConfig)
+			.flat()
+			.forEach((item) => {
+				const itemBasePath = item.path.split("/:")[0];
+				if (currentPath.startsWith(itemBasePath)) {
+					if (itemBasePath.length > maxMatchLength) {
+						maxMatchLength = itemBasePath.length;
+						bestMatch = item.path;
 					}
-					// Add specific singular/plural or common variations
-					if (key === "patients") acc["patient"] = route.path;
-					if (key === "users") acc["user"] = route.path;
-
-					return acc;
-				},
-				{
-					// Add manual aliases/common commands
-					login: "/login",
-					register: "/register",
-					profile: "/profile",
-					dashboard: "/dashboard",
-					home: "/",
-					about: "/about-us",
-					features: "/all-features", // Common aliases
-					// Add more specific voice command mappings if needed
 				}
-			);
-
-			const normalizedPageName = pageName.toLowerCase().trim();
-			const route = routeMap[normalizedPageName];
-
-			if (route) {
-				navigate(route);
-				const routeInfo = appRoutes.find((r) => r.path === route);
-				let label = pageName; // Fallback to spoken name
-				if (routeInfo) {
-					// *** Use path (minus slash) directly as key for translation ***
-					let labelKey = routeInfo.path.substring(1);
-					if (routeInfo.path === "/") labelKey = "home";
-					label = t(labelKey, { defaultValue: labelKey.replace(/-/g, " ") }) || pageName; // Translate, fallback nicely
-				}
-				notification.success({ message: t("navigating"), description: `${t("navigating-to")} ${label}` });
-			} else {
-				notification.error({ message: t("navigation-error"), description: `${t("could-not-find-page")} "${pageName}".` });
-			}
-		},
-		[navigate, t] // Keep dependencies
-	);
+			});
+		if (user && currentPath === "/") return ["/dashboard"]; // Default to dashboard if logged in and at root
+		return bestMatch ? [bestMatch] : [currentPath];
+	}, [location.pathname, menuConfig, user]);
 
 	return (
-		// Structure unchanged
-		<>
-			<Space align="center">
-				<RouterLink to={user ? "/dashboard" : "/"}>
-					{" "}
-					<LogoImage src="/logo.png" alt="Logo" />{" "}
-				</RouterLink>
-				{!isSmallScreen && user && (
-					<Button
-						type="text"
-						icon={<MenuOutlined />}
-						onClick={onDesktopToggle}
-						aria-label={t("toggle-sidebar")}
-						style={{ color: token.colorText }}
-					/>
-				)}
-			</Space>
-			<Space align="center" size="middle">
-				<VoiceNavigation onNavigate={handleNavigation} />
-				{user ? (
-					<RouterLink to="/profile">
-						{" "}
-						<Avatar
-							size={isSmallScreen ? 32 : 40}
-							src={user.profilePictureURL ? transformImageUrl(user.profilePictureURL) : undefined}
-							icon={!user.profilePictureURL ? <UserOutlined /> : undefined}
-							style={{ cursor: "pointer", border: `2px solid ${token.colorBorder}` }}>
-							{" "}
-							{!user.profilePictureURL && user.username ? user.username[0].toUpperCase() : null}{" "}
-						</Avatar>{" "}
+		<AntMenu
+			mode={mode}
+			theme={
+				token.Layout?.sider?.colorBgSider === "#001529" ||
+				(token.Layout?.sider?.colorBgSider && token.Layout.sider.colorBgSider.startsWith("rgb(0,")) ||
+				(token.Layout?.sider?.colorBgSider && token.Layout.sider.colorBgSider.startsWith("#0"))
+					? "dark"
+					: "light"
+			}
+			style={{ borderRight: 0, width: "100%" }}
+			selectedKeys={selectedKeys}
+			items={generateMenuItems()}
+			inlineCollapsed={collapsed && mode === "inline"}
+		/>
+	);
+});
+
+const AppHeaderComponent = React.memo(
+	({ onMobileMenuToggle, /* REMOVED: onSearchToggle */ pageTitleFromRoute, breadcrumbItemsFromRoute, onSettingsToggle }) => {
+		const { user, logout } = useAuthStore();
+		const { t } = useTranslation();
+		const navigate = useNavigate();
+		const { token } = antdTheme.useToken();
+		const screens = useBreakpoint();
+		const isMobile = !screens.md;
+
+		// FIX: Implement Voice Navigation logic
+		const handleVoiceNavigation = useCallback(
+			(pageName) => {
+				const routeMap = appRoutes.reduce(
+					(acc, route) => {
+						let key = route.path.substring(1);
+						if (route.path === "/") key = "home";
+
+						if (key && !acc[key]) {
+							acc[key] = route.path;
+							acc[key.replace(/-/g, " ")] = route.path;
+						}
+						if (key === "patients") acc["patient"] = route.path;
+						if (key === "users") acc["user"] = route.path;
+						return acc;
+					},
+					{
+						login: "/login",
+						register: "/register",
+						profile: "/profile",
+						dashboard: "/dashboard",
+						home: "/",
+						about: "/about-us",
+						features: "/all-features",
+					}
+				);
+
+				const normalizedPageName = pageName.toLowerCase().trim();
+				const route = routeMap[normalizedPageName];
+
+				if (route) {
+					navigate(route);
+					const routeInfo = appRoutes.find((r) => r.path === route);
+					let label = pageName;
+					if (routeInfo) {
+						let labelKey = routeInfo.path.substring(1);
+						if (routeInfo.path === "/") labelKey = "home";
+						if (routeInfo.titleKey) labelKey = routeInfo.titleKey; // Prefer titleKey if available from new appRoutes structure
+						label = t(labelKey, { defaultValue: labelKey.replace(/-/g, " ") }) || pageName;
+					}
+					notification.success({ message: t("navigating", "Navigating..."), description: `${t("navigating-to", "Going to")} ${label}` });
+				} else {
+					notification.error({
+						message: t("navigation-error", "Navigation Error"),
+						description: `${t("could-not-find-page", "Could not find page:")} "${pageName}".`,
+					});
+				}
+			},
+			[navigate, t] // appRoutes is stable and available in parent scope
+		);
+
+		const userMenuItems = [
+			{ key: "profile", label: t("profile"), icon: <UserOutlined />, onClick: () => navigate("/profile") },
+			{ key: "settings", label: t("settings"), icon: <SettingOutlined />, onClick: onSettingsToggle },
+			{ type: "divider" },
+			{ key: "logout", label: t("logout"), icon: <LogoutOutlined />, onClick: logout },
+		];
+
+		return (
+			<StyledAppHeader theme={{ token }}>
+				<div className="logo-area">
+					{isMobile && user && (
+						<Button type="text" icon={<MenuOutlined />} onClick={onMobileMenuToggle} aria-label={t("toggle-mobile-menu")} />
+					)}
+					<RouterLink to={user ? "/dashboard" : "/"}>
+						<LogoImage src="/logo.png" alt={t("logo-alt-text", "GMTS Logo")} />
 					</RouterLink>
-				) : (
-					!isSmallScreen && (
-						<>
-							{" "}
-							<RouterLink to="/login">
-								{" "}
-								<Button icon={<LoginOutlined />}>{t("login")}</Button>{" "}
-							</RouterLink>{" "}
-							<RouterLink to="/register">
-								{" "}
-								<Button type="primary" icon={<UserAddOutlined />}>
-									{" "}
-									{t("register")}{" "}
-								</Button>{" "}
-							</RouterLink>{" "}
-						</>
-					)
-				)}
-				<MobileMenuButton
-					type="text"
-					icon={<MenuOutlined />}
-					onClick={onMobileToggle}
-					aria-label={t("toggle-mobile-menu")}
-					style={{ color: token.colorText }}
-				/>
-			</Space>
-		</>
-	);
-});
+					{!isMobile && breadcrumbItemsFromRoute && breadcrumbItemsFromRoute.length > 0 && (
+						<Breadcrumb items={breadcrumbItemsFromRoute} style={{ marginLeft: 8 }} />
+					)}
+				</div>
 
-// --- AppLayout Component ---
-const AppLayout = React.memo(({ children, direction, language, componentSize }) => {
+				<div className="header-center">
+					<Title level={isMobile ? 5 : 4} style={{ margin: 0, fontWeight: 500 }}>
+						{pageTitleFromRoute || t("app-name", "GMTS")}
+					</Title>
+				</div>
+
+				<div className="header-right">
+					{!isMobile && <VoiceNavigation onNavigate={handleVoiceNavigation} />}
+					{/* REMOVED: Search button and Tooltip 
+				<Tooltip title={t("search")}>
+					<Button type="text" shape="circle" icon={<FileSearchOutlined />} onClick={onSearchToggle} aria-label={t("search")} />
+				</Tooltip>
+                */}
+					{user ? (
+						<Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
+							<Space style={{ cursor: "pointer" }}>
+								<Avatar
+									size={isMobile ? 30 : 36}
+									src={user.profilePictureURL ? transformImageUrl(user.profilePictureURL) : undefined}
+									icon={!user.profilePictureURL ? <UserOutlined /> : undefined}>
+									{!user.profilePictureURL && user.username ? user.username[0].toUpperCase() : null}
+								</Avatar>
+								{!isMobile && (
+									<Text strong style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+										{user.username || "User"}
+									</Text>
+								)}
+							</Space>
+						</Dropdown>
+					) : (
+						!isMobile && (
+							<Space>
+								<Button onClick={() => navigate("/login")}>{t("login")}</Button>
+								<Button type="primary" onClick={() => navigate("/register")}>
+									{t("register")}
+								</Button>
+							</Space>
+						)
+					)}
+				</div>
+			</StyledAppHeader>
+		);
+	}
+);
+
+const AppSidebarComponent = React.memo(({ collapsed, onCollapse }) => {
 	const { user } = useAuthStore();
-	const [mobileOpen, setMobileOpen] = useState(false);
-	const [desktopCollapsed, setDesktopCollapsed] = useState(false);
 	const { t } = useTranslation();
-	const location = useLocation();
-	const screens = Grid.useBreakpoint();
-	const isSmallScreen = !screens.md;
 	const { token } = antdTheme.useToken();
-	// nodeRef removed
+	// REMOVED: currentTime state and effect as "Shift Time" is removed
+	// const [currentTime, setCurrentTime] = useState(new Date());
+	// useEffect(() => {
+	// 	const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+	// 	return () => clearInterval(timer);
+	// }, []);
 
-	const handleMobileToggle = useCallback(() => {
-		setMobileOpen((prev) => !prev);
-	}, []);
-	const handleDesktopToggle = useCallback(() => {
-		setDesktopCollapsed((prev) => !prev);
-	}, []);
+	const quickActions = [];
 
-	const breadcrumbItems = useMemo(() => {
-		const pathSegments = location.pathname.split("/").filter(Boolean);
-		const rootPath = user ? "/dashboard" : "/";
-		const rootLabelKey = user ? "dashboard" : "home";
-		const items = [{ title: <RouterLink to={rootPath}>{t(rootLabelKey)}</RouterLink> }]; // t() used for root label
-
-		let currentPath = "";
-		pathSegments.forEach((segment, index) => {
-			currentPath += `/${segment}`;
-			if (user && currentPath === "/dashboard") return; // Don't repeat dashboard
-
-			// *** CORRECTED: Use segment directly as potential key ***
-			// Fallback to segment if translation not found
-			let labelKey = segment;
-			// Attempt to find a route match to potentially use a more accurate base path key
-			const routeMatch = appRoutes.find((route) => route.path === currentPath || route.path.split("/:")[0] === currentPath);
-			if (routeMatch) {
-				// Use the label key derived from the route definition path for consistency
-				const pathKey = routeMatch.path.substring(1);
-				if (pathKey && pathKey !== labelKey) {
-					// Prefer pathKey if it's different and non-empty
-					labelKey = pathKey;
-				}
-			}
-
-			const isLast = index === pathSegments.length - 1;
-			// Use default value for t() fallback
-			const title = t(labelKey, { defaultValue: segment.replace(/-/g, " ") }); // Use segment if key not found
-
-			const isParamLike = /^\d+$/.test(segment) || /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(segment) || segment.length === 24;
-
-			if (isParamLike && isLast) {
-				if (items.length > 0) {
-					const lastItem = items[items.length - 1];
-					const lastTitle = lastItem.title?.props?.children || lastItem.title;
-					items[items.length - 1] = { title: lastTitle };
-				}
-			} else if (!isParamLike) {
-				items.push({
-					title: isLast ? title : <RouterLink to={currentPath}>{title}</RouterLink>,
-				});
-			}
-		});
-
-		if (items.length <= 1 || location.pathname === rootPath) return [];
-		return items;
-	}, [location.pathname, t, user]);
+	if (!user) return null;
 
 	return (
-		// Structure Unchanged, removed animation wrappers
-		<StyledLayout>
-			<StyledHeader theme={{ token }}>
-				{" "}
-				<HeaderContent onDesktopToggle={handleDesktopToggle} onMobileToggle={handleMobileToggle} />{" "}
-			</StyledHeader>
-			<Layout>
-				{!isSmallScreen && user && (
-					<StyledSider
-						theme={{ token }}
-						width={250}
-						collapsible
-						collapsed={desktopCollapsed}
-						onCollapse={handleDesktopToggle}
-						trigger={null}
-						breakpoint="md"
-						collapsedWidth={80}>
-						{" "}
-						<NavigationMenu onClose={() => {}} isMobile={false} collapsed={desktopCollapsed} />{" "}
-					</StyledSider>
-				)}
-				{user && (
-					<StyledDrawer
-						width={210}
-						theme={{ token }}
-						title={t("menu")}
-						placement={direction === "rtl" ? "right" : "left"}
-						onClose={handleMobileToggle}
-						open={mobileOpen && isSmallScreen}
-						styles={{ body: { padding: 0 }, header: { borderBottom: `1px solid ${token.colorBorderSecondary}` } }}>
-						{" "}
-						<NavigationMenu onClose={handleMobileToggle} isMobile={true} collapsed={false} />{" "}
-					</StyledDrawer>
-				)}
-
-				<Layout style={{ padding: "0", overflowX: "hidden" }}>
-					<StyledContent theme={{ token }}>
-						{user && location.pathname !== "/dashboard" && location.pathname !== "/" && breadcrumbItems.length > 0 && (
-							<Breadcrumb items={breadcrumbItems} style={{ marginBottom: 16 }} />
+		<StyledAppSidebar theme={{ token }} collapsible collapsed={collapsed} onCollapse={onCollapse} trigger={null} width={280} collapsedWidth={72}>
+			<div className="user-context-section">
+				<Tooltip title={!collapsed ? "" : user.fullName || user.username} placement="right">
+					<div className="user-info">
+						<Avatar size={collapsed ? 36 : 48} src={transformImageUrl(user.profilePictureURL)} icon={<UserOutlined />} />
+						{!collapsed && (
+							<div style={{ overflow: "hidden" }}>
+								<Text
+									strong
+									className="user-name-role"
+									style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+									{user.fullName || user.username}
+								</Text>
+								<Text type="secondary" style={{ display: "block", fontSize: "0.9em" }}>
+									{user.role || t("user-role-placeholder", "Role")}
+								</Text>
+							</div>
 						)}
-						{/* No TransitionGroup/CSSTransition */}
-						<div> {children} </div>
-					</StyledContent>
-					<StyledFooter theme={{ token }}>
-						© {new Date().getFullYear()} GMTS Hospital Model. {t("all-rights-reserved")} {/* CORRECTED key */} |{" "}
-						<RouterLink to="/about-us" style={{ color: token.colorPrimary }}>
-							{t("about-us")} {/* CORRECTED key */}
-						</RouterLink>
-					</StyledFooter>
-				</Layout>
-			</Layout>
-		</StyledLayout>
+					</div>
+				</Tooltip>
+				{/* REMOVED: "On Duty" and "Shift Time" sections
+				{!collapsed && (
+					<>
+						<Text className="shift-status" style={{ display: "block", fontSize: "0.8em", marginTop: 4 }}>
+							<EnvironmentOutlined /> {user.department || t("on-duty", "On Duty")}
+						</Text>
+						<Text className="time-date" style={{ display: "block", fontSize: "0.8em", marginTop: 2 }}>
+							<ClockCircleOutlined /> {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+							{currentTime.toLocaleDateString()}
+						</Text>
+					</>
+				)}
+                */}
+			</div>
+
+			{!collapsed && quickActions.length > 0 && (
+				<div className="quick-actions-panel">
+					{quickActions.map((action) => (
+						<Button
+							key={action.key}
+							icon={action.icon}
+							type={action.type || "default"}
+							danger={action.danger}
+							onClick={action.onClick}
+							block>
+							{t(action.labelKey)}
+						</Button>
+					))}
+				</div>
+			)}
+
+			<NavigationMenu isMobile={false} mode="inline" collapsed={collapsed} />
+
+			<div className="sidebar-collapse-toggle">
+				<Button type="text" onClick={onCollapse} block icon={collapsed ? <RightOutlined /> : <LeftOutlined />}>
+					{!collapsed && t("collapse-sidebar", "Collapse")}
+				</Button>
+			</div>
+		</StyledAppSidebar>
 	);
 });
 
-// --- SettingsDrawer Component --- (Keys seem ok, assuming gemini_api_key etc are not in provided JSON)
-const SettingsDrawer = React.memo(
+const BottomNavComponent = React.memo(({ currentPath, onTabChange }) => {
+	const { t } = useTranslation();
+	const { token } = antdTheme.useToken();
+
+	const tabs = [
+		{ value: "/dashboard", label: t("dashboard", "Dashboard"), icon: <DashboardOutlined /> },
+		{ value: "/patients", label: t("patients", "Patients"), icon: <TeamOutlined /> },
+		{ value: "/more", label: t("more", "More"), icon: <MoreOutlined /> },
+	];
+
+	let activeTab = tabs[0].value;
+	const currentBase = `/${currentPath.split("/")[1]}`; // Ensure leading slash for comparison
+	const matchedTab = tabs.find((tab) => tab.value === currentBase);
+
+	if (matchedTab) {
+		activeTab = matchedTab.value;
+	} else if (currentPath === "/" && tabs.some((t) => t.value === "/dashboard")) {
+		activeTab = "/dashboard";
+	} else if (!tabs.some((tab) => tab.value === currentBase) && currentPath !== "/") {
+		// If no direct match and not on dashboard, default to 'More' or first tab if 'More' doesn't exist
+		activeTab = tabs.find((t) => t.value === "/more")?.value || (tabs.length > 0 ? tabs[0].value : currentPath);
+	}
+
+	return (
+		<StyledBottomNav offsetBottom={0} theme={{ token }}>
+			<Segmented
+				value={activeTab}
+				options={tabs.map((tab) => ({
+					value: tab.value,
+					label: tab.label,
+					icon: tab.icon,
+				}))}
+				onChange={onTabChange}
+				block
+			/>
+		</StyledBottomNav>
+	);
+});
+
+const MobileDrawerComponent = React.memo(({ open, onClose, onSettingsToggle, onLogout }) => {
+	const { user } = useAuthStore();
+	const { t } = useTranslation();
+	const { token } = antdTheme.useToken();
+
+	if (!user) return null;
+
+	return (
+		<Drawer
+			title={
+				<Space>
+					<Avatar src={transformImageUrl(user.profilePictureURL)} icon={<UserOutlined />} />
+					<Text strong>{user.fullName || user.username}</Text>
+				</Space>
+			}
+			placement="left"
+			onClose={onClose}
+			open={open}
+			width="80%"
+			styles={{ body: { padding: 0, overflowX: "hidden" }, header: { borderBottom: `1px solid ${token.colorBorderSecondary}` } }}>
+			<NavigationMenu isMobile={true} mode="vertical" onClose={onClose} inDrawer={true} />
+			<div style={{ padding: "16px", borderTop: `1px solid ${token.colorBorderSecondary}`, marginTop: "auto" }}>
+				<Button
+					block
+					icon={<SettingOutlined />}
+					onClick={() => {
+						onSettingsToggle();
+						onClose();
+					}}
+					style={{ marginBottom: "8px" }}>
+					{t("settings")}
+				</Button>
+				<Button
+					block
+					danger
+					icon={<LogoutOutlined />}
+					onClick={() => {
+						onLogout();
+						onClose();
+					}}>
+					{t("logout")}
+				</Button>
+			</div>
+		</Drawer>
+	);
+});
+
+// REMOVED: SearchOverlay component
+// const SearchOverlay = ({ visible, onClose }) => { ... };
+
+const SettingsDrawerComponent = React.memo(
 	({ visible, onClose, language, onLanguageChange, theme, onThemeChange, size, onSizeChange, languageOptions, themeOptions }) => {
 		const { t } = useTranslation();
-		const hasAuthority = useAuthStore((state) => state.hasAuthority);
-		const userToken = useAuthStore((state) => state.token || state.user?.token);
-
+		const { hasAuthority } = useAuthStore();
+		const userToken = useAuthStore((state) => state.token); // Use the direct token from the store
 		const [geminiApiKey, setGeminiApiKey] = useState("");
 		const [isSaving, setIsSaving] = useState(false);
 		const [saveError, setSaveError] = useState(null);
-
 		const canManageApiKey = hasAuthority("MANAGE_GEMINI_API_KEY");
 
 		const handleSaveApiKey = useCallback(async () => {
+			// Using direct notification import now
 			if (!geminiApiKey) {
-				/* ... error handling ... */ return;
+				notification.error({ message: t("error"), description: t("api-key-required", "API Key cannot be empty.") });
+				return;
 			}
 			if (!userToken) {
-				/* ... error handling ... */ return;
+				notification.error({ message: t("error"), description: t("auth-token-missing", "Authentication token is missing.") });
+				return;
 			}
 			setIsSaving(true);
 			setSaveError(null);
@@ -867,16 +917,16 @@ const SettingsDrawer = React.memo(
 					{ apiKey: geminiApiKey },
 					{ headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` } }
 				);
-				notification.success({ message: t("success"), description: t("gemini_api_key_saved") });
+				notification.success({ message: t("success"), description: t("gemini-api-key-saved", "Gemini API Key saved successfully.") });
 			} catch (error) {
 				console.error("Error saving Gemini API key:", error);
-				const errorMessage = error.response?.data?.message || error.message || t("api_key_save_failed");
+				const errorMessage = error.response?.data?.message || error.message || t("api-key-save-failed", "Failed to save API Key.");
 				setSaveError(errorMessage);
 				notification.error({ message: t("error"), description: errorMessage });
 			} finally {
 				setIsSaving(false);
 			}
-		}, [geminiApiKey, userToken, t]); // Keep t dependency
+		}, [geminiApiKey, userToken, t]);
 
 		const handleApiKeyChange = (e) => {
 			setGeminiApiKey(e.target.value);
@@ -884,44 +934,40 @@ const SettingsDrawer = React.memo(
 		};
 
 		return (
-			<Drawer title={t("settings")} placement="right" onClose={onClose} open={visible} width={300}>
+			<StyledSettingsDrawer title={t("settings", "Settings")} placement="right" onClose={onClose} open={visible}>
 				<Space direction="vertical" size="large" style={{ width: "100%" }}>
 					<Space direction="vertical" style={{ width: "100%" }}>
-						{" "}
-						<Text>{t("language")}:</Text>{" "}
+						<Text>{t("language", "Language")}:</Text>
 						<Select
 							aria-label={t("language")}
 							value={language}
 							options={languageOptions}
 							onChange={onLanguageChange}
 							style={{ width: "100%" }}
-						/>{" "}
+						/>
 					</Space>
 					<Space direction="vertical" style={{ width: "100%" }}>
-						{" "}
-						<Text>{t("theme")}:</Text>{" "}
-						<Select aria-label={t("theme")} value={theme} options={themeOptions} onChange={onThemeChange} style={{ width: "100%" }} />{" "}
+						<Text>{t("theme", "Theme")}:</Text>
+						<Select aria-label={t("theme")} value={theme} options={themeOptions} onChange={onThemeChange} style={{ width: "100%" }} />
 					</Space>
 					<Space direction="vertical" style={{ width: "100%" }}>
-						{" "}
-						<Text>{t("size")}:</Text>{" "}
+						<Text>{t("size", "Component Size")}:</Text>
 						<Radio.Group value={size} onChange={onSizeChange}>
-							{" "}
-							<Radio.Button value="small">{t("small")}</Radio.Button> <Radio.Button value="middle">{t("middle")}</Radio.Button>{" "}
-							<Radio.Button value="large">{t("large")}</Radio.Button>{" "}
-						</Radio.Group>{" "}
+							<Radio.Button value="small">{t("small", "Small")}</Radio.Button>
+							<Radio.Button value="middle">{t("middle", "Middle")}</Radio.Button>
+							<Radio.Button value="large">{t("large", "Large")}</Radio.Button>
+						</Radio.Group>
 					</Space>
 					{canManageApiKey && (
 						<>
+							{" "}
 							<Divider />
 							<Space direction="vertical" style={{ width: "100%" }}>
 								<Text strong>
-									{" "}
-									<ApiOutlined /> {t("gemini_api_key")}:
-								</Text>{" "}
-								{/* Assuming key is gemini_api_key */}
+									<ApiOutlined /> {t("gemini-api-key", "Gemini API Key")}:
+								</Text>
 								<Input.Password
-									placeholder={t("enter_gemini_api_key")}
+									placeholder={t("enter-gemini-api-key", "Enter Gemini API Key")}
 									value={geminiApiKey}
 									onChange={handleApiKeyChange}
 									status={saveError ? "error" : ""}
@@ -935,37 +981,198 @@ const SettingsDrawer = React.memo(
 									icon={<SaveOutlined />}
 									style={{ width: "100%", marginTop: "8px" }}
 									disabled={!geminiApiKey || isSaving}>
-									{isSaving ? t("saving") : t("save_api_key")} {/* Assuming key is save_api_key */}
+									{isSaving ? t("saving", "Saving...") : t("save-api-key", "Save API Key")}
 								</Button>
 							</Space>
 						</>
 					)}
 				</Space>
-			</Drawer>
+			</StyledSettingsDrawer>
 		);
 	}
 );
 
-// --- Main App Component ---
+const AppLayout = React.memo(({ children, direction, language, componentSize, onSettingsToggle, onLogout }) => {
+	const { user } = useAuthStore();
+	const location = useLocation();
+	const navigate = useNavigate();
+	const { t } = useTranslation();
+	const screens = useBreakpoint();
+	const isMobile = !screens.md;
+	const { token } = antdTheme.useToken();
+
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+	const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+	// REMOVED: searchOverlayVisible state
+	// const [searchOverlayVisible, setSearchOverlayVisible] = useState(false);
+
+	const handleSidebarCollapse = useCallback(() => setSidebarCollapsed((prev) => !prev), []);
+	const handleMobileDrawerToggle = useCallback(() => setMobileDrawerOpen((prev) => !prev), []);
+	// REMOVED: handleSearchToggle
+	// const handleSearchToggle = useCallback(() => setSearchOverlayVisible((prev) => !prev), []);
+
+	const { pageTitleFromRoute, breadcrumbItemsFromRoute } = useMemo(() => {
+		const pathSegments = location.pathname.split("/").filter(Boolean);
+		let derivedTitle = t("app-name", "GMTS");
+		const currentRouteConfig = appRoutes.find((route) => {
+			const routeBasePath = route.path.split("/:")[0];
+			const currentPathBase = location.pathname.split("/:")[0];
+			return currentPathBase === routeBasePath;
+		});
+
+		if (currentRouteConfig?.titleKey) {
+			// Use optional chaining
+			derivedTitle = t(currentRouteConfig.titleKey, { defaultValue: currentRouteConfig.titleKey.replace(/-/g, " ") });
+		} else if (pathSegments.length > 0) {
+			const lastSegmentKey = pathSegments[pathSegments.length - 1];
+			// Attempt to find a more specific key from appRoutes if the last segment is a base path
+			const segmentRouteConfig = appRoutes.find(
+				(route) => route.path === `/${lastSegmentKey}` || route.path.split("/:")[0] === `/${lastSegmentKey}`
+			);
+			const titleKeyToUse = segmentRouteConfig?.titleKey || lastSegmentKey;
+			derivedTitle = t(titleKeyToUse, { defaultValue: titleKeyToUse.replace(/-/g, " ") });
+		}
+
+		if (location.pathname === "/" || (user && location.pathname === "/dashboard")) {
+			derivedTitle = t("dashboard", "Dashboard");
+		}
+
+		const items = [{ title: <RouterLink to={user ? "/dashboard" : "/"}>{t("home", "Home")}</RouterLink>, key: "home" }];
+		// Add dashboard to breadcrumb start if not on dashboard
+		if (user && location.pathname !== "/dashboard" && location.pathname !== "/") {
+			items[0] = { title: <RouterLink to="/dashboard">{t("dashboard", "Dashboard")}</RouterLink>, key: "dashboard_link" };
+		} else if (!user && location.pathname !== "/") {
+			// For non-logged-in users, 'Home' is the root.
+		} else {
+			// If on root or dashboard, items might be empty or just the current page.
+			// The logic below will handle not showing breadcrumbs if items.length <=1
+		}
+
+		let currentPath = "";
+		pathSegments.forEach((segment, index) => {
+			currentPath += `/${segment}`;
+			if (user && currentPath === "/dashboard") return; // Don't repeat dashboard if it's already the root
+
+			let labelKey = segment;
+			const routeMatchForBreadcrumb = appRoutes.find((route) => {
+				const routeBasePath = route.path.split("/:")[0];
+				return currentPath === routeBasePath || currentPath === route.path;
+			});
+			if (routeMatchForBreadcrumb?.titleKey) {
+				// Use optional chaining
+				labelKey = routeMatchForBreadcrumb.titleKey;
+			}
+
+			const isLast = index === pathSegments.length - 1;
+			const segTitle = t(labelKey, { defaultValue: segment.replace(/-/g, " ") });
+
+			const isParamLike =
+				/^\d+$/.test(segment) ||
+				/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(segment) ||
+				(segment.length > 15 && !segment.includes(" ") && !appRoutes.some((r) => r.path.includes(segment))); // Added check against known paths
+
+			if (currentPath === (user ? "/dashboard" : "/")) {
+				// Avoid adding home/dashboard again if it's the current segment
+				if (items.length === 1 && items[0].key === (user ? "dashboard_link" : "home")) {
+					// if it's the only item and it's already the root, do nothing
+				} else if (!isLast) {
+					// if it's not the last segment, make it a link
+					items.push({ key: currentPath, title: <RouterLink to={currentPath}>{segTitle}</RouterLink> });
+				} else {
+					// if it's the last segment, just text
+					items.push({ key: currentPath, title: segTitle });
+				}
+			} else if (!isParamLike) {
+				items.push({
+					key: currentPath,
+					title: isLast ? segTitle : <RouterLink to={currentPath}>{segTitle}</RouterLink>,
+				});
+			} else if (isParamLike && isLast && items.length > 0) {
+				// If the last segment is a param, make the previous breadcrumb item non-clickable text
+				const prevItem = items[items.length - 1];
+				if (prevItem && prevItem.title && typeof prevItem.title === "object" && prevItem.title.props && prevItem.title.props.to) {
+					// Only update if it was a RouterLink
+					items[items.length - 1] = { key: prevItem.key, title: prevItem.title.props.children };
+				}
+				// Optionally, add the param itself as non-clickable text if needed, but often not desired
+				// items.push({ key: "param", title: segTitle });
+			}
+		});
+
+		// Filter out the initial "Home" or "Dashboard" link if it's the only item (i.e., we are on that page)
+		const finalBreadcrumbItems =
+			(items.length <= 1 && (location.pathname === "/" || location.pathname === "/dashboard")) || items.length === 0 ? [] : items;
+		return { pageTitleFromRoute: derivedTitle, breadcrumbItemsFromRoute: finalBreadcrumbItems };
+	}, [location.pathname, t, user, appRoutes]);
+
+	const handleMobileTabChange = (value) => {
+		if (value === "/more") {
+			setMobileDrawerOpen(true);
+		} else {
+			navigate(value);
+		}
+	};
+
+	return (
+		<StyledLayout>
+			<AppHeaderComponent
+				onMobileMenuToggle={handleMobileDrawerToggle}
+				// onSearchToggle={handleSearchToggle} // REMOVED
+				pageTitleFromRoute={pageTitleFromRoute}
+				breadcrumbItemsFromRoute={breadcrumbItemsFromRoute}
+				onSettingsToggle={onSettingsToggle}
+			/>
+			<Layout>
+				{!isMobile && user && <AppSidebarComponent collapsed={sidebarCollapsed} onCollapse={handleSidebarCollapse} />}
+				<StyledContentWrapper theme={{ token }}>
+					{/* Breadcrumb moved to header for desktop, can be conditionally rendered here for content area if design prefers */}
+					{/* {!isMobile && user && breadcrumbItemsFromRoute && breadcrumbItemsFromRoute.length > 0 && (
+                        <Breadcrumb items={breadcrumbItemsFromRoute} style={{ margin: '16px 24px 0' }} />
+                    )} */}
+					<StyledAppContent theme={{ token }}>
+						<div>{children}</div>
+					</StyledAppContent>
+					<StyledAppFooter theme={{ token }}>
+						© {new Date().getFullYear()} GMTS Hospital Model. {t("all-rights-reserved", "All rights reserved.")} |{" "}
+						<RouterLink to="/about-us" style={{ color: token.colorPrimary }}>
+							{t("about-us", "About Us")}
+						</RouterLink>
+					</StyledAppFooter>
+				</StyledContentWrapper>
+			</Layout>
+
+			{user && (
+				<MobileDrawerComponent
+					open={mobileDrawerOpen && isMobile}
+					onClose={handleMobileDrawerToggle}
+					onSettingsToggle={onSettingsToggle}
+					onLogout={onLogout}
+				/>
+			)}
+			{/* REMOVED: SearchOverlay component instance */}
+			{/* <SearchOverlay visible={searchOverlayVisible} onClose={handleSearchToggle} /> */}
+			{isMobile && user && <BottomNavComponent currentPath={location.pathname} onTabChange={handleMobileTabChange} />}
+		</StyledLayout>
+	);
+});
+
 const App = () => {
-	const [direction, setDirection] = useState("ltr");
+	const [direction, setDirection] = useState(() => localStorage.getItem("appDir") || "ltr");
 	const [language, setLanguage] = useState(() => localStorage.getItem("i18nextLng") || "en");
 	const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem("appTheme") || "light");
 	const [componentSize, setComponentSize] = useState(() => localStorage.getItem("appComponentSize") || "middle");
 	const [settingsDrawerVisible, setSettingsDrawerVisible] = useState(false);
-	const { i18n, t } = useTranslation();
+	const { logout } = useAuthStore();
+	const { i18n: i18nInstance, t } = useTranslation();
 
 	const themeOptions = useMemo(
 		() => [
-			// Assuming theme keys in JSON would follow convention like theme-light, theme-dark, etc.
-			// Adjust this if your JSON uses underscores (theme_light).
 			...Object.keys(colorTokens).map((name) => ({ value: name, label: t(`theme-${name}`, { defaultValue: name }) })),
-			{ value: "dark_killer", label: t("theme-dark-killer", { defaultValue: "Dark Killer" }) }, // Adjust key if needed
+			{ value: "dark_killer", label: t("theme-dark-killer", { defaultValue: "Dark Killer" }) },
 		],
 		[t]
 	);
 	const languageOptions = useMemo(
-		// This seems fine
 		() => [
 			{ value: "en", label: "English" },
 			{ value: "fa", label: "فارسی" },
@@ -973,9 +1180,7 @@ const App = () => {
 		],
 		[]
 	);
-
 	const antdLocale = useMemo(() => {
-		// Fine
 		switch (language) {
 			case "fa":
 				return faIR;
@@ -987,19 +1192,32 @@ const App = () => {
 	}, [language]);
 
 	const antDesignTheme = useMemo(() => {
-		// Theme logic unchanged
-		let currentTokens = colorTokens["light"];
+		let currentTokens = colorTokens["light"]; // Default to light
 		let isSystemDark = false;
+
 		if (selectedTheme === "dark_killer") {
-			return { algorithm: darkAlgorithm, token: darkKillerTheme.token, components: darkKillerTheme.components };
+			const baseDark = colorTokens["dark"] || {}; // Ensure 'dark' theme exists in colorTokens for fallback
+			return {
+				...darkKillerTheme, // from themeConfig
+				algorithm: darkAlgorithm,
+				token: {
+					...baseDark, // Provide base dark tokens
+					...darkKillerTheme.token, // Override with specific darkKiller tokens
+					// Ensure crucial tokens like colorBgLayout are present in darkKillerTheme.token or baseDark
+					colorBgLayout: darkKillerTheme.token?.layoutBackground || baseDark?.layoutBackground || "#141414",
+					colorBgContainer: darkKillerTheme.token?.paperColor || baseDark?.paperColor || "#1f1f1f",
+				},
+			};
 		} else if (colorTokens[selectedTheme]) {
 			currentTokens = colorTokens[selectedTheme];
 			isSystemDark = currentTokens.isDark === true;
 		} else {
-			setSelectedTheme("light");
-		} // Fallback if invalid theme
-		const config = {
-			/* ... (theme token/component config based on currentTokens/isSystemDark) ... */
+			console.warn(`Invalid theme "${selectedTheme}", falling back to "light".`);
+			// currentTokens remains colorTokens["light"]
+			// selectedTheme is not changed here to avoid re-render loop, localStorage will persist invalid theme until changed by user
+		}
+
+		return {
 			algorithm: isSystemDark ? darkAlgorithm : defaultAlgorithm,
 			token: {
 				colorPrimary: currentTokens.primaryColor,
@@ -1007,49 +1225,45 @@ const App = () => {
 				colorWarning: currentTokens.warningColor,
 				colorError: currentTokens.errorColor,
 				colorInfo: currentTokens.infoColor,
-				colorBgLayout: currentTokens.backgroundColor,
-				colorBgContainer: currentTokens.paperColor,
-				colorBgElevated: currentTokens.paperColor,
-				colorTextBase: currentTokens.textColor,
-				colorBorder: currentTokens.borderColor,
-				colorBorderSecondary: currentTokens.dividerColor,
-				borderRadius: 6,
+				colorBgLayout: currentTokens.layoutBackground || (isSystemDark ? "#141414" : "#f0f2f5"),
+				colorBgContainer: currentTokens.paperColor || (isSystemDark ? "#1f1f1f" : "#ffffff"),
+				colorBgElevated: currentTokens.paperColor || (isSystemDark ? "#262626" : "#ffffff"), // Often same as paperColor
+				colorTextBase: currentTokens.textColor || (isSystemDark ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.88)"),
+				colorTextSecondary: currentTokens.textSecondaryColor || (isSystemDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.65)"),
+				colorTextDescription: currentTokens.textDescriptionColor || (isSystemDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)"),
+				colorBorder: currentTokens.borderColor || (isSystemDark ? "#303030" : "#d9d9d9"),
+				colorBorderSecondary: currentTokens.dividerColor || (isSystemDark ? "#303030" : "#f0f0f0"), // often a lighter border
+				borderRadius: currentTokens.borderRadius || 6,
+				borderRadiusLG: currentTokens.borderRadiusLG || 8, // For larger elements like cards, modals
+				controlItemBgHover: currentTokens.controlItemBgHover || (isSystemDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)"),
+				colorPrimaryBg: currentTokens.primaryColorBg || (isSystemDark ? "rgba(22, 119, 255, 0.2)" : "#e6f4ff"), // Light background for primary elements
 			},
 			components: {
 				Layout: {
-					sider: { colorBgLayout: currentTokens.backgroundColor },
-					header: { colorBgHeader: currentTokens.paperColor, colorHeaderTitle: currentTokens.textColor },
-					footer: { colorBgFooter: currentTokens.backgroundColor, colorTextFooter: currentTokens.textColor },
+					// Specific component overrides
+					sider: { colorBgSider: currentTokens.paperColor || (isSystemDark ? "#1f1f1f" : "#ffffff") }, // Sider often uses paper/container color
+					header: { colorBgHeader: currentTokens.paperColor || (isSystemDark ? "#1f1f1f" : "#ffffff") }, // Header too
 				},
 				Menu: {
+					// Menu specific tokens
 					colorItemText: currentTokens.textColor,
-					colorItemTextHover: currentTokens.primaryColor,
-					colorSubmenuArrow: currentTokens.textColor,
-					...(isSystemDark
-						? {
-								colorItemText: "rgba(255, 255, 255, 0.75)",
-								colorItemTextSelected: "#ffffff",
-								colorItemBgSelected: currentTokens.primaryColor,
-								colorItemTextHover: "#ffffff",
-								colorItemBgHover: "rgba(255, 255, 255, 0.1)",
-								colorSubmenuArrow: "rgba(255, 255, 255, 0.75)",
-						  }
-						: {
-								colorItemTextSelected: currentTokens.primaryColor,
-								colorItemBgSelected: currentTokens.primaryColor + "1A",
-								colorItemBgHover: "rgba(0, 0, 0, 0.04)",
-						  }),
+					colorItemTextSelected: currentTokens.primaryColor, // Or specific selected text color
+					colorItemBgSelected: currentTokens.primaryColorBg,
+					colorItemBgHover: currentTokens.controlItemBgHover,
+					...(isSystemDark && {
+						// Overrides for dark menu
+						colorItemText: "rgba(255, 255, 255, 0.75)",
+						colorItemTextSelected: "#ffffff", // Brighter selected text for dark
+						colorItemBgSelected: currentTokens.primaryColor, // Often a solid primary color for dark selected
+						colorItemTextHover: "#ffffff",
+						colorItemBgHover: "rgba(255, 255, 255, 0.1)",
+					}),
 				},
-				Drawer: { colorBgElevated: currentTokens.paperColor },
-				Input: { colorBgContainer: currentTokens.paperColor },
-				Select: { colorBgContainer: currentTokens.paperColor },
-				Card: { colorBgContainer: currentTokens.paperColor, colorBorderSecondary: currentTokens.borderColor },
+				// Add other component specific tokens as needed
 			},
 		};
-		return config;
-	}, [selectedTheme, setSelectedTheme]); // Added setSelectedTheme dependency
+	}, [selectedTheme]); // Only selectedTheme is needed here if colorTokens and darkKillerTheme are stable
 
-	// --- Event Handlers (Unchanged) ---
 	const handleThemeSelectChange = useCallback((value) => {
 		setSelectedTheme(value);
 		localStorage.setItem("appTheme", value);
@@ -1057,61 +1271,54 @@ const App = () => {
 	const handleLanguageChange = useCallback(
 		(value) => {
 			setLanguage(value);
-			i18n.changeLanguage(value);
+			i18nInstance.changeLanguage(value);
 			const newDirection = value === "ar" || value === "fa" ? "rtl" : "ltr";
 			setDirection(newDirection);
 			document.documentElement.dir = newDirection;
 			document.documentElement.lang = value;
 			localStorage.setItem("i18nextLng", value);
+			localStorage.setItem("appDir", newDirection);
 		},
-		[i18n]
+		[i18nInstance]
 	);
 	useEffect(() => {
-		const initialDirection = language === "ar" || language === "fa" ? "rtl" : "ltr";
+		const initialDirection = localStorage.getItem("appDir") || (language === "ar" || language === "fa" ? "rtl" : "ltr");
 		document.documentElement.dir = initialDirection;
 		document.documentElement.lang = language;
-		if (i18n.language !== language) {
-			i18n.changeLanguage(language);
+		if (i18nInstance.language !== language) {
+			i18nInstance.changeLanguage(language);
 		}
-	}, [language, i18n]);
+		setDirection(initialDirection);
+	}, [language, i18nInstance]);
+
 	const handleComponentSizeChange = useCallback((e) => {
 		const newSize = e.target.value;
 		setComponentSize(newSize);
 		localStorage.setItem("appComponentSize", newSize);
 	}, []);
-	const toggleSettingsDrawer = useCallback(() => {
+
+	const toggleGlobalSettingsDrawer = useCallback(() => {
 		setSettingsDrawerVisible((prev) => !prev);
 	}, []);
 
-	const settingsButtonStyles = useMemo(() => {
-		// Style calculation unchanged
-		const currentThemeConfig = antDesignTheme;
-		const colors = {
-			primary: currentThemeConfig.token?.colorPrimary || "#1677ff",
-			paper: currentThemeConfig.token?.colorBgContainer || "#ffffff",
-			border: currentThemeConfig.token?.colorPrimary || "#1677ff",
-		};
-		return {
-			"--setting-btn-bg": colors.paper,
-			"--setting-btn-text": colors.primary,
-			"--setting-btn-border": colors.border,
-			"--setting-btn-hover-bg": colors.primary,
-			"--setting-btn-hover-text": colors.paper,
-		};
-	}, [antDesignTheme]);
+	const handleLogout = useCallback(() => {
+		logout();
+		// Optionally navigate to login page
+		// navigate('/login'); // if navigate is available here or passed down
+	}, [logout]);
 
 	const ThemeProviderComponent = selectedTheme === "dark_killer" ? ComplexThemeProvider : ConfigProvider;
-	const themeProviderProps = selectedTheme === "dark_killer" ? { theme: darkKillerTheme } : { theme: antDesignTheme };
+	const themeProviderProps = selectedTheme === "dark_killer" ? { theme: antDesignTheme } : { theme: antDesignTheme };
 
 	return (
-		<AppWrapper>
-			<style>{` :root { ${Object.entries(settingsButtonStyles)
-				.map(([key, value]) => `${key}: ${value};`)
-				.join(
-					"\n"
-				)} } .settings-button { background-color: var(--setting-btn-bg); color: var(--setting-btn-text); border: 1px solid var(--setting-btn-border); transition: background-color 0.3s, color 0.3s, border-color 0.3s; } .settings-button:hover, .settings-button:focus { background-color: var(--setting-btn-hover-bg) !important; color: var(--setting-btn-hover-text) !important; border-color: var(--setting-btn-hover-bg) !important; } /* Removed fade animation styles */ `}</style>
+		<AppWrapper theme={{ token: antDesignTheme.token }}>
 			<ThemeProviderComponent direction={direction} locale={antdLocale} componentSize={componentSize} {...themeProviderProps}>
-				<AppLayout direction={direction} language={language} componentSize={componentSize}>
+				<AppLayout
+					direction={direction}
+					language={language}
+					componentSize={componentSize}
+					onSettingsToggle={toggleGlobalSettingsDrawer}
+					onLogout={handleLogout}>
 					<Routes>
 						{appRoutes.map((route, index) => (
 							<Route key={index} path={route.path} element={route.element} />
@@ -1119,45 +1326,26 @@ const App = () => {
 						{/* <Route path="*" element={<NotFoundPage />} /> */}
 					</Routes>
 				</AppLayout>
+				<SettingsDrawerComponent
+					visible={settingsDrawerVisible}
+					onClose={toggleGlobalSettingsDrawer}
+					language={language}
+					onLanguageChange={handleLanguageChange}
+					theme={selectedTheme}
+					onThemeChange={handleThemeSelectChange}
+					size={componentSize}
+					onSizeChange={handleComponentSizeChange}
+					languageOptions={languageOptions}
+					themeOptions={themeOptions}
+				/>
 			</ThemeProviderComponent>
-			<SettingsDrawer
-				visible={settingsDrawerVisible}
-				onClose={toggleSettingsDrawer}
-				language={language}
-				onLanguageChange={handleLanguageChange}
-				theme={selectedTheme}
-				onThemeChange={handleThemeSelectChange}
-				size={componentSize}
-				onSizeChange={handleComponentSizeChange}
-				languageOptions={languageOptions}
-				themeOptions={themeOptions}
-			/>
-			<Button
-				className="settings-button"
-				type="default"
-				shape="circle"
-				icon={<SettingOutlined />}
-				size="large"
-				onClick={toggleSettingsDrawer}
-				aria-label={t("settings")}
-				style={{
-					position: "fixed",
-					bottom: 20,
-					right: direction === "ltr" ? 20 : "auto",
-					left: direction === "rtl" ? 20 : "auto",
-					zIndex: 1002,
-					boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-				}}
-			/>
 		</AppWrapper>
 	);
 };
 
-// --- Root App with Router ---
 const RootApp = () => (
 	<Router>
-		{" "}
-		<App />{" "}
+		<App />
 	</Router>
 );
 

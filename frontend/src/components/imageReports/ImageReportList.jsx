@@ -393,9 +393,8 @@ const ImageReportList = () => {
 		},
 		{
 			title: "Performed By",
-			dataIndex: "performedById",
-			key: "performedById",
-			render: (text, record) => getPerformedByName(record), // Pass the whole record
+			dataIndex: "performedByName",
+			key: "performedByName",
 		},
 		{
 			title: "Description",
