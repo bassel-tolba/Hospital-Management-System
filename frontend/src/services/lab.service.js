@@ -4,8 +4,8 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const LAB_TEST_API_BASE_URL = `/api/lab-tests`;
-const LAB_RESULT_API_BASE_URL = `/api/lab-results`;
+const LAB_TEST_API_BASE_URL = `http://localhost:8080/api/lab-tests`;
+const LAB_RESULT_API_BASE_URL = `http://localhost:8080/api/lab-results`;
 
 export const useLabStore = create((set, get) => ({
 	labTests: [],

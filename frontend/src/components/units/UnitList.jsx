@@ -38,7 +38,7 @@ const UnitList = () => {
 	const fetchUnits = async () => {
 		setLoading(true);
 		try {
-			// searchUnits maps to GET /api/units/search -> permitAll() - No specific permission check needed for viewing/searching
+			// searchUnits maps to GET http://localhost:8080/api/units/search -> permitAll() - No specific permission check needed for viewing/searching
 			await searchUnits(searchTerm);
 		} catch (error) {
 			console.error("Error fetching units:", error);
@@ -101,11 +101,11 @@ const UnitList = () => {
 		try {
 			const values = await form.validateFields();
 			if (selectedUnit) {
-				// updateUnit maps to PUT /api/units/{id} -> requires UPDATE_UNIT
+				// updateUnit maps to PUT http://localhost:8080/api/units/{id} -> requires UPDATE_UNIT
 				// Check is implicitly done by the button state
 				await updateUnit(selectedUnit.id, values);
 			} else {
-				// createUnit maps to POST /api/units -> requires CREATE_UNIT
+				// createUnit maps to POST http://localhost:8080/api/units -> requires CREATE_UNIT
 				// Check is implicitly done by the button state
 				await createUnit(values);
 			}
@@ -118,7 +118,7 @@ const UnitList = () => {
 	};
 
 	const handleDelete = async (unitId) => {
-		// deleteUnit maps to DELETE /api/units/{id} -> requires DELETE_UNIT
+		// deleteUnit maps to DELETE http://localhost:8080/api/units/{id} -> requires DELETE_UNIT
 		// Check is done on the button that triggers this handler
 		try {
 			await deleteUnit(unitId);

@@ -1,4 +1,4 @@
-// models/Patient.java (Modified)
+// models/Patient.java (CORRECTED)
 package mine.profile.website.models;
 
 import java.time.LocalDate;
@@ -37,26 +37,18 @@ public class Patient {
     private Long id;
 
     private String firstName;
-
     private String lastName;
-
     private LocalDate dateOfBirth;
-
     private String gender;
-
     private String address;
-
     private String phoneNumber;
-
     private String email;
-
     private String profilePictureURL;
 
     @Column(unique = true)
     private String medicalRecordNumber;
 
     private String bloodType;
-
     private String allergies;
 
     @Lob
@@ -67,41 +59,50 @@ public class Patient {
     private Integer severityLevel;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Appointment> appointments;
+    private List<Appointment> appointments = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Prescription> prescriptions;
+    private List<Prescription> prescriptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Admission> admissions;
+    private List<Admission> admissions = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Assessment> assessments;
+    private List<Assessment> assessments = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<NursingCarePlan> nursingCarePlans;
+    private List<NursingCarePlan> nursingCarePlans = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<QuickNote> quickNotes = new ArrayList<>(); // Initialize the list
+    private List<QuickNote> quickNotes = new ArrayList<>();
 
     private boolean deleted = false;
 
+    // --- CORRECTED METHODS ---
+
     public Unit getUnit() {
         return getCurrentAdmission()
-                .map(admission -> admission.getBed().getRoom().getUnit())
+                .map(Admission::getBed) // Use method reference
+                .map(Bed::getRoom) // Chain method references
+                .map(Room::getUnit) // Chain method references
                 .orElse(null);
     }
 
     public Room getRoom() {
-        return getCurrentAdmission().map(admission -> admission.getBed().getRoom()).orElse(null);
+        return getCurrentAdmission()
+                .map(Admission::getBed) // Use method reference
+                .map(Bed::getRoom) // Chain method references
+                .orElse(null);
     }
 
     public Optional<Admission> getCurrentAdmission() {
-        if (admissions == null || admissions.isEmpty()) {
+        if (this.admissions == null || this.admissions.isEmpty()) {
             return Optional.empty();
         }
 
-        return admissions.stream()
+        // This comparator is correct and was not the source of the error, but it's good
+        // practice
+        return this.admissions.stream()
                 .filter(admission -> admission.getDischargeDate() == null
                         || admission.getDischargeDate().isAfter(LocalDateTime.now()))
                 .max(Comparator.comparing(Admission::getAdmissionDate));
@@ -109,12 +110,17 @@ public class Patient {
 
     // Add helper methods for QuickNotes
     public void addQuickNote(QuickNote quickNote) {
-        quickNotes.add(quickNote);
+        if (this.quickNotes == null) {
+            this.quickNotes = new ArrayList<>();
+        }
+        this.quickNotes.add(quickNote);
         quickNote.setPatient(this); // Set the bidirectional relationship
     }
 
     public void removeQuickNote(QuickNote quickNote) {
-        quickNotes.remove(quickNote);
+        if (this.quickNotes != null) {
+            this.quickNotes.remove(quickNote);
+        }
         quickNote.setPatient(null); // Important for orphan removal
     }
 }

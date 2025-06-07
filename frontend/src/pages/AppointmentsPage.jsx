@@ -4,22 +4,21 @@ import AppointmentsList from "../components/appointments/AppointmentsList";
 import AppointmentFormModal from "../components/appointments/AppointmentFormModal";
 import { useAppointmentStore } from "../services/appointment.service";
 import { useAuthStore } from "../services/auth.service";
-import { useTranslation } from "react-i18next"; // Import useTranslation
+import { useTranslation } from "react-i18next";
 
 const { Content } = Layout;
 const { Title } = Typography;
-const { Option } = Select; // Option might not be needed if using 'options' prop directly
 
 const AppointmentsPage = () => {
-	const { t } = useTranslation(); // Initialize useTranslation
+	const { t } = useTranslation();
 	const {
 		appointments,
 		loading,
 		total,
 		getAllAppointments,
 		createAppointment,
+		updateAppointment,
 		deleteAppointment,
-		getAppointmentById,
 		getAppointmentsByPatientId,
 		getAppointmentsByUserId,
 		getAppointmentsByPatientIdAndUserId,
@@ -35,7 +34,6 @@ const AppointmentsPage = () => {
 	const { hasAuthority } = useAuthStore();
 	const [filterParams, setFilterParams] = useState({});
 
-	// Memoize options to avoid re-creating on every render unless appointments change
 	const patientOptions = React.useMemo(() => {
 		const uniquePatients = new Map();
 		appointments.forEach((appt) => {
@@ -65,7 +63,7 @@ const AppointmentsPage = () => {
 	useEffect(() => {
 		fetchAppointments();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [page, size, filterParams]); // Dependencies are correct
+	}, [page, size, filterParams]);
 
 	const fetchAppointments = async (searchQuery = null) => {
 		try {
@@ -81,8 +79,7 @@ const AppointmentsPage = () => {
 				await getAllAppointments(page, size);
 			}
 		} catch (error) {
-			// Add user-facing error handling if needed, e.g., using message.error(t('appointments.page.error.fetchFailed'))
-			console.error("Failed to fetch appointments:", error); // Keep console logs untranslated
+			console.error("Failed to fetch appointments:", error);
 		}
 	};
 
@@ -99,19 +96,15 @@ const AppointmentsPage = () => {
 	const handleCreateOrUpdate = async (appointmentData) => {
 		try {
 			if (selectedAppointment) {
-				// Assuming an updateAppointment function exists or will be added
-				// await updateAppointment(selectedAppointment.id, appointmentData);
-				console.log("Update appointment (logic TBC):", selectedAppointment.id, appointmentData); // Replace with API call
-				// Optionally show success message: message.success(t('appointments.notification.updated'))
+				await updateAppointment(selectedAppointment.id, appointmentData);
 			} else {
 				await createAppointment(appointmentData);
-				// Optionally show success message: message.success(t('appointments.notification.created'))
 			}
-			await fetchAppointments(); // Refresh the list after successful operation
+			await fetchAppointments();
 			setIsModalVisible(false);
 		} catch (error) {
-			console.error("Failed to save appointment:", error); // Keep console logs untranslated
-			// Optionally show error message: message.error(t('appointments.notification.saveFailed'))
+			console.error("Failed to save appointment:", error);
+			throw error;
 		}
 	};
 
@@ -119,99 +112,97 @@ const AppointmentsPage = () => {
 		try {
 			await deleteAppointment(id);
 			await fetchAppointments(); // Refresh
-			// Optionally show success message: message.success(t('appointments.notification.deleted'))
 		} catch (error) {
-			console.error("Failed to delete appointment:", error); // Keep console logs untranslated
-			// Optionally show error message: message.error(t('appointments.notification.deleteFailed'))
+			console.error("Failed to delete appointment:", error);
+		}
+	};
+
+	const handleStatusChange = async (appointmentId, newStatus) => {
+		// --- THIS CONSOLE LOG WILL NOW APPEAR ---
+		console.log(`handleStatusChange triggered for ID: ${appointmentId} with status: ${newStatus}`);
+		try {
+			await updateAppointment(appointmentId, { status: newStatus });
+		} catch (error) {
+			console.error("Failed to update status from page:", error);
 		}
 	};
 
 	const handleView = (record) => {
-		// This currently re-uses the edit modal.
-		// If a dedicated view-only modal is needed, implement it separately.
 		console.log("View appointment:", record);
-		showModal(record); // Opens the form modal, which isn't strictly "view"
+		showModal(record);
 	};
 
 	const handleTableChange = (pagination, filters, sorter) => {
 		setPage(pagination.current - 1);
 		setSize(pagination.pageSize);
-		// Reset filters if necessary, or handle sorting/filtering from `filters` and `sorter` args
-		// Example: if (sorter.field) { setSortParams({ field: sorter.field, order: sorter.order }); } else { setSortParams({}); }
 	};
 
 	const handleSearch = (value) => {
-		setFilterParams({}); // Reset dropdown filters when searching
+		setFilterParams({});
 		setPage(0);
-		fetchAppointments(value.trim()); // Pass search query to fetch function
+		fetchAppointments(value.trim());
 	};
 
 	const handleFilterChange = (type, value) => {
-		// Clear search term if a filter is applied? Or allow combining? Decide on behavior.
-		// This example clears other filters when one is set.
 		const newFilterParams = { [type]: value };
 		setFilterParams(value ? newFilterParams : {});
-		setPage(0); // Reset page when filters change
-		// fetchAppointments() will be called by the useEffect hook
+		setPage(0);
 	};
 
 	return (
 		<Content style={{ padding: "20px" }}>
-			<Title level={2}>{t("appointments.page.title")}</Title> {/* Translate */}
+			<Title level={2}>{t("appointments.page.title")}</Title>
 			<Space wrap style={{ marginBottom: 16, display: "flex", gap: "10px", width: "100%" }}>
-				{" "}
-				{/* Added wrap */}
 				{hasAuthority("CREATE_APPOINTMENT") && (
 					<Button type="primary" onClick={() => showModal()}>
-						{t("appointments.page.action.create")} {/* Translate */}
+						{t("appointments.page.action.create")}
 					</Button>
 				)}
 				<Input.Search
-					placeholder={t("appointments.page.filter.searchPlaceholder")} // Translate
+					placeholder={t("appointments.page.filter.searchPlaceholder")}
 					onSearch={handleSearch}
 					enterButton
-					allowClear // Allow clearing search
+					allowClear
 					style={{ width: 300 }}
 				/>
 				<Select
 					showSearch
 					allowClear
 					style={{ width: 200 }}
-					placeholder={t("appointments.page.filter.patientPlaceholder")} // Translate
+					placeholder={t("appointments.page.filter.patientPlaceholder")}
 					onChange={(value) => handleFilterChange("patientId", value)}
-					optionFilterProp="label" // Filter based on the label text
+					optionFilterProp="label"
 					filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())}
 					options={patientOptions}
-					value={filterParams.patientId} // Control the select value
-					notFoundContent={null} // Or display a "not found" message
+					value={filterParams.patientId}
+					notFoundContent={null}
 				/>
 				<Select
 					showSearch
 					allowClear
 					style={{ width: 200 }}
-					placeholder={t("appointments.page.filter.userPlaceholder")} // Translate
+					placeholder={t("appointments.page.filter.userPlaceholder")}
 					onChange={(value) => handleFilterChange("userId", value)}
 					optionFilterProp="label"
 					filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())}
 					options={userOptions}
-					value={filterParams.userId} // Control the select value
+					value={filterParams.userId}
 					notFoundContent={null}
 				/>
 			</Space>
 			<AppointmentsList
 				appointments={appointments}
 				loading={loading}
-				onEdit={showModal} // Assuming clicking Edit should open the same modal
+				onEdit={showModal}
 				onDelete={handleDelete}
-				onView={handleView} // Assuming clicking View should open the same modal (consider read-only state if possible)
+				onView={handleView}
+				onStatusChange={handleStatusChange}
 				pagination={{
 					current: page + 1,
 					pageSize: size,
 					total: total,
-					showSizeChanger: true, // Optionally allow changing page size
-					pageSizeOptions: ["10", "20", "50"], // Example options
-					// Optionally add translated text for pagination:
-					// locale={{ items_per_page: t('common.pagination.itemsPerPage') }} // Example for AntD locale customization
+					showSizeChanger: true,
+					pageSizeOptions: ["10", "20", "50"],
 				}}
 				onTableChange={handleTableChange}
 			/>

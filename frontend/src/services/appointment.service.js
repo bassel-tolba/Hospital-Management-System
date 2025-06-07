@@ -1,14 +1,14 @@
-// frontend/src/services/appointment.service.js (Add endAppointment)
+// frontend/src/services/appointment.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const APPOINTMENT_API_BASE_URL = `/api/appointments`;
+const APPOINTMENT_API_BASE_URL = `http://localhost:8080/api/appointments`;
 
 export const useAppointmentStore = create((set, get) => ({
 	appointments: [],
-	userAppointments: [], // New state for user-specific appointments
+	userAppointments: [],
 	loading: false,
 	error: null,
 	total: 0,
@@ -16,7 +16,7 @@ export const useAppointmentStore = create((set, get) => ({
 	size: 10,
 
 	setAppointments: (appointments) => set({ appointments }),
-	setUserAppointments: (userAppointments) => set({ userAppointments }), // Setter for userAppointments
+	setUserAppointments: (userAppointments) => set({ userAppointments }),
 	setLoading: (loading) => set({ loading }),
 	setError: (error) => set({ error }),
 	setTotal: (total) => set({ total }),
@@ -45,7 +45,7 @@ export const useAppointmentStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to create appointment: ${error?.response?.data?.message || error.message}`,
 			});
-			throw error; // Re-throw to allow component to handle
+			throw error;
 		}
 	},
 
@@ -75,6 +75,45 @@ export const useAppointmentStore = create((set, get) => ({
 			throw error;
 		}
 	},
+
+	// --- THIS IS THE MISSING FUNCTION ---
+	// It will handle both full updates from the modal and partial updates (like status change).
+	updateAppointment: async (id, appointmentData) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			// We use PUT for full replacement from the form, or you can use PATCH for partial updates.
+			// Let's use PUT as it's more common for a full form "update". The status change will also work.
+			const response = await axios.put(`${APPOINTMENT_API_BASE_URL}/${id}`, appointmentData, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
+			const updatedAppointment = response.data;
+
+			// Update the list in the state so the UI refreshes instantly
+			set((state) => ({
+				appointments: state.appointments.map((appt) => (appt.id === id ? updatedAppointment : appt)),
+				loading: false,
+			}));
+
+			notification.success({
+				message: "Success",
+				description: "Appointment updated successfully.",
+			});
+			return updatedAppointment;
+		} catch (error) {
+			set({ error: error.message, loading: false });
+			const errorMessage = error.response?.data?.message || error.message;
+			notification.error({
+				message: "Error",
+				description: `Failed to update appointment: ${errorMessage}`,
+			});
+			throw error;
+		}
+	},
+	// --- END OF MISSING FUNCTION ---
+
 	getAppointmentsByPatientId: async (patientId, page, size) => {
 		set({ loading: true, error: null });
 		try {
@@ -97,7 +136,7 @@ export const useAppointmentStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to get appointments: ${error.message}`,
 			});
-			throw error; // Re-throw for component handling
+			throw error;
 		}
 	},
 	getAppointmentsByPatientIdAndNotDeleted: async (patientId, page, size) => {
@@ -122,7 +161,7 @@ export const useAppointmentStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to get appointments: ${error.message}`,
 			});
-			throw error; // Re-throw for component handling
+			throw error;
 		}
 	},
 
@@ -221,27 +260,22 @@ export const useAppointmentStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to get appointment: ${error.message}`,
 			});
-			throw error; // Re-throw for component handling
+			throw error;
 		}
 	},
-	// --- New Function: Get Appointments for Current User ---
 	getUserAppointments: async (userId, page = 0, size = 10) => {
-		// Added pagination
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.get(
-				`${APPOINTMENT_API_BASE_URL}/user/${userId}?page=${page}&size=${size}`, // Use correct endpoint
-				{
-					headers: {
-						Authorization: `Bearer ${user?.token}`,
-					},
-				}
-			);
+			const response = await axios.get(`${APPOINTMENT_API_BASE_URL}/user/${userId}?page=${page}&size=${size}`, {
+				headers: {
+					Authorization: `Bearer ${user?.token}`,
+				},
+			});
 			set({
 				loading: false,
-				userAppointments: response.data.content, // Use the new state
-				total: response.data.totalElements, // Update total if needed for pagination
+				userAppointments: response.data.content,
+				total: response.data.totalElements,
 			});
 			return response.data;
 		} catch (error) {
@@ -265,14 +299,14 @@ export const useAppointmentStore = create((set, get) => ({
 					headers: {
 						Authorization: `Bearer ${user?.token}`,
 					},
-				}
+				},
 			);
 			set({ loading: false });
 			notification.success({
 				message: "Success",
 				description: "Appointment ended successfully.",
 			});
-			return response.data; // Return updated appointment
+			return response.data;
 		} catch (error) {
 			set({ error: error.message, loading: false });
 			const errorMessage = error.response?.data?.message || error.message;
@@ -280,7 +314,7 @@ export const useAppointmentStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to end appointment: ${errorMessage}`,
 			});
-			throw error; // Re-throw for component handling
+			throw error;
 		}
 	},
 

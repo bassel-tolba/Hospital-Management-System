@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import the auth store
 
-const PERMISSION_API_BASE_URL = `/api/permissions`;
+const PERMISSION_API_BASE_URL = `http://localhost:8080/api/permissions`;
 
 export const usePermissionStore = create((set) => ({
 	permissions: [],

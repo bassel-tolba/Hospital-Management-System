@@ -854,5 +854,9 @@
 	"not-applicable": "N/A",
 	"download-active-info": "Download Active Info",
 	"download-all-info": "Download All Info",
-	"generate-patient-file-html": "Generate Patient File (HTML)"
+	"generate-patient-file-html": "Generate Patient File (HTML)",
+	"common.room": "Room",
+	"common.noResults": "No Results",
+	"common.error": "Error",
+	"admission.notification.endFailed": "End failed"
 }

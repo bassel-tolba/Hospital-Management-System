@@ -1079,56 +1079,60 @@ const HtmlReportGenerator = ({ type, mode, data, columns, fileNamePrefix, childr
 		let filename = "medical_report.html";
 		let orientationClass = "";
 
-		let patientContextForCurrentReport = patientDataForHeader;
-
-		if (!patientContextForCurrentReport) {
-			let sourceDataItem = null;
-
-			if (mode === "patientFile" && data) {
-				sourceDataItem = data; // data IS the patient object
-				patientContextForCurrentReport = sourceDataItem; // Patient object itself is the context
-			} else if (data) {
-				// For 'single' or 'table' modes
-				const item = mode === "single" ? data : Array.isArray(data) && data.length > 0 ? data[0] : null;
-				if (item) {
-					sourceDataItem = item; // The report item (e.g., admission, appointment)
-					if (sourceDataItem.patient && typeof sourceDataItem.patient === "object") {
-						patientContextForCurrentReport = sourceDataItem.patient; // Use the nested patient object
-					} else {
-						// No nested .patient object. Try to construct from flat properties on sourceDataItem.
-						// This relies on sourceDataItem (e.g., an appointment object) having these flat fields,
-						// or denormalized fields like patientFirstName.
-						patientContextForCurrentReport = {
-							id: sourceDataItem.patientId || sourceDataItem.id,
-							medicalRecordNumber: sourceDataItem.medicalRecordNumber || sourceDataItem.patientMedicalRecordNumber,
-							firstName: sourceDataItem.firstName || sourceDataItem.patientFirstName,
-							lastName: sourceDataItem.lastName || sourceDataItem.patientLastName,
-							dateOfBirth: sourceDataItem.dateOfBirth || sourceDataItem.patientDateOfBirth,
-							gender: sourceDataItem.gender || sourceDataItem.patientGender,
-							attendingPhysician:
-								sourceDataItem.attendingPhysicianName ||
-								sourceDataItem.attendingPhysician ||
-								sourceDataItem.patientAttendingPhysician,
-							profilePictureURL: sourceDataItem.profilePictureURL || sourceDataItem.patientProfilePictureURL,
-						};
-					}
-				}
-			}
-		}
-
-		const finalPatientContext = {
-			id: patientContextForCurrentReport?.id || null,
-			medicalRecordNumber: patientContextForCurrentReport?.medicalRecordNumber || null,
-			firstName: patientContextForCurrentReport?.firstName || null,
-			lastName: patientContextForCurrentReport?.lastName || null,
-			dateOfBirth: patientContextForCurrentReport?.dateOfBirth || null,
-			gender: patientContextForCurrentReport?.gender || null,
-			attendingPhysician: patientContextForCurrentReport?.attendingPhysician || null,
-			profilePictureURL: patientContextForCurrentReport?.profilePictureURL || null,
-		};
-
 		try {
 			setIsGeneratingFile(true);
+
+			// --- START: MODIFIED PATIENT CONTEXT LOGIC ---
+			let patientContextForCurrentReport = patientDataForHeader;
+
+			if (!patientContextForCurrentReport) {
+				const sourceItem = mode === "patientFile" ? data : mode === "single" ? data : Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+				if (mode === "patientFile" && sourceItem) {
+					// Priority 1 (after prop): data object in patientFile mode is the patient
+					patientContextForCurrentReport = sourceItem;
+				} else if (sourceItem && sourceItem.patient && typeof sourceItem.patient === "object") {
+					// Priority 2: nested patient object in a data record
+					patientContextForCurrentReport = sourceItem.patient;
+				} else {
+					// Priority 3: Fallback to the global store, which likely holds the active patient.
+					// This is the key fix for sub-tables on a patient detail page.
+					const patientFromStore = usePatientDetailStore.getState().patient;
+					if (patientFromStore && patientFromStore.id) {
+						// Optional: verify match if the data item has a patientId
+						if (!sourceItem || !sourceItem.patientId || sourceItem.patientId === patientFromStore.id) {
+							patientContextForCurrentReport = patientFromStore;
+						}
+					}
+				}
+
+				// Priority 4 (Last Resort): If still no context, try building from flat properties (for appointments etc.)
+				if (!patientContextForCurrentReport && sourceItem) {
+					patientContextForCurrentReport = {
+						id: sourceItem.patientId || sourceItem.id,
+						medicalRecordNumber: sourceItem.medicalRecordNumber || sourceItem.patientMedicalRecordNumber,
+						firstName: sourceItem.firstName || sourceItem.patientFirstName,
+						lastName: sourceItem.lastName || sourceItem.patientLastName,
+						dateOfBirth: sourceItem.dateOfBirth || sourceItem.patientDateOfBirth,
+						gender: sourceItem.gender || sourceItem.patientGender,
+						attendingPhysician:
+							sourceItem.attendingPhysicianName || sourceItem.attendingPhysician || sourceItem.patientAttendingPhysician,
+						profilePictureURL: sourceItem.profilePictureURL || sourceItem.patientProfilePictureURL,
+					};
+				}
+			}
+			// --- END: MODIFIED PATIENT CONTEXT LOGIC ---
+
+			const finalPatientContext = {
+				id: patientContextForCurrentReport?.id || null,
+				medicalRecordNumber: patientContextForCurrentReport?.medicalRecordNumber || null,
+				firstName: patientContextForCurrentReport?.firstName || null,
+				lastName: patientContextForCurrentReport?.lastName || null,
+				dateOfBirth: patientContextForCurrentReport?.dateOfBirth || null,
+				gender: patientContextForCurrentReport?.gender || null,
+				attendingPhysician: patientContextForCurrentReport?.attendingPhysician || null,
+				profilePictureURL: patientContextForCurrentReport?.profilePictureURL || null,
+			};
 
 			if (mode === "patientFile") {
 				const patientObjectForFile = data; // data IS the patient object for patientFile mode

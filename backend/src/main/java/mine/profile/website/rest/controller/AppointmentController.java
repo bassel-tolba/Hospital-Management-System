@@ -1,5 +1,4 @@
-
-// AppointmentController.java (Controller - Add endAppointment endpoint)
+// AppointmentController.java (UPDATED)
 package mine.profile.website.rest.controller;
 
 import org.springframework.data.domain.Page;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping; // <-- ADD THIS IMPORT
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,7 +33,15 @@ public class AppointmentController {
     @PostMapping
     public ResponseEntity<AppointmentDTO> createAppointment(@RequestBody AppointmentDTO appointmentDTO) {
         AppointmentDTO createdAppointment = appointmentService.createAppointment(appointmentDTO);
-        return new ResponseEntity<>(createdAppointment, HttpStatus.CREATED); // Return the DTO
+        return new ResponseEntity<>(createdAppointment, HttpStatus.CREATED);
+    }
+
+    // --- NEW METHOD TO HANDLE UPDATES ---
+    @PutMapping("/{id}")
+    public ResponseEntity<AppointmentDTO> updateAppointment(@PathVariable Long id,
+            @RequestBody AppointmentDTO appointmentDTO) {
+        AppointmentDTO updatedAppointment = appointmentService.updateAppointment(id, appointmentDTO);
+        return ResponseEntity.ok(updatedAppointment);
     }
 
     @GetMapping
@@ -120,5 +128,4 @@ public class AppointmentController {
         appointmentService.deleteAppointment(id);
         return ResponseEntity.noContent().build();
     }
-    // Other endpoints (update, etc.) as needed
 }

@@ -1,4 +1,3 @@
-// AdmissionService.java (Revised for Payment Check on Discharge)
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
@@ -9,8 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import jakarta.persistence.EntityNotFoundException;
 import mine.profile.website.dtos.AdmissionDTO;
@@ -37,6 +38,20 @@ import mine.profile.website.repository.ProductRepository;
 
 @Service
 public class AdmissionService {
+
+    // --- NEW EXCEPTION CLASS DEFINED INSIDE THIS FILE ---
+    /**
+     * Custom exception for the business rule that a patient cannot be discharged
+     * with an unpaid bill. The @ResponseStatus annotation tells Spring Boot to
+     * automatically return a 409 Conflict HTTP status when this is thrown.
+     * This follows your existing pattern for handling exceptions.
+     */
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public static class UnpaidBillException extends RuntimeException {
+        public UnpaidBillException(String message) {
+            super(message);
+        }
+    }
 
     @Autowired
     private AdmissionRepository admissionRepository;
@@ -67,7 +82,7 @@ public class AdmissionService {
     @Autowired
     private MedicationAdministrationRepository medicationAdministrationRepository;
     @Autowired
-    private PaymentService paymentService; // Inject PaymentService
+    private PaymentService paymentService;
 
     @Transactional
     public AdmissionDTO createAdmission(AdmissionDTO admissionDTO) {
@@ -75,7 +90,6 @@ public class AdmissionService {
                 .orElseThrow(
                         () -> new EntityNotFoundException("Patient not found with id: " + admissionDTO.getPatientId()));
 
-        // Check if the patient has an open admission
         if (hasOpenAdmission(patient.getId())) {
             throw new IllegalStateException(
                     "Patient with id " + patient.getId() + " has an open admission. Close it first.");
@@ -98,10 +112,9 @@ public class AdmissionService {
         Admission admission = admissionDTO.toEntity(patient, bed, admissionType);
         Admission savedAdmission = admissionRepository.save(admission);
 
-        // Create Billing *here*, associated with the patient.
         BillingDTO newBillingDTO = new BillingDTO();
         newBillingDTO.setPatientId(patient.getId());
-        newBillingDTO.setBillDate(LocalDateTime.now()); // Or admission.getAdmissionDate()?
+        newBillingDTO.setBillDate(LocalDateTime.now());
         billingService.createBilling(newBillingDTO);
 
         return AdmissionDTO.toDto(savedAdmission);
@@ -150,65 +163,83 @@ public class AdmissionService {
         Admission existingAdmission = admissionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Admission not found with id: " + id));
 
+        // Case 1: Handle patient discharge.
+        if (admissionDTO.getDischargeDate() != null && existingAdmission.getDischargeDate() == null) {
+            Bed bedToFree = existingAdmission.getBed();
+            if (bedToFree == null) {
+                throw new IllegalStateException("Cannot discharge: Admission " + id + " has no associated bed.");
+            }
+            dischargePatient(existingAdmission, bedToFree);
+            Admission dischargedAdmission = admissionRepository.save(existingAdmission);
+            return AdmissionDTO.toDto(dischargedAdmission);
+        }
+
+        // Case 2: Handle regular updates.
         Patient patient = patientRepository.findById(admissionDTO.getPatientId())
                 .orElseThrow(
                         () -> new EntityNotFoundException("Patient not found with id: " + admissionDTO.getPatientId()));
-        Bed bed = bedRepository.findById(admissionDTO.getBedId())
+        Bed newBed = bedRepository.findById(admissionDTO.getBedId())
                 .orElseThrow(() -> new EntityNotFoundException("Bed not found with id: " + admissionDTO.getBedId()));
-
         AdmissionType admissionType = admissionTypeRepository.findById(admissionDTO.getAdmissionTypeId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Admission type not found with id: " + admissionDTO.getAdmissionTypeId()));
 
-        existingAdmission.setAdmissionDate(admissionDTO.getAdmissionDate());
-        existingAdmission.setAdmissionType(admissionType);
-        existingAdmission.setBed(bed);
-        existingAdmission.setPatient(patient);
-
-        // Check payment before setting discharge date
-        if (admissionDTO.getDischargeDate() != null) {
-            Billing billing = billingRepository
-                    .findByPatientId(existingAdmission.getPatient().getId(), PageRequest.of(0, 1))
-                    .getContent().get(0);
-            if (!paymentService.isBillFullyPaid(billing)) {
-                throw new IllegalStateException("Cannot discharge patient. Bill is not fully paid.");
+        Bed oldBed = existingAdmission.getBed();
+        if (oldBed != null && !oldBed.getId().equals(newBed.getId())) {
+            if (newBed.isOccupied()) {
+                throw new IllegalStateException(
+                        "Cannot move to Bed with id " + newBed.getId() + ". It is already occupied.");
             }
-            dischargePatient(existingAdmission, bed);
-
+            oldBed.setOccupied(false);
+            bedRepository.save(oldBed);
+            newBed.setOccupied(true);
+            bedRepository.save(newBed);
         }
+
+        existingAdmission.setPatient(patient);
+        existingAdmission.setBed(newBed);
+        existingAdmission.setAdmissionType(admissionType);
+        existingAdmission.setAdmissionDate(admissionDTO.getAdmissionDate());
 
         Admission updatedAdmission = admissionRepository.save(existingAdmission);
         return AdmissionDTO.toDto(updatedAdmission);
     }
 
     private void dischargePatient(Admission existingAdmission, Bed bed) {
-        // 1. Find the correct billing record.
         Billing billing = billingRepository
                 .findByPatientId(existingAdmission.getPatient().getId(), PageRequest.of(0, 1))
-                .getContent().get(0);
+                .getContent().stream().findFirst()
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Billing record not found for patient id: " + existingAdmission.getPatient().getId()));
 
-        // 2. Update the billing total (final calculation). *Before* checking payment.
         billingService.updateBillingTotal(billing.getId());
 
-        // 3. *NOW* check if fully paid. Throw exception if not.
-        if (!paymentService.isBillFullyPaid(billing)) {
-            throw new IllegalStateException("Cannot discharge patient. Bill is not fully paid.");
+        Billing updatedBilling = billingRepository.findById(billing.getId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Billing record disappeared after update for id: " + billing.getId()));
+
+        // --- KEY CHANGE IS HERE ---
+        // Instead of IllegalStateException, we throw our new custom exception.
+        // Spring Boot will see the @ResponseStatus(HttpStatus.CONFLICT) and
+        // automatically
+        // return a 409 status code.
+        if (!paymentService.isBillFullyPaid(updatedBilling)) {
+            throw new UnpaidBillException("Cannot discharge patient. Bill is not fully paid.");
         }
 
-        // 4. If we get here, the bill *is* paid. Proceed with discharge.
         existingAdmission.setDischargeDate(LocalDateTime.now());
         bed.setOccupied(false);
         bedRepository.save(bed);
 
-        billing.setPaid(true);
-        billing.setPaidDate(LocalDateTime.now()); // Set paid date
+        updatedBilling.setPaid(true);
+        updatedBilling.setPaidDate(LocalDateTime.now());
 
-        BillingDTO billingDTO = BillingDTO.toDto(billing, paymentRepository, procedureLogRepository,
+        BillingDTO billingDTO = BillingDTO.toDto(updatedBilling, paymentRepository, procedureLogRepository,
                 patientProductUsageRepository, labResultRepository, imageReportRepository, productRepository,
                 procedureRepository, admissionRepository, patientRepository, medicationAdministrationRepository,
                 bedRepository);
-        billing.setPaidBillHtml(billingDTO.generateBillHtml()); // Generate and store *final* HTML
-        billingRepository.save(billing); // Save updated billing.
+        updatedBilling.setPaidBillHtml(billingDTO.generateBillHtml());
+        billingRepository.save(updatedBilling);
     }
 
     @Transactional

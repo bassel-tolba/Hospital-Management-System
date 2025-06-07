@@ -5,7 +5,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const ROOM_API_BASE_URL = ` /api/rooms`;
+const ROOM_API_BASE_URL = ` http://localhost:8080/api/rooms`;
 
 export const useRoomStore = create((set, get) => ({
 	rooms: [],
@@ -180,7 +180,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const MEDICATION_ADMINISTRATION_API_BASE_URL = `/api/medication-administrations`;
+const MEDICATION_ADMINISTRATION_API_BASE_URL = `http://localhost:8080/api/medication-administrations`;
 
 export const useMedicationAdministrationStore = create((set, get) => ({
 	medicationAdministrations: [],
@@ -324,7 +324,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_PRODUCT_USAGE_API_BASE_URL = `/api/product-usage`;
+const PATIENT_PRODUCT_USAGE_API_BASE_URL = `http://localhost:8080/api/product-usage`;
 
 export const usePatientProductUsageStore = create((set, get) => ({
 	patientProductUsages: [],
@@ -468,9 +468,9 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
 import { notification } from "antd";
 
-const IMAGE_REPORT_API_BASE_URL = `/api/imagereports`;
-const PATIENT_API_BASE_URL = `/api/patients`;
-const USER_API_BASE_URL = `/api/users`;
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
 
 export const useImageReportStore = create((set, get) => ({
 	imageReports: [],
@@ -663,7 +663,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const APPOINTMENT_API_BASE_URL = `/api/appointments`;
+const APPOINTMENT_API_BASE_URL = `http://localhost:8080/api/appointments`;
 
 export const useAppointmentStore = create((set, get) => ({
 	appointments: [],
@@ -976,7 +976,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const USER_API_BASE_URL = `/api/users`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
 
 export const useUserStore = create((set, get) => ({
 	users: [],
@@ -1282,10 +1282,10 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const DOCUMENT_API_BASE_URL = `/api/documents`;
-const DOCUMENT_TYPE_API_BASE_URL = `/api/documenttypes`;
-const PATIENT_API_BASE_URL = `/api/patients`;
-const USER_API_BASE_URL = `/api/users`;
+const DOCUMENT_API_BASE_URL = `http://localhost:8080/api/documents`;
+const DOCUMENT_TYPE_API_BASE_URL = `http://localhost:8080/api/documenttypes`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
 
 export const useDocumentStore = create((set, get) => ({
 	documents: [],
@@ -1496,7 +1496,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const BED_API_BASE_URL = `/api/beds`;
+const BED_API_BASE_URL = `http://localhost:8080/api/beds`;
 
 export const useBedStore = create((set, get) => ({
 	beds: [],
@@ -1698,7 +1698,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const NURSE_API_BASE_URL = `/api/nurses`;
+const NURSE_API_BASE_URL = `http://localhost:8080/api/nurses`;
 
 export const useNurseStore = create((set, get) => ({
 	nurses: [],
@@ -2142,7 +2142,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const PRESCRIBED_MEDICATION_API_BASE_URL = `/api/prescribed-medications`;
+const PRESCRIBED_MEDICATION_API_BASE_URL = `http://localhost:8080/api/prescribed-medications`;
 
 export const usePrescribedMedicationStore = create((set, get) => ({
 	prescribedMedications: [],
@@ -2252,8 +2252,8 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_DATA_URL = `/api/patients-data`;
-const IMAGE_REPORT_API_BASE_URL = `/api/imagereports`;
+const PATIENT_API_BASE_DATA_URL = `http://localhost:8080/api/patients-data`;
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
 
 export const usePatientDetailStore = create((set, get) => ({
 	loading: false,
@@ -2689,7 +2689,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import
 
-const ROLE_API_BASE_URL = `/api/roles`;
+const ROLE_API_BASE_URL = `http://localhost:8080/api/roles`;
 
 export const useRoleStore = create((set, get) => ({
 	// Added get
@@ -2801,7 +2801,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Assuming you have an auth service
 import { notification } from "antd";
 
-const IMAGE_REPORT_TYPE_API_BASE_URL = `/api/imagereporttypes`;
+const IMAGE_REPORT_TYPE_API_BASE_URL = `http://localhost:8080/api/imagereporttypes`;
 
 export const useImageReportTypeStore = create((set, get) => ({
 	imageReportTypes: [],
@@ -2917,7 +2917,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Corrected import
 import { notification } from "antd";
 
-const DOCUMENT_TYPE_API_BASE_URL = `/api/documenttypes`;
+const DOCUMENT_TYPE_API_BASE_URL = `http://localhost:8080/api/documenttypes`;
 
 export const useDocumentTypeStore = create((set, get) => ({
 	// Added get
@@ -3034,10 +3034,10 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Adjust path if needed
 import { notification } from "antd";
 
-const ASSESSMENT_API_BASE_URL = `/api/assessments`;
+const ASSESSMENT_API_BASE_URL = `http://localhost:8080/api/assessments`;
 // PATIENT_API_BASE_URL might be needed if fetching patient details separately
-// const PATIENT_API_BASE_URL = `/api/patients`;
-const TYPE_API_URL = `/api/assessment-types`;
+// const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
 
 // Define the store creator function
 const assessmentStoreCreator = (set, get) => ({
@@ -3278,7 +3278,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_URL = `/api/patients`;
+const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
 
 export const usePatientStore = create((set, get) => ({
 	patients: [],
@@ -3511,7 +3511,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import the auth store
 
-const PERMISSION_API_BASE_URL = `/api/permissions`;
+const PERMISSION_API_BASE_URL = `http://localhost:8080/api/permissions`;
 
 export const usePermissionStore = create((set) => ({
 	permissions: [],
@@ -3548,7 +3548,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "../auth.service";
 
-const PRODUCT_API_BASE_URL = `/api/products`;
+const PRODUCT_API_BASE_URL = `http://localhost:8080/api/products`;
 
 export const useProductHistoryStore = create((set, get) => ({
 	productHistory: [],
@@ -3644,7 +3644,7 @@ import { notification } from "antd";
 import { useAuthStore } from "../auth.service";
 import moment from "moment";
 
-const MEDICATION_API_BASE_URL = `/api/medications`;
+const MEDICATION_API_BASE_URL = `http://localhost:8080/api/medications`;
 
 export const useMedicationHistoryStore = create((set, get) => ({
 	medicationHistory: [],
@@ -3742,7 +3742,7 @@ export const useMedicationHistoryStore = create((set, get) => ({
 import axios from "axios";
 import { useAuthStore } from "./auth.service";
 
-const USER_API_BASE_URL = `/api/users`;
+const USER_API_BASE_URL = `http://localhost:8080/api/users`;
 
 const userApi = axios.create({
 	baseURL: USER_API_BASE_URL,
@@ -3770,7 +3770,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const NURSE_ACTIVITY_API_BASE_URL = `/api/nurses`;
+const NURSE_ACTIVITY_API_BASE_URL = `http://localhost:8080/api/nurses`;
 
 export const useNurseActivityStore = create((set, get) => ({
 	activities: [],
@@ -3905,7 +3905,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Import useAuthStore
 
-const UNIT_API_BASE_URL = `/api/units`;
+const UNIT_API_BASE_URL = `http://localhost:8080/api/units`;
 
 export const useUnitStore = create((set, get) => ({
 	units: [],
@@ -4067,8 +4067,8 @@ export const useUnitStore = create((set, get) => ({
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = `/api/auth`;
-const API_VOICE_URL = `/api/analyze-voice`;
+const API_URL = `http://localhost:8080/api/auth`;
+const API_VOICE_URL = `http://localhost:8080/api/analyze-voice`;
 
 export const useAuthStore = create((set, get) => ({
 	user: JSON.parse(localStorage.getItem("user")) || null,
@@ -4202,7 +4202,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Assuming this path
 
-const BILLING_API_BASE_URL = `/api/billings`;
+const BILLING_API_BASE_URL = `http://localhost:8080/api/billings`;
 
 export const useBillingStore = create((set, get) => ({
 	billings: [],
@@ -4351,7 +4351,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const MEDICATION_API_BASE_URL = `/api/medications`;
+const MEDICATION_API_BASE_URL = `http://localhost:8080/api/medications`;
 
 export const useMedicationStore = create((set, get) => ({
 	// ... (other store properties and functions) ...
@@ -4620,7 +4620,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PROCEDURE_API_BASE_URL = `/api/procedures`;
+const PROCEDURE_API_BASE_URL = `http://localhost:8080/api/procedures`;
 
 export const useProcedureStore = create((set, get) => ({
 	procedures: [],
@@ -4809,7 +4809,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const ACTIVITY_API_BASE_URL = `/api/activities`;
+const ACTIVITY_API_BASE_URL = `http://localhost:8080/api/activities`;
 
 export const useActivityStore = create((set, get) => ({
 	allActivities: [],
@@ -4967,7 +4967,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Make sure this path is correct
 
-const DASHBOARD_API_BASE_URL = "/api/dashboard";
+const DASHBOARD_API_BASE_URL = "http://localhost:8080/api/dashboard";
 
 export const useDashboardStore = create((set, get) => ({
 	admissionCount: null, // Not needed for trend, keep if used elsewhere
@@ -5225,7 +5225,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PRODUCT_API_BASE_URL = `/api/products`;
+const PRODUCT_API_BASE_URL = `http://localhost:8080/api/products`;
 
 export const useProductStore = create((set, get) => ({
 	products: [],
@@ -5450,8 +5450,8 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const ADMISSION_API_BASE_URL = `/api/admissions`;
-const ADMISSION_TYPE_API_BASE_URL = `/api/admissionTypes`;
+const ADMISSION_API_BASE_URL = `http://localhost:8080/api/admissions`;
+const ADMISSION_TYPE_API_BASE_URL = `http://localhost:8080/api/admissionTypes`;
 
 export const useAdmissionStore = create((set, get) => ({
 	admissions: [],
@@ -5742,8 +5742,8 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const LAB_TEST_API_BASE_URL = `/api/lab-tests`;
-const LAB_RESULT_API_BASE_URL = `/api/lab-results`;
+const LAB_TEST_API_BASE_URL = `http://localhost:8080/api/lab-tests`;
+const LAB_RESULT_API_BASE_URL = `http://localhost:8080/api/lab-results`;
 
 export const useLabStore = create((set, get) => ({
 	labTests: [],
@@ -5910,7 +5910,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Adjust path if needed
 import { notification } from "antd";
 
-const TYPE_API_URL = `/api/assessment-types`;
+const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
 
 export const useAssessmentTypeStore = create((set, get) => ({
 	// State
@@ -6046,7 +6046,7 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service";
 import { notification } from "antd";
 
-const VITAL_SIGNS_API_BASE_URL = `/api/vital-signs`;
+const VITAL_SIGNS_API_BASE_URL = `http://localhost:8080/api/vital-signs`;
 
 export const useVitalSignStore = create((set, get) => ({
 	vitalSigns: [],
@@ -6182,7 +6182,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PRESCRIPTION_API_BASE_URL = `/api/prescriptions`;
+const PRESCRIPTION_API_BASE_URL = `http://localhost:8080/api/prescriptions`;
 
 export const usePrescriptionStore = create((set, get) => ({
 	prescriptions: [],

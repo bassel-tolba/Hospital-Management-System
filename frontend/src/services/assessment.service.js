@@ -3,10 +3,10 @@ import { create } from "zustand";
 import { useAuthStore } from "./auth.service"; // Adjust path if needed
 import { notification } from "antd";
 
-const ASSESSMENT_API_BASE_URL = `/api/assessments`;
+const ASSESSMENT_API_BASE_URL = `http://localhost:8080/api/assessments`;
 // PATIENT_API_BASE_URL might be needed if fetching patient details separately
-// const PATIENT_API_BASE_URL = `/api/patients`;
-const TYPE_API_URL = `/api/assessment-types`;
+// const PATIENT_API_BASE_URL = `http://localhost:8080/api/patients`;
+const TYPE_API_URL = `http://localhost:8080/api/assessment-types`;
 
 // Define the store creator function
 const assessmentStoreCreator = (set, get) => ({

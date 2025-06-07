@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
 	Layout,
-	// Menu, // Not used for primary nav -> Now used for Dropdown
 	Card,
 	Tabs,
 	Typography,
@@ -25,9 +24,9 @@ import {
 	List,
 	Grid,
 	FloatButton,
-	theme as antdTheme, // THEME: Import antdTheme
-	Dropdown, // Added Dropdown
-	Menu, // Added Menu
+	theme as antdTheme,
+	Dropdown,
+	Menu,
 } from "antd";
 import {
 	CalendarOutlined,
@@ -43,7 +42,6 @@ import {
 	PlusOutlined,
 	EyeOutlined,
 	DownloadOutlined,
-	SearchOutlined,
 	PhoneOutlined,
 	MailOutlined,
 	EnvironmentOutlined,
@@ -56,7 +54,6 @@ import {
 	AudioOutlined,
 	AudioMutedOutlined,
 	FileDoneOutlined,
-	DashboardOutlined,
 	ManOutlined,
 	WomanOutlined,
 	InfoCircleOutlined,
@@ -74,7 +71,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../services/auth.service";
 import WaveSurfer from "wavesurfer.js";
 
-const { Header, Content /*, Footer */ } = Layout;
+const { Header, Content } = Layout;
 const { TabPane } = Tabs;
 const { Text, Title, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -141,7 +138,7 @@ const DetailModal = ({ title, isOpen, onClose, children }) => {
 			footer={null}
 			width={screens.xs ? "95%" : "90%"}
 			style={{ maxWidth: screens.xs ? "95vw" : "800px" }}
-			bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}>
+			styles={{ body: { padding: screens.xs ? "16px" : "24px" } }}>
 			<Row gutter={[16, 16]}>{children}</Row>
 		</Modal>
 	);
@@ -156,12 +153,17 @@ const renderDetail = (label, value) => (
 		<Text>{value ? value : "N/A"}</Text>
 	</div>
 );
+
 // -----------------------------------------------------------------------------
-// Utility function for rendering notes
+// FIX: Converted renderAssessmentNotes from a helper function to a component
+// to correctly use the `useToken` hook.
 // -----------------------------------------------------------------------------
-const renderAssessmentNotes = (notes) => (
-	<div dangerouslySetInnerHTML={{ __html: notes }} style={{ backgroundColor: "#f0f0f0", padding: 15, borderRadius: 10 }} />
-);
+const AssessmentNotesDisplay = ({ notes }) => {
+	const { token } = antdTheme.useToken();
+	if (!notes) return null;
+	return <div dangerouslySetInnerHTML={{ __html: notes }} style={{ backgroundColor: token.colorFillContent, padding: 15, borderRadius: 10 }} />;
+};
+
 // -----------------------------------------------------------------------------
 // Utility function for rendering medication list
 // -----------------------------------------------------------------------------
@@ -183,23 +185,6 @@ const renderMedicationList = (medications, t) => {
 	);
 };
 
-// -----------------------------------------------------------------------------
-// Utility function for rendering image list
-// -----------------------------------------------------------------------------
-const renderImagesList = (images) => (
-	<ul style={{ paddingLeft: 20 }}>
-		{images &&
-			images.map((imageUrl, index) => (
-				<li key={index}>
-					<Text>
-						<a href={imageUrl} target="_blank" rel="noopener noreferrer">
-							{imageUrl}
-						</a>
-					</Text>
-				</li>
-			))}
-	</ul>
-);
 // -----------------------------------------------------------------------------
 // Expanded Row Details Component
 // -----------------------------------------------------------------------------
@@ -256,7 +241,8 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 						)}
 					</Col>
 					<Col xs={24} sm={24}>
-						{renderAssessmentNotes(data.notes)}
+						{/* FIX: Replaced helper function with component */}
+						<AssessmentNotesDisplay notes={data.notes} />
 					</Col>
 				</>
 			)}
@@ -266,7 +252,8 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 						{renderDetail(t("billing-date"), data.billDate ? moment(data.billDate).format("YYYY-MM-DD HH:mm") : "N/A")}
 					</Col>
 					<Col xs={24} sm={24}>
-						{renderAssessmentNotes(data.bill)}
+						{/* FIX: Replaced helper function with component */}
+						<AssessmentNotesDisplay notes={data.bill} />
 					</Col>
 				</>
 			)}
@@ -446,7 +433,6 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
-	const { token } = antdTheme.useToken();
 	return (
 		<Modal
 			title={t("patient-profile-image")}
@@ -456,11 +442,8 @@ const PatientAvatarModal = ({ imageUrl, isOpen, onClose }) => {
 			width={screens.xs ? "95%" : "90%"}
 			style={{
 				maxWidth: screens.xs ? "95vw" : "400px",
-				borderColor: token.colorPrimary,
-				borderWidth: "2px",
-				borderStyle: "solid",
 			}}
-			bodyStyle={{ padding: screens.xs ? "16px" : "24px", textAlign: "center" }}>
+			styles={{ body: { padding: screens.xs ? "16px" : "24px", textAlign: "center" } }}>
 			{imageUrl ? (
 				<Image src={generateImageUrl(imageUrl)} alt="Patient Profile" style={{ width: "100%", maxWidth: "350px", objectFit: "contain" }} />
 			) : (
@@ -499,8 +482,6 @@ const QuickNotesModal = ({
 
 	const handleSave = () => {
 		onSave();
-		// if (quickNotesModalMode !== "list") { // Decided to keep modal open for add/edit
-		// }
 	};
 
 	const startRecording = async () => {
@@ -560,7 +541,7 @@ const QuickNotesModal = ({
 		const formData = new FormData();
 		formData.append("audio", blob, "recording.webm");
 		try {
-			const response = await fetch("/api/gemini/soundtotext", { method: "POST", body: formData });
+			const response = await fetch("http://localhost:8080/api/gemini/soundtotext", { method: "POST", body: formData });
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({ message: "Transcription failed with status " + response.status }));
 				throw new Error(errorData.message || "Transcription failed");
@@ -603,7 +584,7 @@ const QuickNotesModal = ({
 				URL.revokeObjectURL(audioBlobUrl);
 			}
 		};
-	}, [token]); // Removed mediaRecorder, audioBlobUrl from deps to avoid re-creating WaveSurfer unnecessarily
+	}, [token]);
 
 	useEffect(() => {
 		if (isOpen && (quickNotesModalMode === "create" || quickNotesModalMode === "edit")) {
@@ -635,7 +616,7 @@ const QuickNotesModal = ({
 			onCancel={onClose}
 			width={quickNotesModalMode === "list" ? (screens.xs ? "95%" : "60%") : screens.xs ? "95%" : "500px"}
 			style={{ maxWidth: screens.xs ? "95vw" : quickNotesModalMode === "list" ? "800px" : "500px" }}
-			bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}
+			styles={{ body: { padding: screens.xs ? "16px" : "24px" } }}
 			footer={
 				quickNotesModalMode === "list"
 					? [
@@ -744,7 +725,7 @@ const PatientDetails = () => {
 	const { id: patientId } = useParams();
 	const { t } = useTranslation();
 	const screens = useBreakpoint();
-	const isMobile = screens.xs;
+	const isMobile = !screens.sm; // Use !screens.sm for a better mobile breakpoint
 
 	const { token } = antdTheme.useToken();
 
@@ -789,7 +770,6 @@ const PatientDetails = () => {
 	const [documentsPage, setDocumentsPage] = useState(0);
 	const [procedureLogsPage, setProcedureLogsPage] = useState(0);
 
-	const [searchTerm, setSearchTerm] = useState(""); // Keep if search functionality is planned
 	const [activeTab, setActiveTab] = useState("profile");
 
 	const [expandedRow, setExpandedRow] = useState(null);
@@ -809,9 +789,6 @@ const PatientDetails = () => {
 	const [activityCreated, setActivityCreated] = useState(false);
 	const { fetchLabTests, labTests } = useLabStore();
 	const { user: loggedInUser } = useAuthStore();
-
-	const getResponsivePadding = (defaultValue = "24px") => (screens.xs ? "12px" : screens.sm ? "16px" : defaultValue);
-	const getResponsiveMargin = () => (screens.xs ? "8px" : screens.sm ? "12px" : "16px");
 
 	const handleOpenServiceModal = () => setIsServiceModalOpen(true);
 	const handleCloseServiceModal = () => setIsServiceModalOpen(false);
@@ -886,9 +863,8 @@ const PatientDetails = () => {
 			setQuickNotesModalMode("list");
 			setQuickNoteText("");
 			setEditingQuickNoteId(null);
-			// fetchQuickNotes will be called by the store actions if needed
 		} catch (error) {
-			// Error should be handled in store actions with notifications
+			// Error handled in store
 		}
 	};
 	const handleDeleteQuickNote = async (quickNoteId) => {
@@ -922,8 +898,8 @@ const PatientDetails = () => {
 
 	useEffect(() => {
 		if (patientId) {
-			fetchPatientData(patientId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10); // Initial fetch for patient, and first page of admissions
-			fetchQuickNotes(patientId, 1, 10); // Initial fetch for quick notes
+			fetchPatientData(patientId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10);
+			fetchQuickNotes(patientId, 1, 10);
 		}
 	}, [patientId, fetchPatientData, fetchQuickNotes, activityCreated]);
 
@@ -945,19 +921,18 @@ const PatientDetails = () => {
 				dataType === "imageReports" ? pageNum : 0,
 				dataType === "labResults" ? pageNum : 0,
 				dataType === "documents" ? pageNum : 0,
-				0, // quickNotes are handled by their own modal/fetch
+				0,
 				dataType === "procedureLogs" ? pageNum : 0,
 				10
 			);
 		} catch (error) {
 			console.error(`Error fetching ${dataType}:`, error.message);
-			// Notification is handled by the store
 		}
 	};
 
 	useEffect(() => {
 		if (activeTab === "3" && patientId) fetchPaginatedDataForTab("admissions", admissionsPage);
-	}, [activeTab, patientId, admissionsPage, activityCreated, filters.admissions]); // Added filters dependency
+	}, [activeTab, patientId, admissionsPage, activityCreated, filters.admissions]);
 	useEffect(() => {
 		if (activeTab === "4" && patientId) fetchPaginatedDataForTab("appointments", appointmentsPage);
 	}, [activeTab, patientId, appointmentsPage, filters.appointments, activityCreated]);
@@ -1090,7 +1065,7 @@ const PatientDetails = () => {
 			},
 		];
 		return isMobile
-			? [baseColumns[0], baseColumns[3], commonActionColumn("Appointment", "appointment", "appointment")] // DateTime, Status, Actions
+			? [baseColumns[0], baseColumns[3], commonActionColumn("Appointment", "appointment", "appointment")]
 			: [...baseColumns, commonActionColumn("Appointment", "appointment", "appointment")];
 	}, [isMobile, t, labTests]);
 
@@ -1397,14 +1372,10 @@ const PatientDetails = () => {
 			: [...baseColumns, commonActionColumn("Procedure Log", "procedureLog", "procedure_log")];
 	}, [isMobile, t, labTests]);
 
-	const handleSearch = (value) => {
-		console.log("Search triggered:", value);
-		setSearchTerm(value);
-	};
 	const handleFilterToggle = (dataType) => {
 		toggleFilter(dataType);
 		const pageSetters = {
-			admissions: setAdmissionsPage, // Added admissions filter toggle
+			admissions: setAdmissionsPage,
 			appointments: setAppointmentsPage,
 			assessments: setAssessmentsPage,
 			billings: setBillingsPage,
@@ -1448,7 +1419,7 @@ const PatientDetails = () => {
 		<Layout style={{ minHeight: "100vh", background: token.colorBgLayout }}>
 			<Header
 				style={{
-					padding: `0 ${getResponsivePadding()}`,
+					padding: isMobile ? "0 16px" : "0 24px",
 					background: token.colorBgContainer,
 					display: "flex",
 					justifyContent: "space-between",
@@ -1456,9 +1427,7 @@ const PatientDetails = () => {
 					borderBottom: `1px solid ${token.colorBorderSecondary}`,
 					height: 56,
 				}}>
-				<Title
-					level={4}
-					style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: token.colorTextHeading }}>
+				<Title level={4} style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 					{t("patient-details")}
 				</Title>
 				<Space>
@@ -1474,97 +1443,86 @@ const PatientDetails = () => {
 					)}
 				</Space>
 			</Header>
-			<Content style={{ margin: `${getResponsiveMargin()} ${getResponsivePadding()}` }}>
+
+			<Content style={{ padding: isMobile ? "8px" : "16px" }}>
 				{loading && !patient && <Spin tip={t("loading-patient-details")} style={{ display: "block", marginTop: 50 }} />}
+
 				{patient && (
-					<div
+					<Card
 						style={{
-							padding: getResponsivePadding(),
-							background: token.colorBgContainer,
-							border: `1px solid ${token.colorBorder}`,
-							borderRadius: token.borderRadiusLG,
-							marginBottom: getResponsiveMargin(),
+							marginBottom: isMobile ? "8px" : "16px",
 							position: "sticky",
-							top: 0,
+							top: isMobile ? "8px" : "16px",
 							zIndex: 10,
-						}}>
+							boxShadow: token.boxShadowSecondary,
+						}}
+						styles={{ body: { padding: isMobile ? "12px" : "20px" } }}>
 						<Row gutter={[16, 16]} align="middle">
-							<Col xs={24} sm={4} md={3} style={{ textAlign: isMobile ? "center" : "left" }}>
+							<Col xs={24} sm={6} md={4} style={{ textAlign: isMobile ? "center" : "left" }}>
 								<Avatar
-									size={isMobile ? 64 : 80}
+									size={isMobile ? 80 : 96}
 									src={generateImageUrl(patient.profilePictureURL)}
 									alt={`${patient.firstName} ${patient.lastName}`}
 									icon={<UserOutlined />}
-									style={{ cursor: "pointer", border: `2px solid ${token.colorBorder}` }}
+									style={{
+										cursor: "pointer",
+										border: `3px solid ${token.colorBorder}`,
+										backgroundColor: token.colorBgLayout,
+									}}
 									onClick={() => handleOpenAvatarModal(patient.profilePictureURL)}
 								/>
 							</Col>
-							<Col xs={24} sm={20} md={21}>
-								<Row gutter={[16, isMobile ? 8 : 12]}>
-									<Col xs={24} md={12} lg={8}>
-										<Title level={5} style={{ marginBottom: 0, color: token.colorTextHeading }}>
+							<Col xs={24} sm={18} md={20}>
+								<Row gutter={[isMobile ? 8 : 16, isMobile ? 12 : 16]}>
+									<Col span={24}>
+										<Title level={isMobile ? 4 : 3} style={{ marginBottom: 0, textAlign: isMobile ? "center" : "left" }}>
 											{patient.firstName} {patient.lastName}
 										</Title>
 									</Col>
-									<Col xs={12} md={6} lg={4}>
-										<Text type="secondary">
-											<InfoCircleOutlined style={{ marginRight: 4 }} />
-											{t("mrn")}:
-										</Text>{" "}
-										<Text strong>{patient.medicalRecordNumber}</Text>
+									<Col xs={12} sm={12} md={8}>
+										<Statistic
+											title={t("mrn")}
+											value={patient.medicalRecordNumber}
+											valueStyle={{ fontSize: isMobile ? 16 : 20 }}
+											prefix={<InfoCircleOutlined />}
+										/>
 									</Col>
-									<Col xs={12} md={6} lg={4}>
-										<Text type="secondary">
-											<UserOutlined style={{ marginRight: 4 }} />
-											{t("age")}:
-										</Text>{" "}
-										<Text strong>{moment().diff(patient.dateOfBirth, "years")}</Text>
-										{!isMobile && <Text style={{ marginLeft: 8 }}>({moment(patient.dateOfBirth).format("YYYY-MM-DD")})</Text>}
+									<Col xs={12} sm={12} md={5}>
+										<Statistic title={t("age")} value={moment().diff(patient.dateOfBirth, "years")} prefix={<UserOutlined />} />
 									</Col>
-									<Col xs={12} md={6} lg={4}>
-										<Text type="secondary">
-											{patient.gender === "Male" ? (
-												<ManOutlined style={{ marginRight: 4 }} />
-											) : (
-												<WomanOutlined style={{ marginRight: 4 }} />
-											)}
-											{t("gender")}:
-										</Text>{" "}
-										<Text strong>{patient.gender}</Text>
+									<Col xs={12} sm={12} md={5}>
+										<Statistic
+											title={t("gender")}
+											value={patient.gender}
+											prefix={patient.gender === "Male" ? <ManOutlined /> : <WomanOutlined />}
+										/>
 									</Col>
-									<Col xs={12} md={6} lg={4}>
-										<Text type="secondary">
-											<WarningOutlined style={{ marginRight: 4 }} />
-											{t("allergies")}:
-										</Text>{" "}
-										<Tag color={token.colorErrorBg} style={{ margin: 0, color: token.colorErrorText }}>
-											{patient.allergies || t("none")}
-										</Tag>
-									</Col>
-									{admissions && admissions.length > 0 && !admissions[0].dischargeDate && (
-										<Col xs={12} md={6} lg={4}>
+									<Col xs={12} sm={12} md={6}>
+										{admissions && admissions.length > 0 && !admissions[0].dischargeDate ? (
 											<Statistic
-												title={<Text type="secondary">{t("current-visit")}</Text>}
+												title={t("current-visit")}
 												value={moment(admissions[0].admissionDate).format("ll")}
-												valueStyle={{ fontSize: isMobile ? 14 : 16, color: token.colorSuccess }}
+												valueStyle={{ color: token.colorSuccess }}
 												prefix={<CalendarOutlined />}
-												style={{ lineHeight: 1.2 }}
 											/>
-										</Col>
-									)}
+										) : (
+											<Statistic title={t("last-visit")} value={t("n-a")} prefix={<CalendarOutlined />} />
+										)}
+									</Col>
 								</Row>
 							</Col>
 						</Row>
-					</div>
+					</Card>
 				)}
+
 				{patient && (
-					<Card className="patient-details-tabs" bodyStyle={{ padding: `0 ${getResponsivePadding()}` }}>
+					<Card className="patient-details-tabs" styles={{ body: { padding: "0" } }}>
 						<Tabs
 							activeKey={activeTab}
 							onChange={handleTabChange}
 							type="card"
 							size={isMobile ? "small" : "default"}
-							tabBarStyle={{ marginBottom: getResponsivePadding("16px") }}>
+							tabBarStyle={{ margin: 0, paddingLeft: "8px" }}>
 							<TabPane
 								tab={
 									<span>
@@ -1572,115 +1530,97 @@ const PatientDetails = () => {
 									</span>
 								}
 								key="profile">
-								<Row gutter={[24, 16]} style={{ padding: `${getResponsivePadding()} 0` }}>
-									<Col xs={24} md={12} lg={8}>
-										<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
-											{t("contact-information")}
-										</Title>
-										<Space direction="vertical" size="small">
-											<Text>
-												<EnvironmentOutlined style={{ marginRight: 8, color: token.colorPrimary }} />{" "}
-												{patient.address || "N/A"}
-											</Text>
-											<Text>
-												<PhoneOutlined style={{ marginRight: 8, color: token.colorPrimary }} /> {patient.phoneNumber || "N/A"}
-											</Text>
-											<Text>
-												<MailOutlined style={{ marginRight: 8, color: token.colorPrimary }} /> {patient.email || "N/A"}
-											</Text>
-										</Space>
-									</Col>
-									<Col xs={24} md={12} lg={8}>
-										<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
-											{t("medical-information")}
-										</Title>
-										<Space direction="vertical" size="small">
-											<Text>
-												<HeartOutlined style={{ marginRight: 8, color: token.colorError }} /> {t("blood-type")}:{" "}
-												<Text strong>{patient.bloodType || "N/A"}</Text>
-											</Text>
-											<div>
-												<Text strong>{t("medical-history")}:</Text>
-												<Paragraph ellipsis={{ rows: 3, expandable: true, symbol: t("more") }}>
-													{patient.medicalHistory || "N/A"}
-												</Paragraph>
-											</div>
-										</Space>
-									</Col>
-									<Col xs={24} md={24} lg={8}>
-										<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
-											{t("vital-stats")}
-										</Title>
-										<Row gutter={[16, 16]}>
-											<Col xs={12} sm={12}>
-												<Statistic
-													title={t("age")}
-													value={moment().diff(patient.dateOfBirth, "years")}
-													prefix={<UserOutlined />}
-												/>
-											</Col>
-											<Col xs={12} sm={12}>
-												{admissions && admissions.length > 0 && admissions[0].dischargeDate ? (
-													<Statistic
-														title={t("last-visit")}
-														value={moment(admissions[0].dischargeDate).fromNow()}
-														valueStyle={{ color: token.colorSuccess }}
-														prefix={<CalendarOutlined />}
-													/>
-												) : !loading ? (
-													<Statistic title={t("last-visit")} value={"N/A"} prefix={<CalendarOutlined />} />
-												) : null}
-											</Col>
-										</Row>
-									</Col>
-								</Row>
-							</TabPane>
-							<TabPane
-								tab={
-									<span>
-										<DashboardOutlined /> {t("overview")}
-									</span>
-								}
-								key="overview">
-								<div style={{ padding: `${getResponsivePadding()} 0` }}>
-									<Title level={5} style={{ marginBottom: 12, color: token.colorTextHeading }}>
-										{t("recent-quick-notes")}
-									</Title>
-									<List
-										itemLayout="horizontal"
-										dataSource={quickNotes.slice(0, 5)}
-										loading={loading && quickNotes.length === 0}
-										renderItem={(item) => (
-											<List.Item
-												actions={[
-													<Button type="link" size="small" onClick={() => handleEditQuickNote(item)}>
-														{t("edit")}
-													</Button>,
-												]}>
-												<List.Item.Meta
-													avatar={<Avatar size="small" icon={<PushpinOutlined />} />}
-													title={
-														<span>
-															{item.addedByUser || t("system")} - {moment(item.createdAt).format("YYYY-MM-DD HH:mm")}
-														</span>
-													}
-													description={
-														<Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
-															{item.noteText}
-														</Paragraph>
-													}
-												/>
-											</List.Item>
-										)}
-									/>
-									{quickNotes.length > 5 && (
-										<Button type="link" onClick={() => handleOpenQuickNotesModal("list")} style={{ marginTop: 8 }}>
-											{t("view-all-quick-notes")}
-										</Button>
-									)}
-									{quickNotes.length === 0 && !loading && <Text type="secondary">{t("no-quick-notes-available")}</Text>}
+								<div style={{ padding: isMobile ? "16px 12px" : "24px" }}>
+									<Row gutter={[24, 24]}>
+										<Col xs={24} md={12} lg={8}>
+											<Title level={5} style={{ marginBottom: 16 }}>
+												{t("contact-information")}
+											</Title>
+											<Space direction="vertical" size="middle" style={{ width: "100%" }}>
+												<Text>
+													<EnvironmentOutlined style={{ marginRight: 8, color: token.colorPrimary }} />{" "}
+													{patient.address || t("not-available")}
+												</Text>
+												<Text>
+													<PhoneOutlined style={{ marginRight: 8, color: token.colorPrimary }} />{" "}
+													{patient.phoneNumber || t("not-available")}
+												</Text>
+												<Text>
+													<MailOutlined style={{ marginRight: 8, color: token.colorPrimary }} />{" "}
+													{patient.email || t("not-available")}
+												</Text>
+											</Space>
+										</Col>
+										<Col xs={24} md={12} lg={8}>
+											<Title level={5} style={{ marginBottom: 16 }}>
+												{t("medical-information")}
+											</Title>
+											<Space direction="vertical" size="middle" style={{ width: "100%" }}>
+												<Text>
+													<HeartOutlined style={{ marginRight: 8, color: token.colorError }} /> {t("blood-type")}:{" "}
+													<Text strong>{patient.bloodType || "N/A"}</Text>
+												</Text>
+												<div>
+													<Text strong>
+														<WarningOutlined style={{ marginRight: 8, color: token.colorError }} />
+														{t("allergies")}:
+													</Text>
+													<Paragraph ellipsis={{ rows: 3, expandable: true, symbol: t("more") }}>
+														{patient.allergies || t("no-known-allergies")}
+													</Paragraph>
+												</div>
+												<div>
+													<Text strong>{t("medical-history")}:</Text>
+													<Paragraph ellipsis={{ rows: 3, expandable: true, symbol: t("more") }}>
+														{patient.medicalHistory || t("not-available")}
+													</Paragraph>
+												</div>
+											</Space>
+										</Col>
+										<Col xs={24} md={24} lg={8}>
+											<Title level={5} style={{ marginBottom: 16 }}>
+												{t("quick-notes")}
+											</Title>
+											<List
+												itemLayout="horizontal"
+												dataSource={quickNotes.slice(0, 3)}
+												loading={loading && quickNotes.length === 0}
+												renderItem={(item) => (
+													<List.Item
+														actions={[
+															<Button type="link" size="small" onClick={() => handleEditQuickNote(item)}>
+																{t("edit")}
+															</Button>,
+														]}>
+														<List.Item.Meta
+															avatar={
+																<Avatar
+																	size="small"
+																	icon={<PushpinOutlined />}
+																	style={{ backgroundColor: token.colorPrimaryBg }}
+																/>
+															}
+															title={`${item.addedByUser || t("system")} - ${moment(item.createdAt).fromNow()}`}
+															description={
+																<Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
+																	{item.noteText}
+																</Paragraph>
+															}
+														/>
+													</List.Item>
+												)}
+											/>
+											{quickNotes.length > 3 && (
+												<Button type="link" onClick={() => handleOpenQuickNotesModal("list")} style={{ marginTop: 8 }}>
+													{t("view-all-quick-notes")}
+												</Button>
+											)}
+											{quickNotes.length === 0 && !loading && <Text type="secondary">{t("no-quick-notes-available")}</Text>}
+										</Col>
+									</Row>
 								</div>
 							</TabPane>
+
 							{[
 								{
 									key: "3",
@@ -1691,7 +1631,7 @@ const PatientDetails = () => {
 									page: admissionsPage,
 									setPage: setAdmissionsPage,
 									count: totalCounts?.admissions,
-									filterType: "admissions", // Allow filtering admissions tab if needed
+									filterType: "admissions",
 								},
 								{
 									key: "4",
@@ -1830,32 +1770,34 @@ const PatientDetails = () => {
 									key={tab.key}
 									tab={
 										<span>
-											{tab.icon} {tab.title}
-											{tab.filterType && ( // Ensure filterType exists before showing button
+											{tab.icon} {!isMobile && tab.title}
+											{tab.filterType && (
 												<Tooltip title={filters[tab.filterType] ? t("show-all") : t("filter-by-admission")}>
 													<Button
 														type="text"
 														size="small"
-														danger={filters[tab.filterType]} // 'danger' indicates filter is active
+														danger={filters[tab.filterType]}
 														icon={<FilterOutlined />}
 														onClick={(e) => {
-															e.stopPropagation(); // Prevent tab change
+															e.stopPropagation();
 															handleFilterToggle(tab.filterType);
 														}}
-														style={{ marginLeft: 4, padding: "0 4px" }}
+														style={{ marginLeft: isMobile ? 0 : 4, padding: "0 4px" }}
 													/>
 												</Tooltip>
 											)}
 										</span>
 									}>
-									<PaginatedTable
-										columns={tab.columns}
-										data={tab.data}
-										loading={loading && activeTab === tab.key}
-										currentPage={tab.page}
-										onPageChange={tab.setPage}
-										totalCount={tab.count || 0}
-									/>
+									<div style={{ padding: isMobile ? "12px" : "16px" }}>
+										<PaginatedTable
+											columns={tab.columns}
+											data={tab.data}
+											loading={loading && activeTab === tab.key}
+											currentPage={tab.page}
+											onPageChange={tab.setPage}
+											totalCount={tab.count || 0}
+										/>
+									</div>
 								</TabPane>
 							))}
 						</Tabs>
@@ -1880,7 +1822,7 @@ const PatientDetails = () => {
 				footer={null}
 				width={screens.xs ? "95%" : "90%"}
 				style={{ maxWidth: screens.xs ? "95vw" : "600px" }}
-				bodyStyle={{ padding: screens.xs ? "16px" : "24px" }}>
+				styles={{ body: { padding: screens.xs ? "16px" : "24px" } }}>
 				<MiniCreateActivityForm onActivityCreated={handleActivityCreated} patientId={patientId} />
 			</Modal>
 			<ExpandedRowDetails expandedRow={expandedRow} isModalOpen={isDetailModalOpen} handleCloseModal={handleCloseDetailModal} />

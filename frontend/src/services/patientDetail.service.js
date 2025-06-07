@@ -4,8 +4,8 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service";
 
-const PATIENT_API_BASE_DATA_URL = `/api/patients-data`;
-const IMAGE_REPORT_API_BASE_URL = `/api/imagereports`;
+const PATIENT_API_BASE_DATA_URL = `http://localhost:8080/api/patients-data`;
+const IMAGE_REPORT_API_BASE_URL = `http://localhost:8080/api/imagereports`;
 
 export const usePatientDetailStore = create((set, get) => ({
 	loading: false,

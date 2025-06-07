@@ -1,23 +1,44 @@
+// frontend/src/components/appointments/UserAppointmentList.js (UPDATED)
 import React, { useState, useEffect } from "react";
-import { Calendar, Card, Typography, Modal, Badge, theme, ConfigProvider, Button, Space } from "antd"; // Added Space
+import { Calendar, Card, Typography, Modal, Badge, theme, ConfigProvider, Button, Dropdown } from "antd";
+import { DownOutlined, TagsOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { Link } from "react-router-dom";
 import { useAppointmentStore } from "../../services/appointment.service";
-import { useTranslation } from "react-i18next"; // Import useTranslation
+import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 
-const UserAppointmentList = ({ appointments, onAppointmentsUpdated }) => {
-	const { t } = useTranslation(); // Initialize useTranslation
+// Removed unused 'onAppointmentsUpdated' prop
+const UserAppointmentList = ({ appointments }) => {
+	const { t } = useTranslation();
+	const { token } = theme.useToken();
 	const [selectedAppointment, setSelectedAppointment] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const { token } = theme.useToken();
-	const { endAppointment, getUserAppointments } = useAppointmentStore();
+	// Import the new flexible update function and remove endAppointment
+	const { updateAppointment, getUserAppointments } = useAppointmentStore();
 	const [localAppointments, setLocalAppointments] = useState(appointments);
 
 	useEffect(() => {
 		setLocalAppointments(appointments);
 	}, [appointments]);
+
+	const APPOINTMENT_STATUSES_FOR_UPDATE = ["COMPLETED", "MISSED", "CANCELLED"];
+
+	const getStatusText = (status) => {
+		switch (status) {
+			case "SCHEDULED":
+				return t("appointments.status.scheduled", "Scheduled");
+			case "COMPLETED":
+				return t("appointments.status.completed", "Completed");
+			case "MISSED":
+				return t("appointments.status.missed", "Missed");
+			case "CANCELLED":
+				return t("appointments.status.cancelled", "Cancelled");
+			default:
+				return status;
+		}
+	};
 
 	const handleAppointmentClick = (appointment) => {
 		setSelectedAppointment(appointment);
@@ -25,82 +46,67 @@ const UserAppointmentList = ({ appointments, onAppointmentsUpdated }) => {
 	};
 
 	const formatTime = (dateTime) => {
-		// Potentially localize this further using moment locales if needed
 		return moment(dateTime).format("MMM D, YYYY h:mm A");
 	};
 
 	const formatShortTime = (dateTime) => {
-		// Potentially localize this further
 		return moment(dateTime).format("h:mm A");
 	};
 
-	const handleEndAppointment = async (appointmentId) => {
+	// Renamed and updated to handle any status change
+	const handleStatusChange = async (appointmentId, newStatus) => {
 		try {
-			await endAppointment(appointmentId);
+			// Use the new, flexible update function
+			await updateAppointment(appointmentId, { status: newStatus });
 			setIsModalOpen(false);
+
+			// Refresh the full list to ensure the calendar is accurate
 			if (selectedAppointment && selectedAppointment.userId) {
 				await getUserAppointments(selectedAppointment.userId);
 			}
-			// Note: You might want to show a success message here using message.success() and t()
 		} catch (error) {
-			console.error("Failed to end appointment", error); // Keep console logs untranslated
-			// Note: You might want to show an error message here using message.error() and t()
+			console.error("Failed to update appointment status", error);
+			// Error notification is already handled by the service
 		}
 	};
 
 	const dateCellRender = (value) => {
 		const dateAppointments = localAppointments.filter(
-			(appointment) => moment(appointment.appointmentDateTime).format("YYYY-MM-DD") === value.format("YYYY-MM-DD")
+			(appointment) => moment(appointment.appointmentDateTime).format("YYYY-MM-DD") === value.format("YYYY-MM-DD"),
 		);
 
 		return (
 			<ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
 				{dateAppointments.map((appointment) => {
 					let badgeStatus = "default";
-					let appointmentTextKey = "";
-					let interpolationParams = {
-						patientName: `${appointment.patientFirstName}`, // Only first name for brevity? Or full name?
-						time: formatShortTime(appointment.startTime),
-					};
+					let appointmentText = `${appointment.patientFirstName} - ${formatShortTime(appointment.startTime)}`;
 
 					switch (appointment.status) {
 						case "COMPLETED":
 							badgeStatus = "success";
-							appointmentTextKey = "appointments.userList.calendar.statusCompleted";
-							interpolationParams = { patientName: `${appointment.patientFirstName}` }; // No time needed
 							break;
 						case "MISSED":
 							badgeStatus = "warning";
-							appointmentTextKey = "appointments.userList.calendar.statusMissed";
-							interpolationParams = { patientName: `${appointment.patientFirstName}` };
 							break;
 						case "CANCELLED":
 							badgeStatus = "error";
-							appointmentTextKey = "appointments.userList.calendar.statusCancelled";
-							interpolationParams = { patientName: `${appointment.patientFirstName}` };
 							break;
 						case "SCHEDULED":
 							if (moment(appointment.endTime).isBefore(moment())) {
-								badgeStatus = "warning";
-								appointmentTextKey = "appointments.userList.calendar.statusOverdue";
-								interpolationParams = { patientName: `${appointment.patientFirstName}` };
+								badgeStatus = "warning"; // Overdue
 							} else {
-								badgeStatus = "processing";
-								appointmentTextKey = "appointments.userList.calendar.statusScheduled";
-								// interpolationParams already includes name and time
+								badgeStatus = "processing"; // Upcoming
 							}
 							break;
 						default:
 							badgeStatus = "default";
-							appointmentTextKey = "appointments.userList.calendar.statusUnknown"; // Add a key for unknown status
-							interpolationParams = { patientName: `${appointment.patientFirstName}` };
 					}
 
 					return (
 						<li key={appointment.id} onClick={() => handleAppointmentClick(appointment)} style={{ marginBottom: "2px" }}>
 							<Badge
 								status={badgeStatus}
-								text={t(appointmentTextKey, interpolationParams)} // Translate text with interpolation
+								text={appointmentText}
 								style={{
 									cursor: "pointer",
 									fontSize: window.innerWidth < 768 ? "10px" : "14px",
@@ -117,75 +123,74 @@ const UserAppointmentList = ({ appointments, onAppointmentsUpdated }) => {
 		);
 	};
 
-	// Helper function to get translated status text for the modal
-	const getModalStatusText = (status) => {
-		switch (status) {
-			case "SCHEDULED":
-				return t("appointments.status.scheduled");
-			case "COMPLETED":
-				return t("appointments.status.completed");
-			case "MISSED":
-				return t("appointments.status.missed");
-			case "CANCELLED":
-				return t("appointments.status.cancelled");
-			default:
-				return status;
-		}
-	};
+	const AppointmentModal = () => {
+		// Define the menu for the dropdown
+		const menuProps = {
+			items: APPOINTMENT_STATUSES_FOR_UPDATE.map((status) => ({
+				key: status,
+				label: getStatusText(status),
+				// Disable the option if it's already the current status
+				disabled: selectedAppointment?.status === status,
+			})),
+			onClick: ({ key }) => {
+				if (selectedAppointment) {
+					handleStatusChange(selectedAppointment.id, key);
+				}
+			},
+		};
 
-	const AppointmentModal = () => (
-		<Modal
-			title={t("appointments.userList.modal.title")} // Translate
-			open={isModalOpen}
-			onCancel={() => setIsModalOpen(false)}
-			footer={
-				// Add Cancel button for consistency
-				<Button key="back" onClick={() => setIsModalOpen(false)}>
-					{t("common.close")} {/* Use common close */}
-				</Button>
-			}
-			width={window.innerWidth < 768 ? "90%" : "520px"}>
-			{selectedAppointment && (
-				<Card bordered={false}>
-					{" "}
-					{/* Remove card border for cleaner modal look */}
-					<Title level={5} style={{ marginBottom: 16 }}>
-						<Link to={`/patients/${selectedAppointment.patientId}`}>
-							{selectedAppointment.patientFirstName} {selectedAppointment.patientLastName}
-						</Link>
-					</Title>
-					<Space direction="vertical" size="middle" style={{ width: "100%" }}>
-						{" "}
-						{/* Use Space for layout */}
+		return (
+			<Modal
+				title="Appointment Details"
+				open={isModalOpen}
+				onCancel={() => setIsModalOpen(false)}
+				footer={null} // We are putting our action button inside the card
+				width={window.innerWidth < 768 ? "90%" : "520px"}>
+				{selectedAppointment && (
+					<Card
+						actions={
+							[
+								// Conditionally render the dropdown button
+								selectedAppointment.status === "SCHEDULED" && (
+									<Dropdown menu={menuProps} trigger={["click"]}>
+										<Button>
+											<TagsOutlined /> Update Status <DownOutlined />
+										</Button>
+									</Dropdown>
+								),
+							].filter(Boolean) // Filter out false values to prevent empty space
+						}>
+						<Title level={5}>
+							<Link to={`/patients/${selectedAppointment.patientId}`}>
+								{selectedAppointment.patientFirstName} {selectedAppointment.patientLastName}
+							</Link>
+						</Title>
 						<Text>
-							<strong>{t("appointments.userList.modal.labelUser")}:</strong> {selectedAppointment.userFirstName}{" "}
-							{selectedAppointment.userLastName}
+							<strong>Doctor/Nurse:</strong> {selectedAppointment.userFirstName} {selectedAppointment.userLastName}
 						</Text>
+						<br />
 						<Text>
-							<strong>{t("appointments.userList.modal.labelStartTime")}: </strong>
+							<strong>Start Time: </strong>
 							{formatTime(selectedAppointment.startTime)}
 						</Text>
+						<br />
 						<Text>
-							<strong>{t("appointments.userList.modal.labelEndTime")}: </strong>
+							<strong>End Time: </strong>
 							{formatTime(selectedAppointment.endTime)}
 						</Text>
+						<br />
 						<Text>
-							<strong>{t("appointments.userList.modal.labelType")}:</strong> {selectedAppointment.productName}
+							<strong>Type:</strong> {selectedAppointment.productName}
 						</Text>
+						<br />
 						<Text>
-							<strong>{t("appointments.userList.modal.labelStatus")}:</strong> {getModalStatusText(selectedAppointment.status)}{" "}
-							{/* Translate Status */}
+							<strong>Status:</strong> {getStatusText(selectedAppointment.status)}
 						</Text>
-						{(selectedAppointment.status === "SCHEDULED" || selectedAppointment.status === "MISSED") && (
-							<Button type="primary" onClick={() => handleEndAppointment(selectedAppointment.id)} style={{ marginTop: 16 }}>
-								{t("appointments.userList.modal.actionEnd")} {/* Translate */}
-							</Button>
-						)}
-					</Space>
-				</Card>
-			)}
-		</Modal>
-	);
+					</Card>
+				)}
+			</Modal>
+		);
+	};
 
 	return (
 		<ConfigProvider

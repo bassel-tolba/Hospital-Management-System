@@ -327,9 +327,9 @@ public class SecurityConfig {
                                 "MANAGE_GEMINI_API_KEY")
                         // --- Catch-all: Default Deny (More Secure) ---
                         // .anyRequest().permitAll() // <-- Original Less Secure
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated() // <-- More Secure Default: Require authentication if no specific
                                                       // rule matches
-
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

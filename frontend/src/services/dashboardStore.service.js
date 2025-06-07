@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { notification } from "antd";
 import { useAuthStore } from "./auth.service"; // Make sure this path is correct
 
-const DASHBOARD_API_BASE_URL = "/api/dashboard";
+const DASHBOARD_API_BASE_URL = "http://localhost:8080/api/dashboard";
 
 export const useDashboardStore = create((set, get) => ({
 	admissionCount: null, // Not needed for trend, keep if used elsewhere

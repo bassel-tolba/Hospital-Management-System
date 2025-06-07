@@ -1,4 +1,4 @@
-// AppointmentService.java
+// AppointmentService.java (UPDATED)
 package mine.profile.website.service;
 
 import java.math.BigDecimal;
@@ -57,6 +57,8 @@ public class AppointmentService {
 
     @Transactional
     public AppointmentDTO createAppointment(AppointmentDTO appointmentDTO) {
+        // ... existing createAppointment logic ...
+        // No changes needed here
         Objects.requireNonNull(appointmentDTO, "AppointmentDTO cannot be null");
         Objects.requireNonNull(appointmentDTO.getPatientId(), "Patient ID cannot be null");
         Objects.requireNonNull(appointmentDTO.getUserId(), "User ID cannot be null");
@@ -163,26 +165,83 @@ public class AppointmentService {
         return appointmentDTO;
     }
 
+    // --- NEW METHOD TO HANDLE UPDATE LOGIC ---
+    @Transactional
+    public AppointmentDTO updateAppointment(Long id, AppointmentDTO appointmentDTO) {
+        logger.info("Updating appointment with ID: {}", id);
+        Appointment existingAppointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Appointment ID: " + id));
+
+        // This handles partial updates gracefully. If a field in the DTO is null, it's
+        // ignored.
+        // If it has a value, it's used for the update.
+
+        // Update status if provided
+        if (appointmentDTO.getStatus() != null) {
+            logger.info("Updating status for appointment {} to {}", id, appointmentDTO.getStatus());
+            existingAppointment.setStatus(appointmentDTO.getStatus());
+        }
+
+        // Update date/time fields if provided
+        if (appointmentDTO.getAppointmentDateTime() != null) {
+            existingAppointment.setAppointmentDateTime(appointmentDTO.getAppointmentDateTime());
+        }
+        if (appointmentDTO.getStartTime() != null) {
+            existingAppointment.setStartTime(appointmentDTO.getStartTime());
+        }
+        if (appointmentDTO.getEndTime() != null) {
+            existingAppointment.setEndTime(appointmentDTO.getEndTime());
+        }
+
+        // Update related patient if ID is provided and different
+        if (appointmentDTO.getPatientId() != null
+                && !appointmentDTO.getPatientId().equals(existingAppointment.getPatient().getId())) {
+            Patient patient = patientRepository.findById(appointmentDTO.getPatientId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Invalid Patient ID for update: " + appointmentDTO.getPatientId()));
+            existingAppointment.setPatient(patient);
+        }
+
+        // Update related user if ID is provided and different
+        if (appointmentDTO.getUserId() != null
+                && !appointmentDTO.getUserId().equals(existingAppointment.getUser().getId())) {
+            User user = userRepository.findById(appointmentDTO.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Invalid User ID for update: " + appointmentDTO.getUserId()));
+            existingAppointment.setUser(user);
+        }
+
+        // Note: Updating the product is more complex as it's linked via
+        // PatientProductUsage.
+        // For now, this logic focuses on updating the core Appointment details.
+        // If the product needs to change, the old PatientProductUsage might need to be
+        // deleted and a new one created.
+
+        Appointment savedAppointment = appointmentRepository.save(existingAppointment);
+        logger.info("Successfully updated appointment with ID: {}", id);
+
+        // Return a fully-populated DTO
+        return mapToDtoWithProductDetails(savedAppointment);
+    }
+
     @Transactional(readOnly = true)
     public Page<AppointmentDTO> getAllAppointments(Pageable pageable) {
         return appointmentRepository.findAll(pageable).map(this::mapToDtoWithProductDetails);
     }
 
+    // ... all other existing service methods ...
+    // No changes needed for the rest of the file
     @Transactional(readOnly = true)
     public Page<AppointmentDTO> getAppointmentsByPatientId(Long patientId, Pageable pageable) {
-        // This method now explicitly calls the repository method that sorts by
-        // AppointmentDateTimeDesc
-        // and then maps using the enriching DTO converter.
         return appointmentRepository.findByPatientIdOrderByAppointmentDateTimeDesc(patientId, pageable)
                 .map(this::mapToDtoWithProductDetails);
     }
 
-    // <<<< NEW METHOD ADDED for filtering by admission date >>>>
     @Transactional(readOnly = true)
     public Page<AppointmentDTO> getAppointmentsByPatientIdAndAppointmentDateTimeAfter(Long patientId,
             LocalDateTime afterDateTime, Pageable pageable) {
         return appointmentRepository.findByPatientIdAndAppointmentDateTimeAfter(patientId, afterDateTime, pageable)
-                .map(this::mapToDtoWithProductDetails); // Use the enriching mapper
+                .map(this::mapToDtoWithProductDetails);
     }
 
     @Transactional(readOnly = true)

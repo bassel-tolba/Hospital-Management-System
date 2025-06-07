@@ -45,7 +45,7 @@ const VitalSignList = () => {
 	const { createVitalSign, updateVitalSign, deleteVitalSign, loading, setVitalSigns, vitalSigns } = useVitalSignStore();
 
 	const { user, hasAuthority } = useAuthStore();
-	const API_BASE_URL = `/api/vital-signs`;
+	const API_BASE_URL = `http://localhost:8080/api/vital-signs`;
 
 	const canReadVitalSigns = user && hasAuthority("READ_VITAL_SIGN");
 	const canCreateVitalSigns = user && hasAuthority("CREATE_VITAL_SIGN");

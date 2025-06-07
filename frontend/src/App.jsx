@@ -105,7 +105,7 @@ const { Header, Content, Footer, Sider } = Layout;
 const { defaultAlgorithm, darkAlgorithm } = antdTheme;
 const { useBreakpoint } = Grid;
 const { Text, Title, Paragraph } = Typography; // Paragraph might be unused if SearchOverlay is fully removed
-const GEMINI_API_CONFIG_URL = `/api/gemini/configure-key`;
+const GEMINI_API_CONFIG_URL = `http://localhost:8080/api/gemini/configure-key`;
 
 // --- Styled Components ---
 const AppWrapper = styled.div`

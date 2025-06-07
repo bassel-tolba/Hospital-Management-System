@@ -246,7 +246,7 @@ const VoiceToPatient = ({ onFormFill, disabled }) => {
 			const user = useAuthStore.getState().user;
 			const formData = new FormData();
 			formData.append("audio", audioBlob, "patient-audio.webm");
-			const response = await fetch(`/api/patients/transcribe`, {
+			const response = await fetch(`http://localhost:8080/api/patients/transcribe`, {
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
