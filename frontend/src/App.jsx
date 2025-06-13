@@ -466,7 +466,7 @@ const NavigationMenu = React.memo(({ onClose, isMobile, mode = "inline", inDrawe
 			navigate(path);
 			if (onClose) onClose();
 		},
-		[navigate, onClose]
+		[navigate, onClose],
 	);
 
 	const menuConfig = useMemo(
@@ -474,20 +474,33 @@ const NavigationMenu = React.memo(({ onClose, isMobile, mode = "inline", inDrawe
 			dashboard: [{ path: "/dashboard", labelKey: "dashboard", permissions: ["READ_DASHBOARD"], authOnly: true }],
 			"patient-management": [
 				{ path: "/patients", labelKey: "patients", permissions: ["READ_PATIENT"], authOnly: true },
-				{ path: "/appointments", labelKey: "appointments", permissions: ["READ_APPOINTMENT"], authOnly: true },
 				{ path: "/admissions", labelKey: "admissions", permissions: ["READ_ADMISSION"], authOnly: true },
+				// UPDATED: Now uses the new READ_ACTIVITY permission from the backend.
+				{ path: "/activities", labelKey: "activities", permissions: ["READ_ACTIVITY"], authOnly: true },
+				{ path: "/procedures", labelKey: "procedures", permissions: ["READ_PROCEDURE"], authOnly: true },
 			],
 			"medical-records-diagnostics": [
 				{ path: "/vital-signs", labelKey: "vital-signs", permissions: ["READ_VITAL_SIGN"], authOnly: true },
 				{ path: "/assessments", labelKey: "assessments", permissions: ["READ_ASSESSMENT"], authOnly: true },
+				{ path: "/procedure-logs", labelKey: "procedure-logs", permissions: ["READ_PROCEDURE_LOG"], authOnly: true },
+				{ path: "/documents", labelKey: "documents", permissions: ["READ_DOCUMENT"], authOnly: true },
+				{ path: "/document-types", labelKey: "document-types", permissions: ["READ_DOCUMENT_TYPE"], authOnly: true },
 				{ path: "/lab-tests", labelKey: "lab-tests", permissions: ["READ_LAB_TEST"], authOnly: true },
 				{ path: "/lab-results", labelKey: "lab-results", permissions: ["READ_LAB_RESULT"], authOnly: true },
 				{ path: "/image-reports", labelKey: "image-reports", permissions: ["READ_IMAGE_REPORT"], authOnly: true },
+				{ path: "/image-report-types", labelKey: "image-report-types", permissions: ["READ_IMAGE_REPORT_TYPE"], authOnly: true },
 			],
 			"medication-inventory": [
 				{ path: "/medications", labelKey: "medications", permissions: ["READ_MEDICATION"], authOnly: true },
 				{ path: "/prescriptions", labelKey: "prescriptions", permissions: ["READ_PRESCRIPTION"], authOnly: true },
+				{
+					path: "/medication-administrations",
+					labelKey: "medication-administrations",
+					permissions: ["READ_MEDICATION_ADMINISTRATION"],
+					authOnly: true,
+				},
 				{ path: "/products", labelKey: "products", permissions: ["READ_PRODUCT"], authOnly: true },
+				{ path: "/product-usages", labelKey: "product-usages", permissions: ["READ_PATIENT_PRODUCT_USAGE"], authOnly: true },
 			],
 			administration: [
 				{ path: "/users", labelKey: "users", permissions: ["READ_USER"], authOnly: true },
@@ -508,7 +521,7 @@ const NavigationMenu = React.memo(({ onClose, isMobile, mode = "inline", inDrawe
 				{ path: "/register", labelKey: "register", showIfLoggedOut: true },
 			],
 		}),
-		[]
+		[],
 	);
 
 	const generateMenuItems = useCallback(() => {
@@ -629,7 +642,7 @@ const AppHeaderComponent = React.memo(
 						home: "/",
 						about: "/about-us",
 						features: "/all-features",
-					}
+					},
 				);
 
 				const normalizedPageName = pageName.toLowerCase().trim();
@@ -653,7 +666,7 @@ const AppHeaderComponent = React.memo(
 					});
 				}
 			},
-			[navigate, t] // appRoutes is stable and available in parent scope
+			[navigate, t], // appRoutes is stable and available in parent scope
 		);
 
 		const userMenuItems = [
@@ -719,7 +732,7 @@ const AppHeaderComponent = React.memo(
 				</div>
 			</StyledAppHeader>
 		);
-	}
+	},
 );
 
 const AppSidebarComponent = React.memo(({ collapsed, onCollapse }) => {
@@ -915,7 +928,7 @@ const SettingsDrawerComponent = React.memo(
 				await axios.post(
 					GEMINI_API_CONFIG_URL,
 					{ apiKey: geminiApiKey },
-					{ headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` } }
+					{ headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` } },
 				);
 				notification.success({ message: t("success"), description: t("gemini-api-key-saved", "Gemini API Key saved successfully.") });
 			} catch (error) {
@@ -989,7 +1002,7 @@ const SettingsDrawerComponent = React.memo(
 				</Space>
 			</StyledSettingsDrawer>
 		);
-	}
+	},
 );
 
 const AppLayout = React.memo(({ children, direction, language, componentSize, onSettingsToggle, onLogout }) => {
@@ -1027,7 +1040,7 @@ const AppLayout = React.memo(({ children, direction, language, componentSize, on
 			const lastSegmentKey = pathSegments[pathSegments.length - 1];
 			// Attempt to find a more specific key from appRoutes if the last segment is a base path
 			const segmentRouteConfig = appRoutes.find(
-				(route) => route.path === `/${lastSegmentKey}` || route.path.split("/:")[0] === `/${lastSegmentKey}`
+				(route) => route.path === `/${lastSegmentKey}` || route.path.split("/:")[0] === `/${lastSegmentKey}`,
 			);
 			const titleKeyToUse = segmentRouteConfig?.titleKey || lastSegmentKey;
 			derivedTitle = t(titleKeyToUse, { defaultValue: titleKeyToUse.replace(/-/g, " ") });
@@ -1170,7 +1183,7 @@ const App = () => {
 			...Object.keys(colorTokens).map((name) => ({ value: name, label: t(`theme-${name}`, { defaultValue: name }) })),
 			{ value: "dark_killer", label: t("theme-dark-killer", { defaultValue: "Dark Killer" }) },
 		],
-		[t]
+		[t],
 	);
 	const languageOptions = useMemo(
 		() => [
@@ -1178,7 +1191,7 @@ const App = () => {
 			{ value: "fa", label: "فارسی" },
 			{ value: "ar", label: "العربية" },
 		],
-		[]
+		[],
 	);
 	const antdLocale = useMemo(() => {
 		switch (language) {
@@ -1279,7 +1292,7 @@ const App = () => {
 			localStorage.setItem("i18nextLng", value);
 			localStorage.setItem("appDir", newDirection);
 		},
-		[i18nInstance]
+		[i18nInstance],
 	);
 	useEffect(() => {
 		const initialDirection = localStorage.getItem("appDir") || (language === "ar" || language === "fa" ? "rtl" : "ltr");

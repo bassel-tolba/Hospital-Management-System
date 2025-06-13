@@ -1,6 +1,6 @@
 // src/components/ProductList.js
 import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Typography, Modal, Form, Pagination, Select, InputNumber, Row, Col, Alert, Tooltip } from "antd";
+import { Table, Input, Button, Space, Typography, Modal, Form, Pagination, Select, InputNumber, Row, Col, Alert, Tooltip, Popover } from "antd";
 import { useProductStore } from "../../services/product.service";
 // Import useAuthStore
 import { useAuthStore } from "../../services/auth.service"; // <-- Adjust path as needed
@@ -216,7 +216,30 @@ const ProductList = () => {
 	const columns = [
 		{ title: "Code", dataIndex: "code", key: "code" },
 		{ title: "Name", dataIndex: "name", key: "name" },
-		{ title: "Description", dataIndex: "description", key: "description" },
+		{
+			title: "Description",
+			dataIndex: "description",
+			key: "description",
+			render: (description) => {
+				if (!description) {
+					return <Text type="secondary">N/A</Text>;
+				}
+
+				const maxLength = 50; // Max characters to show in the cell
+
+				if (description.length <= maxLength) {
+					return description;
+				}
+
+				const truncatedText = `${description.substring(0, maxLength)}...`;
+
+				return (
+					<Popover content={<div style={{ maxWidth: "300px" }}>{description}</div>} title="Full Description" trigger="hover">
+						<span>{truncatedText}</span>
+					</Popover>
+				);
+			},
+		},
 		{ title: "Type", dataIndex: "type", key: "type" },
 		{ title: "Pricing Model", dataIndex: "pricingModel", key: "pricingModel" },
 		{

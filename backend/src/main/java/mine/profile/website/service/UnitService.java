@@ -1,18 +1,23 @@
 package mine.profile.website.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import mine.profile.website.dtos.UnitDTO;
 import mine.profile.website.models.Unit;
+import mine.profile.website.models.UnitType;
 import mine.profile.website.repository.UnitRepository;
 
 @Service
 public class UnitService {
+    private static final Logger log = LoggerFactory.getLogger(UnitService.class);
 
     @Autowired
     private UnitRepository unitRepository;
@@ -24,14 +29,14 @@ public class UnitService {
         return new UnitDTO(savedUnit);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public UnitDTO getUnitById(Long id) {
         return unitRepository.findById(id)
                 .map(UnitDTO::new)
                 .orElse(null);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<UnitDTO> getAllUnits() {
         return unitRepository.findAll().stream()
                 .map(UnitDTO::new)
@@ -57,11 +62,26 @@ public class UnitService {
         unitRepository.deleteById(id);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<UnitDTO> searchUnits(String searchTerm) {
         List<Unit> units = unitRepository.findByNameContaining(searchTerm);
         return units.stream()
                 .map(UnitDTO::new)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<UnitDTO> getUnitsByType(String unitTypeStr) {
+        log.info("Fetching units by type: {}", unitTypeStr);
+        try {
+            UnitType unitType = UnitType.valueOf(unitTypeStr.toUpperCase());
+            List<Unit> units = unitRepository.findByUnitType(unitType);
+            return units.stream()
+                    .map(UnitDTO::new)
+                    .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid unit type string provided: {}", unitTypeStr, e);
+            return Collections.emptyList();
+        }
     }
 }

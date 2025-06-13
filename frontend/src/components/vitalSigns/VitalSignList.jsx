@@ -176,7 +176,7 @@ const VitalSignList = () => {
 					searchResults?.content?.map((patient) => ({
 						label: `${patient.firstName} ${patient.lastName}`,
 						value: patient.id,
-					})) || []
+					})) || [],
 				);
 			} catch (error) {
 				console.error("Failed to search patients:", error);
@@ -225,7 +225,7 @@ const VitalSignList = () => {
 			};
 
 			const filteredVitalSignData = Object.fromEntries(
-				Object.entries(vitalSignData).filter(([_, v]) => v !== null && v !== undefined && v !== "")
+				Object.entries(vitalSignData).filter(([_, v]) => v !== null && v !== undefined && v !== ""),
 			);
 
 			if (selectedVitalSign) {
@@ -301,27 +301,43 @@ const VitalSignList = () => {
 			});
 			return;
 		}
-		const isCreate = !selectedVitalSign;
-		const formData = { ...data };
 
-		if (formData.timestamp && formData.timestamp !== "did not get") {
-			formData.timestamp = moment(formData.timestamp, "YYYY-MM-DDTHH:mm:ss");
-		} else if (formData.timestamp === "did not get") {
-			formData.timestamp = null;
-		}
+		const fieldsToUpdate = {};
 
-		if (isCreate) {
-			formData.heightUnit = data.heightUnit === "did not get" ? "cm" : data.heightUnit;
-			formData.weightUnit = data.weightUnit === "did not get" ? "kg" : data.weightUnit;
-			formData.glucoseUnit = data.glucoseUnit === "did not get" ? "mg/dL" : data.glucoseUnit;
-		}
-
-		Object.keys(formData).forEach((key) => {
-			if (formData[key] === "did not get") {
-				formData[key] = null;
+		// Iterate over all keys from the AI data
+		for (const key in data) {
+			// Only process keys where the AI provided a valid value (i.e., not "did not get")
+			if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== "did not get" && data[key] !== null && data[key] !== undefined) {
+				if (key === "timestamp") {
+					const newTimestamp = moment(data[key], "YYYY-MM-DDTHH:mm:ss");
+					if (newTimestamp.isValid()) {
+						fieldsToUpdate[key] = newTimestamp;
+					}
+				} else {
+					fieldsToUpdate[key] = data[key];
+				}
 			}
-		});
-		form.setFieldsValue(formData);
+		}
+
+		const isCreate = !selectedVitalSign;
+		// If creating a new record, and a value for height/weight/glucose is being set by AI,
+		// but the unit is not, then apply a default unit.
+		if (isCreate) {
+			if (fieldsToUpdate.height && !fieldsToUpdate.heightUnit) {
+				fieldsToUpdate.heightUnit = "cm";
+			}
+			if (fieldsToUpdate.weight && !fieldsToUpdate.weightUnit) {
+				fieldsToUpdate.weightUnit = "kg";
+			}
+			if (fieldsToUpdate.glucose && !fieldsToUpdate.glucoseUnit) {
+				fieldsToUpdate.glucoseUnit = "mg/dL";
+			}
+		}
+
+		// Only update the form if there are valid fields to update.
+		if (Object.keys(fieldsToUpdate).length > 0) {
+			form.setFieldsValue(fieldsToUpdate);
+		}
 	};
 
 	const columns = [

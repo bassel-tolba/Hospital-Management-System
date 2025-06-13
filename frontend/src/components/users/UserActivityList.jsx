@@ -142,7 +142,7 @@ const UserActivityList = () => {
 	const groupActivitiesByPatient = (activities) => {
 		const grouped = activities.reduce((acc, activity) => {
 			const patientId = activity.patientIds?.[0] || "unassigned";
-			const patientName = activity.patientName || "Unassigned";
+			const patientName = activity.patientName || "Click for patient page";
 
 			if (!acc[patientId]) {
 				acc[patientId] = {
@@ -213,8 +213,8 @@ const UserActivityList = () => {
 													activity.state === "completed"
 														? "success"
 														: activity.state === "inprogress"
-														? "processing"
-														: "default"
+															? "processing"
+															: "default"
 												}>
 												{t(activity.state.toLowerCase())}
 											</Tag>

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -207,7 +208,9 @@ public class AdmissionService {
 
     private void dischargePatient(Admission existingAdmission, Bed bed) {
         Billing billing = billingRepository
-                .findByPatientId(existingAdmission.getPatient().getId(), PageRequest.of(0, 1))
+                .findByPatientId(existingAdmission.getPatient().getId(),
+                        PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC,
+                                "billDate")))
                 .getContent().stream().findFirst()
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Billing record not found for patient id: " + existingAdmission.getPatient().getId()));

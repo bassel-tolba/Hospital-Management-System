@@ -1,5 +1,6 @@
 package mine.profile.website.models;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.Column;
@@ -31,7 +32,7 @@ public class Role {
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "role_permission", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
-    private Set<Permission> permissions;
+    private Set<Permission> permissions = new HashSet<>();
 
     @Override
     public String toString() {

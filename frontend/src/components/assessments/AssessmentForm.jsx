@@ -69,7 +69,7 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 				setIsSearchingPatients(false);
 			}
 		}, 500),
-		[searchPatients, t]
+		[searchPatients, t],
 	);
 
 	useEffect(() => {
@@ -498,7 +498,7 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 
 	const templateOptions = useMemo(
 		() => assessmentTypes.map((type) => ({ label: type.displayName || type.name, value: type.name, key: type.name })),
-		[assessmentTypes]
+		[assessmentTypes],
 	);
 	const aiRecordingTips = useMemo(
 		() => (
@@ -526,7 +526,7 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 				</p>
 			</div>
 		),
-		[t]
+		[t],
 	);
 
 	useEffect(() => {
@@ -541,11 +541,11 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 			!p || p < 1
 				? ""
 				: p < 95
-				? `${p}% ${t("assessmentForm.progress.transcribing")}`
-				: p < 100
-				? `${p}% ${t("assessmentForm.progress.processing")}`
-				: t("assessmentForm.progress.populating"),
-		[t]
+					? `${p}% ${t("assessmentForm.progress.transcribing")}`
+					: p < 100
+						? `${p}% ${t("assessmentForm.progress.processing")}`
+						: t("assessmentForm.progress.populating"),
+		[t],
 	);
 	const cannotStartRecording = isReadOnly || !selectedTemplateName || !selectedPatientId || loadingTemplateContent || isTranscribing || isRecording;
 	const aiButtonDisabled = isTranscribing || (!isRecording && cannotStartRecording);
@@ -555,7 +555,7 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 			isCancelling.current = true;
 			if (mediaRecorder.current?.state === "recording") mediaRecorder.current.stop();
 		},
-		[]
+		[],
 	);
 	const handleCancelClick = () => {
 		isCancelling.current = true;
@@ -573,7 +573,7 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 		backgroundColor: darkMode ? (isReadOnly ? "#1f1f1f" : "#262626") : isReadOnly ? "#f5f5f5" : "white",
 		color: darkMode ? (isReadOnly ? "rgba(255,255,255,0.45)" : "#f0f0f0") : "inherit",
 		lineHeight: "1.5",
-		whiteSpace: "pre-wrap",
+		// whiteSpace: "pre-wrap", // <-- FIX APPLIED HERE: This line caused the extra spacing issue.
 		wordWrap: "break-word",
 	};
 
@@ -590,8 +590,8 @@ const AssessmentForm = ({ assessment, initialPatient, onSave, onCancel, darkMode
 								!selectedPatientId && form.isFieldTouched("patientId")
 									? t("assessmentForm.validation.selectPatient")
 									: selectedPatientId
-									? t("assessmentForm.patient.helpSelected", { patientInfo: patientSearchTerm || `ID: ${selectedPatientId}` })
-									: t("assessmentForm.patient.helpSearch")
+										? t("assessmentForm.patient.helpSelected", { patientInfo: patientSearchTerm || `ID: ${selectedPatientId}` })
+										: t("assessmentForm.patient.helpSearch")
 							}
 							validateStatus={!selectedPatientId && form.isFieldTouched("patientId") ? "error" : ""}>
 							<AutoComplete

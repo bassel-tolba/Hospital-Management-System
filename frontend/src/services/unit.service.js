@@ -1,7 +1,7 @@
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
-import { useAuthStore } from "./auth.service"; // Import useAuthStore
+import { useAuthStore } from "./auth.service";
 
 const UNIT_API_BASE_URL = `http://localhost:8080/api/units`;
 
@@ -154,6 +154,28 @@ export const useUnitStore = create((set, get) => ({
 			notification.error({
 				message: "Error",
 				description: `Failed to search unit: ${error?.response?.data?.message || error.message}`,
+			});
+			throw error;
+		}
+	},
+	fetchUnitsByType: async (type) => {
+		set({ loading: true, error: null });
+		try {
+			const user = useAuthStore.getState().user;
+			const response = await axios.get(`${UNIT_API_BASE_URL}/by-type`, {
+				params: { type },
+				headers: { Authorization: `Bearer ${user?.token}` },
+			});
+			set({ loading: false });
+			// This function is a utility fetcher, it returns the data directly
+			// instead of setting it in the global store state.
+			return response.data;
+		} catch (error) {
+			const errorMessage = error.response?.data?.message || error.message;
+			set({ error: errorMessage, loading: false });
+			notification.error({
+				message: "Error",
+				description: `Failed to fetch units by type: ${errorMessage}`,
 			});
 			throw error;
 		}

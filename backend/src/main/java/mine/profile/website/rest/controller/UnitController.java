@@ -66,9 +66,15 @@ public class UnitController {
     @GetMapping("/search")
     public ResponseEntity<List<UnitDTO>> searchUnits(@RequestParam String searchTerm) {
         if (searchTerm == null) {
-            searchTerm = new String();
+            searchTerm = "";
         }
         List<UnitDTO> units = unitService.searchUnits(searchTerm);
         return new ResponseEntity<>(units, HttpStatus.OK);
+    }
+
+    @GetMapping("/by-type")
+    public ResponseEntity<List<UnitDTO>> getUnitsByType(@RequestParam String type) {
+        List<UnitDTO> units = unitService.getUnitsByType(type);
+        return ResponseEntity.ok(units);
     }
 }

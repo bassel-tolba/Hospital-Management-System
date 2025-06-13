@@ -180,9 +180,6 @@ const BedList = () => {
 	};
 
 	const handleSearch = (value) => {
-		// No specific permission needed for searching, but you might want to restrict
-		// the data returned based on read permissions.  Consider this in your `searchBeds`
-		// implementation in the service.
 		setSearchParams({ ...searchParams, searchTerm: value });
 		setPage(0);
 	};
@@ -193,15 +190,12 @@ const BedList = () => {
 	};
 
 	const handleRoomChange = (roomId) => {
-		// No specific permission check here, but filtering impacts what's displayed.
-		// The service should handle data filtering based on permissions.
 		setSearchParams({ ...searchParams, roomId: roomId });
 		setPage(0);
 	};
 
 	const handleUnitChange = (unitId) => {
-		// Same as above - filtering, not a direct action.
-		setSearchParams({ ...searchParams, unitId: unitId });
+		setSearchParams({ ...searchParams, unitId: unitId, roomId: null }); // Also reset room filter
 		setPage(0);
 		setSelectedUnit(unitId);
 	};
@@ -223,27 +217,33 @@ const BedList = () => {
 		}
 	};
 
+	const formatRoomDisplay = (room) => {
+		if (!room) return "N/A";
+		const type = room.roomType ? `(${room.roomType})` : "";
+		return `${room.roomNumber} ${type}`.trim();
+	};
+
 	const columns = [
 		{
 			title: "Bed Number",
 			dataIndex: "bedNumber",
 			key: "bedNumber",
-			render: (text) => (canReadBed ? text : "***"), // Data masking
+			render: (text) => (canReadBed ? text : "***"),
 		},
 		{
 			title: "Is Occupied",
 			dataIndex: "occupied",
 			key: "isOccupied",
-			render: (isOccupied) => (canReadBed ? (isOccupied ? "Yes" : "No") : "***"), // Data masking
+			render: (isOccupied) => (canReadBed ? (isOccupied ? "Yes" : "No") : "***"),
 		},
 		{
 			title: "Room",
 			dataIndex: "roomId",
 			key: "roomId",
 			render: (roomId) => {
-				if (!canReadBed) return "***"; // Data masking
-				const room = rooms?.content?.find((room) => room.id === roomId);
-				return room ? room.roomNumber : "N/A";
+				if (!canReadBed) return "***";
+				const room = rooms?.content?.find((r) => r.id === roomId);
+				return formatRoomDisplay(room);
 			},
 		},
 		{
@@ -251,10 +251,10 @@ const BedList = () => {
 			dataIndex: "roomId",
 			key: "unit",
 			render: (roomId) => {
-				if (!canReadBed) return "***"; // Data masking
-				const room = rooms?.content?.find((room) => room.id === roomId);
+				if (!canReadBed) return "***";
+				const room = rooms?.content?.find((r) => r.id === roomId);
 				if (room) {
-					const unit = units?.find((unit) => unit.id === room?.unitId);
+					const unit = units?.find((u) => u.id === room.unitId);
 					return unit ? unit.name : "N/A";
 				}
 				return "N/A";
@@ -284,7 +284,6 @@ const BedList = () => {
 		<div className="main-container" style={{ padding: "20px", maxWidth: "100%", overflowX: "auto" }}>
 			<Title level={2}>Bed List</Title>
 
-			{/* Search and Filters */}
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={12} md={8} lg={6}>
 					<Input.Search placeholder="Search by bed number..." onSearch={handleSearch} style={{ width: "100%" }} disabled={!canReadBed} />
@@ -304,10 +303,11 @@ const BedList = () => {
 						onChange={handleRoomChange}
 						disabled={!selectedUnit || !canReadBed}
 						allowClear
-						style={{ width: "100%" }}>
+						style={{ width: "100%" }}
+						value={searchParams.roomId}>
 						{tableFilteredRooms?.map((room) => (
 							<Option key={room.id} value={room.id}>
-								{room.roomNumber}
+								{formatRoomDisplay(room)}
 							</Option>
 						))}
 					</Select>
@@ -326,20 +326,17 @@ const BedList = () => {
 				</Col>
 			</Row>
 
-			{/* Table */}
 			<div style={{ overflowX: "auto", margin: "0 -16px" }}>
 				<Table columns={columns} dataSource={beds} loading={loading} rowKey="id" pagination={false} scroll={{ x: true }} />
 			</div>
 
-			{/* Pagination */}
 			<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
 				<Pagination current={page + 1} pageSize={size} total={totalElements} showSizeChanger onChange={handlePaginationChange} responsive />
 			</div>
 
-			{/* Modal */}
 			<Modal
 				title={selectedBed ? "Edit Bed" : "Add Bed"}
-				visible={isModalVisible}
+				open={isModalVisible}
 				onCancel={handleCancel}
 				width="70%"
 				footer={[
@@ -347,7 +344,7 @@ const BedList = () => {
 						Cancel
 					</Button>,
 					(selectedBed ? canUpdateBed : canCreateBed) && (
-						<Button key="submit" type="default" onClick={handleFormSubmit}>
+						<Button key="submit" type="primary" onClick={handleFormSubmit}>
 							{selectedBed ? "Update" : "Save"}
 						</Button>
 					),
@@ -374,7 +371,7 @@ const BedList = () => {
 								<Select placeholder="Select a Room" disabled={!selectedUnit || (!canCreateBed && !canUpdateBed)}>
 									{filteredRooms?.map((room) => (
 										<Option key={room.id} value={room.id}>
-											{room.roomNumber}
+											{formatRoomDisplay(room)}
 										</Option>
 									))}
 								</Select>

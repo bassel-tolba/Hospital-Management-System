@@ -52,39 +52,12 @@ const PatientListActivityForm = ({ onActivityCreated }) => {
 		<Form form={form} layout="vertical" onFinish={onFinish}>
 			<Form.Item label={t("service-type")} name="activityType" rules={[{ required: true, message: t("please-select-a-service-type") }]}>
 				<Select placeholder={t("select-a-service-type")} allowClear>
-					<Option value="LAB_TEST">{t("lab-test")}</Option>
-					<Option value="IMAGE_REPORT">{t("image-report")}</Option>
 					<Option value="VITAL_SIGNS">{t("vital-signs")}</Option>
 					<Option value="MEDICATION_ADMINISTRATION">{t("medication-administration")}</Option>
 					<Option value="ASSESSMENT">{t("assessment")}</Option>
 					<Option value="PRODUCT">{t("product")}</Option>
 				</Select>
 			</Form.Item>
-
-			{form.getFieldValue("activityType") === "LAB_TEST" && (
-				<Form.Item label={t("lab-test")} name="labTest" rules={[{ required: true, message: t("please-select-a-lab-test") }]}>
-					<Select
-						placeholder={t("select-a-lab-test")}
-						options={labTests?.map((test) => ({ label: test.testName, value: test.testName })) || []}
-						filterOption={(inputValue, option) => option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
-						allowClear
-					/>
-				</Form.Item>
-			)}
-
-			{form.getFieldValue("activityType") === "IMAGE_REPORT" && (
-				<Form.Item
-					label={t("image-report-type")}
-					name="imageReportType"
-					rules={[{ required: true, message: t("please-select-an-image-report-type") }]}>
-					<Select
-						placeholder={t("select-an-image-report-type")}
-						options={imageReportTypes?.map((type) => ({ label: type.name, value: type.name })) || []}
-						filterOption={(inputValue, option) => option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
-						allowClear
-					/>
-				</Form.Item>
-			)}
 
 			<Form.Item
 				label={t("description")}

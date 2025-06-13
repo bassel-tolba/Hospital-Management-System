@@ -73,6 +73,7 @@ public class UserActivityService {
                 individualActivityDTO.setState(userActivityDTO.getState());
                 // Set *only* the current patient ID
                 individualActivityDTO.setPatientIds(Collections.singletonList(patientId));
+                individualActivityDTO.setUnitId(userActivityDTO.getUnitId()); // Pass through the target Unit ID
 
                 // Create and save the activity for this individual patient
                 createdActivityDTOs.add(createIndividualUserActivity(individualActivityDTO));
@@ -101,6 +102,7 @@ public class UserActivityService {
                 // Set *only* the current patient ID
                 individualActivityDTO.setPatientIds(Collections.singletonList(patient.getId()));
                 individualActivityDTO.setRoomId(userActivityDTO.getRoomId()); // Keep the room ID for context
+                individualActivityDTO.setUnitId(userActivityDTO.getUnitId()); // Pass through the target Unit ID
 
                 createdActivityDTOs.add(createIndividualUserActivity(individualActivityDTO));
             }
@@ -143,55 +145,27 @@ public class UserActivityService {
     private UserActivityDTO createIndividualUserActivity(UserActivityDTO userActivityDTO) {
         ActivityTarget activityTarget = new ActivityTarget();
 
+        // Handle Patient assignment
         if (userActivityDTO.getPatientIds() != null && !userActivityDTO.getPatientIds().isEmpty()) {
             List<Patient> patients = patientRepository.findAllById(userActivityDTO.getPatientIds());
-            if (!patients.isEmpty()) { // Check if the patient exists.
-                activityTarget.setPatients(patients);
-                log.info(
-                        "Activity assigned directly to patient: {}",
-                        patients.get(0)); // Log only the single patient
-            } else {
-                // Handle the case if patient Ids is sent but one of them is not found.
-                // Option 1: Throw an exception
-                // throw new
-                // EntityNotFoundException("Patient with ID " +
-                // userActivityDTO.getPatientIds().get(0) + " not
-                // found");
-                // Option 2: Skip this patient and log a warning (more robust, avoids failing
-                // the entire
-                // request)
-                log.warn(
-                        "Patient with ID {} not found, skipping activity creation for this patient.",
-                        userActivityDTO.getPatientIds().get(0));
-                return null; // Important: Return null to indicate that no DTO was created.
+            if (patients.isEmpty()) {
+                log.warn("Patient(s) with ID(s) {} not found, skipping activity creation.",
+                        userActivityDTO.getPatientIds());
+                return null;
             }
-        } else if (userActivityDTO.getRoomId() != null) {
-            Room room = roomRepository.findById(userActivityDTO.getRoomId()).orElse(null);
-            if (room != null) {
-                activityTarget.setRoom(room);
-                List<Patient> patientsInRoom = room.getBeds().stream()
-                        .filter(bed -> bed.getAdmission() != null)
-                        .map(bed -> bed.getAdmission().getPatient())
-                        .collect(Collectors.toList());
-                if (!patientsInRoom.isEmpty()) {
-                    activityTarget.setPatients(patientsInRoom);
-                }
-            }
-        } else if (userActivityDTO.getUnitId() != null) {
+            activityTarget.setPatients(patients);
+            log.info("Activity assigned to patient(s): {}",
+                    patients.stream().map(Patient::getId).collect(Collectors.toList()));
+        }
 
-            Unit unit = unitRepository.findById(userActivityDTO.getUnitId()).orElse(null);
-            if (unit != null) {
-                activityTarget.setUnit(unit);
-                List<Patient> patientsInUnit = unit.getRooms().stream()
-                        .flatMap(room -> room.getBeds().stream())
-                        .filter(bed -> bed.getAdmission() != null)
-                        .map(bed -> bed.getAdmission().getPatient())
-                        .collect(Collectors.toList());
+        // Handle Room context
+        if (userActivityDTO.getRoomId() != null) {
+            roomRepository.findById(userActivityDTO.getRoomId()).ifPresent(activityTarget::setRoom);
+        }
 
-                if (!patientsInUnit.isEmpty()) {
-                    activityTarget.setPatients(patientsInUnit);
-                }
-            }
+        // Handle Unit context or target
+        if (userActivityDTO.getUnitId() != null) {
+            unitRepository.findById(userActivityDTO.getUnitId()).ifPresent(activityTarget::setUnit);
         }
 
         activityTarget = activityTargetRepository.save(activityTarget);
@@ -253,8 +227,18 @@ public class UserActivityService {
         }
         log.info("Starting filtering of activities...");
         List<UserActivityDTO> result = pendingActivities.stream()
-                .filter(activity -> isActivityApplicable(activity, user))
-                // Apply Role and Unit-Based filtering
+                .filter(activity -> {
+                    // For Lab/Radiology tests, applicability is determined by the role/unit
+                    // assignment in isAllowedActivity, not the user's assignment to the patient's
+                    // ward.
+                    if (activity.getActivityType() == UserActivityType.LAB_TEST
+                            || activity.getActivityType() == UserActivityType.IMAGE_REPORT) {
+                        return true;
+                    }
+                    // For all other types, check if user is authorized for the patient's context
+                    // (ward, room, etc.)
+                    return isActivityApplicable(activity, user);
+                })
                 .filter(activity -> isAllowedActivity(activity, user, userUnits))
                 .map(UserActivityDTO::fromEntity)
                 .collect(Collectors.toList());
@@ -266,18 +250,40 @@ public class UserActivityService {
         log.info("Checking if activity {} is allowed for user {}", activity.getId(), user.getUsername());
         UserActivityType type = activity.getActivityType();
         String role = user.getRoleName();
+        ActivityTarget target = activity.getActivityTarget();
 
-        if ("LAB_TECHNICIAN".equalsIgnoreCase(role) && type == UserActivityType.LAB_TEST) {
-            log.info("User is LAB_TECHNICIAN, activity type is LAB_TEST. Checking unit compatibility.");
-            return userUnits != null
-                    && userUnits.stream().anyMatch(unit -> unit.getUnitType() == UnitType.LABORATORY);
+        if (type == UserActivityType.LAB_TEST) {
+            // Rule 1: User must be a Lab Technician
+            if (!"LAB_TECHNICIAN".equalsIgnoreCase(role)) {
+                return false;
+            }
+            // Rule 2: The activity must be targeted to a specific unit
+            if (target == null || target.getUnit() == null) {
+                log.warn("LAB_TEST activity {} has no target unit. Disallowing.", activity.getId());
+                return false;
+            }
+            // Rule 3: The user must be assigned to that specific target unit
+            log.info("Activity {} is a targeted LAB_TEST for unit {}", activity.getId(), target.getUnit().getId());
+            if (userUnits == null)
+                return false;
+            return userUnits.stream().anyMatch(u -> u.getId().equals(target.getUnit().getId()));
         }
 
-        if ("RADIOLOGY_TECHNICIAN".equalsIgnoreCase(role) && type == UserActivityType.IMAGE_REPORT) {
-            log.info(
-                    "User is RADIOLOGY_TECHNICIAN, activity type is IMAGE_REPORT. Checking unit compatibility.");
-            return userUnits != null
-                    && userUnits.stream().anyMatch(unit -> unit.getUnitType() == UnitType.RADIOLOGY);
+        if (type == UserActivityType.IMAGE_REPORT) {
+            // Rule 1: User must be a Radiology Technician
+            if (!"RADIOLOGY_TECHNICIAN".equalsIgnoreCase(role)) {
+                return false;
+            }
+            // Rule 2: The activity must be targeted to a specific unit
+            if (target == null || target.getUnit() == null) {
+                log.warn("IMAGE_REPORT activity {} has no target unit. Disallowing.", activity.getId());
+                return false;
+            }
+            // Rule 3: The user must be assigned to that specific target unit
+            log.info("Activity {} is a targeted IMAGE_REPORT for unit {}", activity.getId(), target.getUnit().getId());
+            if (userUnits == null)
+                return false;
+            return userUnits.stream().anyMatch(u -> u.getId().equals(target.getUnit().getId()));
         }
 
         if ("NURSE".equalsIgnoreCase(role)) {
@@ -285,8 +291,9 @@ public class UserActivityService {
             return isNurseAllowedActivityType(type);
         }
 
-        // If none of the above conditions match, allow the activity
-        log.info("Activity allowed by default.");
+        // If none of the specific role-based checks match, allow by default.
+        // This could be adjusted for stricter security if needed.
+        log.info("Activity type {} allowed by default for role {}", type, role);
         return true;
     }
 

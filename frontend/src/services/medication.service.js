@@ -138,7 +138,7 @@ export const useMedicationStore = create((set, get) => ({
 			throw error;
 		}
 	},
-	// Replace increaseStock and decreaseStock with addBatch
+
 	addBatch: async (medicationId, batchData) => {
 		set({ loading: true, error: null });
 		try {
@@ -184,7 +184,7 @@ export const useMedicationStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to update medication batch: ${error.response?.data?.message || error.message}`,
 			});
-			throw error; // Re-throw to be handled by caller
+			throw error;
 		}
 	},
 
@@ -208,7 +208,7 @@ export const useMedicationStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to delete medication batch: ${error.response?.data?.message || error.message}`,
 			});
-			throw error; // Re-throw for consistent error handling
+			throw error;
 		}
 	},
 
@@ -231,7 +231,7 @@ export const useMedicationStore = create((set, get) => ({
 			set({
 				loading: false,
 				medications: response.data,
-				total: response.data.length, // This might need adjustment, see below
+				total: response.data.length,
 			});
 			return response.data;
 		} catch (error) {
@@ -243,12 +243,19 @@ export const useMedicationStore = create((set, get) => ({
 			throw error;
 		}
 	},
-	// ADD THIS FUNCTION:
-	getBatchesForMedication: async (medicationId) => {
+	// UPDATED FUNCTION
+	getBatchesForMedication: async (medicationId, { startDate, endDate }) => {
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
-			const response = await axios.get(`${MEDICATION_API_BASE_URL}/${medicationId}/batches`, {
+			const params = new URLSearchParams();
+			if (startDate) params.append("start", startDate);
+			if (endDate) params.append("end", endDate);
+
+			const queryString = params.toString();
+			const url = `${MEDICATION_API_BASE_URL}/${medicationId}/batches${queryString ? `?${queryString}` : ""}`;
+
+			const response = await axios.get(url, {
 				headers: {
 					Authorization: `Bearer ${user?.token}`,
 				},
@@ -261,7 +268,7 @@ export const useMedicationStore = create((set, get) => ({
 				message: "Error",
 				description: `Failed to get batches for medication: ${error?.response?.data?.message || error.message}`,
 			});
-			throw error; // Important: Re-throw the error so the calling component can handle it
+			throw error;
 		}
 	},
 }));

@@ -200,7 +200,7 @@ const ImageReportList = () => {
 							label: `${patient.firstName} ${patient.lastName} (ID: ${patient.id})`, // Include ID for clarity
 							value: patient.id, // Use ID as the value
 							key: patient.id, // Ensure key is present
-						})) || []
+						})) || [],
 					);
 				} catch (error) {
 					console.error("Failed to search patients:", error);
@@ -211,7 +211,7 @@ const ImageReportList = () => {
 			}
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		},
-		[searchPatients]
+		[searchPatients],
 	); // searchPatients from Zustand should be stable
 
 	const handlePreview = (file) => {
@@ -357,9 +357,10 @@ const ImageReportList = () => {
 		form.setFieldsValue({ patientId: patientId }); // Update form value if needed (though primary key is selectedPatientIdForModal)
 	};
 
-	const handleTableChange = (pagination) => {
-		setPage(pagination.current - 1);
-		setSize(pagination.pageSize);
+	// Corrected Pagination onChange handler
+	const handleTablePaginationChange = (currentPage, pageSize) => {
+		setPage(currentPage - 1); // Ant Design currentPage is 1-based, our state is 0-based
+		setSize(pageSize);
 	};
 
 	// Simplified - Assuming user details aren't fetched separately here
@@ -429,7 +430,7 @@ const ImageReportList = () => {
 							</Space>
 						),
 					},
-			  ]
+				]
 			: []), // Empty array if no permissions, column is omitted
 	];
 
@@ -467,8 +468,10 @@ const ImageReportList = () => {
 						onChange={(value) => !value && setSelectedPatientIdForFilter(null)} // Clear selection on manual clear
 					/>
 				</Col>
-				<Col xs={24} sm={12} md={{ span: 6, offset: 8 }}>
-					{/* Add New Button: Requires CREATE permission AND a patient selected */}
+				{/* Add New Button: Moved to the left and adjusted column sizing */}
+				<Col xs={24} sm={12} md={6}>
+					{" "}
+					{/* Adjusted md span for better alignment */}
 					{user && hasAuthority("CREATE_IMAGE_REPORT") && (
 						<Tooltip title={!selectedPatientIdForFilter ? "Select a patient first to add a report" : "Add New Image Report"}>
 							<Button
@@ -494,8 +497,8 @@ const ImageReportList = () => {
 						emptyText: !selectedPatientIdForFilter
 							? "Select a patient to view reports."
 							: error
-							? "Failed to load data or insufficient permissions."
-							: "No image reports found for this patient.",
+								? "Failed to load data or insufficient permissions."
+								: "No image reports found for this patient.",
 					}}
 				/>
 			</div>
@@ -504,15 +507,12 @@ const ImageReportList = () => {
 			{!error && total > 0 && (
 				<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
 					<Pagination
-						current={page + 1}
+						current={page + 1} // Ant Design pagination is 1-based
 						pageSize={size}
 						total={total}
 						showSizeChanger
-						onChange={handleTableChange}
-						onShowSizeChange={(current, pageSize) => {
-							setSize(pageSize);
-							setPage(0);
-						}} // Reset page on size change
+						onChange={handleTablePaginationChange} // Use the corrected handler
+						onShowSizeChange={handleTablePaginationChange} // Use the corrected handler
 						style={{ marginTop: 16 }}
 					/>
 				</div>
@@ -551,7 +551,7 @@ const ImageReportList = () => {
 									value={
 										selectedPatientIdForModal
 											? patientOptions.find((p) => p.value === selectedPatientIdForModal)?.label ||
-											  `Patient ID: ${selectedPatientIdForModal}`
+												`Patient ID: ${selectedPatientIdForModal}`
 											: "No Patient Selected"
 									}
 								/>

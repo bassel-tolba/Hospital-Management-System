@@ -245,7 +245,7 @@ const PrescriptionList = () => {
 						label: medication.name, // Keep it simple unless strength needed
 						value: medication.id.toString(),
 						medication, // Keep full object for AI checks
-					})) || []
+					})) || [],
 				);
 			} catch (error) {
 				console.error("Failed to search medications:", error);
@@ -835,7 +835,7 @@ const PrescriptionList = () => {
 	const tableDataSource = prescriptions.map((p) => ({
 		...p,
 		key: p.id, // React requires a unique key
-		patientName: [p.patientFirstName, p.patientLastName].filter(Boolean).join(" ") || `Patient ID: ${p.patientId}`,
+		patientName: p.patientName || `Patient ID: ${p.patientId}`,
 	}));
 
 	// --- Main Render (Reverted UI changes) ---
@@ -936,10 +936,10 @@ const PrescriptionList = () => {
 										apiKeyLoading
 											? "AI loading..."
 											: apiKeyError
-											? `AI Error: ${apiKeyError}`
-											: !selectedPatient
-											? "Select Patient"
-											: "Check Patient History"
+												? `AI Error: ${apiKeyError}`
+												: !selectedPatient
+													? "Select Patient"
+													: "Check Patient History"
 									}>
 									Check Patient History
 								</Button>,
@@ -962,10 +962,10 @@ const PrescriptionList = () => {
 										apiKeyLoading
 											? "AI loading..."
 											: apiKeyError
-											? `AI Error: ${apiKeyError}`
-											: Object.values(medicationForms).filter((f) => f && f.medicationId).length < 2
-											? "Need >= 2 meds"
-											: "Check Conflicts"
+												? `AI Error: ${apiKeyError}`
+												: Object.values(medicationForms).filter((f) => f && f.medicationId).length < 2
+													? "Need >= 2 meds"
+													: "Check Conflicts"
 									}>
 									Check Conflicts (≥2 meds)
 								</Button>,
@@ -982,12 +982,12 @@ const PrescriptionList = () => {
 									}>
 									{selectedPrescription ? "Update" : "Save"}
 								</Button>,
-						  ]
+							]
 						: [
 								<Button key="cancel" onClick={handleCancel}>
 									Close
 								</Button>,
-						  ]
+							]
 				}>
 				{/* Form Content (Keep original structure) */}
 				<Spin spinning={loading && selectedPrescription} tip="Loading Details...">

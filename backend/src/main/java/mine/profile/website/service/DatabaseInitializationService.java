@@ -73,7 +73,11 @@ public class DatabaseInitializationService {
                 // User
                 "CREATE_USER", "READ_USER", "UPDATE_USER", "DELETE_USER",
                 // Appointment
-                "CREATE_APPOINTMENT", "READ_APPOINTMENT", "UPDATE_APPOINTMENT", "DELETE_APPOINTMENT",
+                "CREATE_APPOINTMENT", "READ_APPOINTPOINTMENT", "UPDATE_APPOINTMENT", "DELETE_APPOINTMENT",
+                // START: ==================== MODIFICATION ====================
+                // ADDED: Core permissions for Activity as requested.
+                "CREATE_ACTIVITY", "READ_ACTIVITY", "UPDATE_ACTIVITY", "DELETE_ACTIVITY",
+                // END: ==================== MODIFICATION ====================
                 // Medication & Prescription
                 "CREATE_MEDICATION", "READ_MEDICATION", "UPDATE_MEDICATION", "DELETE_MEDICATION",
                 "UPDATE_MEDICATION_STOCK", "READ_MEDICATION_HISTORY", "DELETE_MEDICATION_HISTORY",
@@ -155,7 +159,11 @@ public class DatabaseInitializationService {
                 "READ_MEDICATION",
                 "READ_MEDICATION_ADMINISTRATION",
                 "READ_USER",
-                "READ_DASHBOARD");
+                "READ_DASHBOARD",
+                // START: ==================== MODIFICATION ====================
+                "READ_UNIT", "READ_ROOM", "READ_BED", "READ_LAB_TEST"
+        // END: ==================== MODIFICATION ====================
+        );
         Role doctorRole = createOrFindRole("DOCTOR", doctorPermissions);
         log.info("DOCTOR role created/updated with {} permissions.", doctorRole.getPermissions().size());
 
@@ -178,7 +186,11 @@ public class DatabaseInitializationService {
                 "CREATE_PROCEDURE_LOG", "READ_PROCEDURE_LOG",
                 "READ_USER",
                 "READ_DASHBOARD",
-                "READ_BED", "READ_ROOM", "READ_UNIT");
+                "READ_BED", "READ_ROOM", "READ_UNIT",
+                // START: ==================== MODIFICATION ====================
+                "READ_LAB_TEST"
+        // END: ==================== MODIFICATION ====================
+        );
         Role nurseRole = createOrFindRole("NURSE", nursePermissions);
         log.info("NURSE role created/updated with {} permissions.", nurseRole.getPermissions().size());
 
@@ -189,7 +201,11 @@ public class DatabaseInitializationService {
                 "READ_DOCUMENT",
                 "READ_ADMISSION", "CREATE_ADMISSION", "UPDATE_ADMISSION",
                 "READ_USER",
-                "READ_BED", "READ_ROOM", "READ_UNIT");
+                "READ_BED", "READ_ROOM", "READ_UNIT",
+                // START: ==================== MODIFICATION ====================
+                "READ_LAB_TEST"
+        // END: ==================== MODIFICATION ====================
+        );
         Role receptionistRole = createOrFindRole("RECEPTIONIST", receptionistPermissions);
         log.info("RECEPTIONIST role created/updated with {} permissions.", receptionistRole.getPermissions().size());
 
@@ -197,7 +213,11 @@ public class DatabaseInitializationService {
         Set<Permission> billingClerkPermissions = findPermissionsOrThrow(
                 "READ_PATIENT",
                 "CREATE_BILLING", "READ_BILLING", "UPDATE_BILLING", "DELETE_BILLING",
-                "READ_ADMISSION");
+                "READ_ADMISSION",
+                // START: ==================== MODIFICATION ====================
+                "READ_UNIT", "READ_ROOM", "READ_BED", "READ_LAB_TEST"
+        // END: ==================== MODIFICATION ====================
+        );
         Role billingClerkRole = createOrFindRole("BILLING_CLERK", billingClerkPermissions);
         log.info("BILLING_CLERK role created/updated with {} permissions.", billingClerkRole.getPermissions().size());
 
@@ -205,7 +225,11 @@ public class DatabaseInitializationService {
         Set<Permission> labTechnicianPermissions = findPermissionsOrThrow(
                 "READ_PATIENT",
                 "CREATE_LAB_TEST", "READ_LAB_TEST", "UPDATE_LAB_TEST", "DELETE_LAB_TEST",
-                "CREATE_LAB_RESULT", "READ_LAB_RESULT", "UPDATE_LAB_RESULT", "DELETE_LAB_RESULT");
+                "CREATE_LAB_RESULT", "READ_LAB_RESULT", "UPDATE_LAB_RESULT", "DELETE_LAB_RESULT",
+                // START: ==================== MODIFICATION ====================
+                "READ_UNIT", "READ_ROOM", "READ_BED"
+        // END: ==================== MODIFICATION ====================
+        );
         Role labTechnicianRole = createOrFindRole("LAB_TECHNICIAN", labTechnicianPermissions);
         log.info("LAB_TECHNICIAN role created/updated with {} permissions.", labTechnicianRole.getPermissions().size());
 
@@ -214,7 +238,11 @@ public class DatabaseInitializationService {
                 "READ_PATIENT",
                 "CREATE_IMAGE_REPORT", "READ_IMAGE_REPORT", "UPDATE_IMAGE_REPORT", "DELETE_IMAGE_REPORT",
                 "CREATE_IMAGE_REPORT_TYPE", "READ_IMAGE_REPORT_TYPE", "UPDATE_IMAGE_REPORT_TYPE",
-                "DELETE_IMAGE_REPORT_TYPE");
+                "DELETE_IMAGE_REPORT_TYPE",
+                // START: ==================== MODIFICATION ====================
+                "READ_UNIT", "READ_ROOM", "READ_BED", "READ_LAB_TEST"
+        // END: ==================== MODIFICATION ====================
+        );
         Role radiologyTechnicianRole = createOrFindRole("RADIOLOGY_TECHNICIAN",
                 radiologyTechnicianPermissions);
         log.info("RADIOLOGY_TECHNICIAN role has {} permissions.", radiologyTechnicianRole.getPermissions().size());
@@ -226,7 +254,11 @@ public class DatabaseInitializationService {
                 "UPDATE_MEDICATION_STOCK",
                 "READ_MEDICATION_HISTORY",
                 "READ_PRESCRIPTION",
-                "READ_PRESCRIBED_MEDICATION");
+                "READ_PRESCRIBED_MEDICATION",
+                // START: ==================== MODIFICATION ====================
+                "READ_UNIT", "READ_ROOM", "READ_BED", "READ_LAB_TEST"
+        // END: ==================== MODIFICATION ====================
+        );
         Role pharmacyTechnicianRole = createOrFindRole("PHARMACY_TECHNICIAN",
                 pharmacyTechnicianPermissions);
         log.info("PHARMACY_TECHNICIAN role has {} permissions.", pharmacyTechnicianRole.getPermissions().size());

@@ -1,10 +1,8 @@
-// MedicationController.java
 package mine.profile.website.rest.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,9 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import mine.profile.website.dtos.MedicationBatchDTO;
 import mine.profile.website.dtos.MedicationDTO;
-import mine.profile.website.models.MedicationBatch;
-import mine.profile.website.repository.MedicationBatchRepository;
-import mine.profile.website.repository.MedicationRepository;
 import mine.profile.website.service.MedicationService;
 
 @RestController
@@ -34,11 +29,6 @@ public class MedicationController {
     private final MedicationService medicationService;
 
     @Autowired
-    private MedicationRepository medicationRepository;
-
-    @Autowired
-    private MedicationBatchRepository medicationBatchRepository;
-
     public MedicationController(MedicationService medicationService) {
         this.medicationService = medicationService;
     }
@@ -61,7 +51,6 @@ public class MedicationController {
         MedicationDTO updatedMedication = medicationService.updateMedication(id, medicationDTO);
         return new ResponseEntity<>(updatedMedication, HttpStatus.OK);
     }
-    // Remove increase-stock and decrease-stock endpoints. Use add-batch instead.
 
     @PostMapping("/{id}/add-batch")
     public ResponseEntity<MedicationBatchDTO> addBatch(
@@ -116,7 +105,6 @@ public class MedicationController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
-        // Remove default time settings from here.
         Map<String, Object> medicationHistory = medicationService.getMedicationHistory(medicationId, start, end, page,
                 size);
         return new ResponseEntity<>(medicationHistory, HttpStatus.OK);
@@ -128,14 +116,13 @@ public class MedicationController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    // ADD THIS ENDPOINT
+    // UPDATED ENDPOINT
     @GetMapping("/{medicationId}/batches")
-    public ResponseEntity<List<MedicationBatchDTO>> getBatchesForMedication(@PathVariable Long medicationId) {
-        List<MedicationBatch> batches = medicationBatchRepository
-                .findByMedicationIdOrderByPurchaseDateAsc(medicationId);
-        List<MedicationBatchDTO> batchDTOs = batches.stream()
-                .map(MedicationBatchDTO::toDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<List<MedicationBatchDTO>> getBatchesForMedication(
+            @PathVariable Long medicationId,
+            @RequestParam(value = "start", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
+            @RequestParam(value = "end", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end) {
+        List<MedicationBatchDTO> batchDTOs = medicationService.findBatchesForMedication(medicationId, start, end);
         return new ResponseEntity<>(batchDTOs, HttpStatus.OK);
     }
 }

@@ -1,4 +1,3 @@
-// MedicationService.java
 package mine.profile.website.service;
 
 import java.time.LocalDateTime;
@@ -35,16 +34,16 @@ public class MedicationService {
 
     private final MedicationRepository medicationRepository;
     private final MedicationHistoryRepository medicationHistoryRepository;
-    private final MedicationBatchRepository medicationBatchRepository; // Add this
+    private final MedicationBatchRepository medicationBatchRepository;
     private final ObjectMapper objectMapper;
 
     public MedicationService(MedicationRepository medicationRepository,
             MedicationHistoryRepository medicationHistoryRepository,
-            MedicationBatchRepository medicationBatchRepository, // Add this
+            MedicationBatchRepository medicationBatchRepository,
             ObjectMapper objectMapper) {
         this.medicationRepository = medicationRepository;
         this.medicationHistoryRepository = medicationHistoryRepository;
-        this.medicationBatchRepository = medicationBatchRepository; // Add this
+        this.medicationBatchRepository = medicationBatchRepository;
         this.objectMapper = objectMapper;
 
     }
@@ -57,7 +56,7 @@ public class MedicationService {
         return MedicationDTO.toDto(savedMedication);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<MedicationDTO> findAll() {
         return medicationRepository.findAll().stream()
                 .map(medication -> {
@@ -68,7 +67,7 @@ public class MedicationService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public MedicationDTO findById(Long id) {
         return medicationRepository.findById(id)
                 .map(medication -> {
@@ -104,7 +103,7 @@ public class MedicationService {
         createMedicationHistory(medication, "DELETE", null, null);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<MedicationDTO> searchMedications(String searchTerm, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Medication> medications = medicationRepository.searchMedications(searchTerm, pageable);
@@ -170,23 +169,15 @@ public class MedicationService {
         MedicationBatch batch = medicationBatchRepository.findById(batchId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Batch ID: " + batchId));
 
-        // Check if quantity is being reduced below what's already been used
         if (batchDTO.getQuantity() < (batch.getQuantity() - batch.getRemainingQuantity())) {
             throw new IllegalArgumentException(
                     "Cannot reduce quantity below the amount already administered from this batch.");
         }
 
         batch.setPurchasePrice(batchDTO.getPurchasePrice());
-        batch.setQuantity(batchDTO.getQuantity());
-        batch.setRemainingQuantity(batchDTO.getQuantity() - (batch.getQuantity() - batch.getRemainingQuantity())); // Update
-                                                                                                                   // remaining
 
         MedicationBatch updatedBatch = medicationBatchRepository.save(batch);
-
-        // *** IMPORTANT: Update the associated Medication ***
         Medication medication = updatedBatch.getMedication();
-        medicationRepository.save(medication); // This triggers recalculation and persistence of totalStock
-
         createMedicationHistory(medication, "BATCH_UPDATE", null, MedicationDTO.toDto(medication),
                 "Batch Update: " + updatedBatch.getQuantity() + " @ " + updatedBatch.getPurchasePrice());
 
@@ -197,19 +188,39 @@ public class MedicationService {
     public void deleteBatch(Long batchId) {
         MedicationBatch batch = medicationBatchRepository.findById(batchId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Batch ID: " + batchId));
-        // Check if any quantity has been used from this batch. Prevent deletion if so.
         if (batch.getQuantity() > batch.getRemainingQuantity()) {
             throw new IllegalStateException("Cannot delete a batch that has already been partially administered.");
         }
 
-        createMedicationHistory(batch.getMedication(), "BATCH_DELETE", null, MedicationDTO.toDto(batch.getMedication()),
+        Medication medication = batch.getMedication();
+        createMedicationHistory(medication, "BATCH_DELETE", null, MedicationDTO.toDto(medication),
                 "Batch DELETE: " + batch.getQuantity() + " @ " + batch.getPurchasePrice());
         medicationBatchRepository.delete(batch);
+        medicationRepository.save(medication);
+    }
 
-        // *** IMPORTANT: Update the associated Medication ***
-        Medication medication = batch.getMedication();
-        medicationRepository.save(medication); // This triggers recalculation and persistence of totalStock
+    // UPDATED METHOD TO FIX JDBC ERROR
+    @Transactional(readOnly = true)
+    public List<MedicationBatchDTO> findBatchesForMedication(Long medicationId, LocalDateTime start,
+            LocalDateTime end) {
+        List<MedicationBatch> batches;
 
+        if (start != null && end != null) {
+            batches = medicationBatchRepository
+                    .findByMedicationIdAndPurchaseDateBetweenOrderByPurchaseDateAsc(medicationId, start, end);
+        } else if (start != null) {
+            batches = medicationBatchRepository
+                    .findByMedicationIdAndPurchaseDateGreaterThanEqualOrderByPurchaseDateAsc(medicationId, start);
+        } else if (end != null) {
+            batches = medicationBatchRepository
+                    .findByMedicationIdAndPurchaseDateLessThanEqualOrderByPurchaseDateAsc(medicationId, end);
+        } else {
+            batches = medicationBatchRepository.findByMedicationIdOrderByPurchaseDateAsc(medicationId);
+        }
+
+        return batches.stream()
+                .map(MedicationBatchDTO::toDto)
+                .collect(Collectors.toList());
     }
 
     private void createMedicationHistory(Medication medication, String action, MedicationDTO oldData,
@@ -224,8 +235,13 @@ public class MedicationService {
         String changes = "";
         try {
             Map<String, Object> difference = getDifference(oldData, newData);
-            if (reason != null)
+            if (reason != null) {
+                // Ensure difference map exists before putting reason
+                if (difference == null) {
+                    difference = new HashMap<>();
+                }
                 difference.put("reason", reason);
+            }
             if (difference != null && !difference.isEmpty()) {
                 changes = objectMapper.writeValueAsString(difference);
             } else if (oldData == null && newData != null) {
@@ -250,30 +266,30 @@ public class MedicationService {
     private Map<String, Object> getDifference(MedicationDTO oldData, MedicationDTO newData) {
         if (oldData == null && newData == null)
             return null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            String old = mapper.writeValueAsString(oldData);
-            String newOne = mapper.writeValueAsString(newData);
-            JsonNode oldNode = mapper.readTree(old);
-            JsonNode newNode = mapper.readTree(newOne);
-
-            Map<String, Object> differences = new HashMap<>();
-            Iterator<String> fieldNames = newNode.fieldNames();
-            while (fieldNames.hasNext()) {
-                String fieldName = fieldNames.next();
-                JsonNode newValue = newNode.get(fieldName);
-                if (!oldNode.has(fieldName) || !oldNode.get(fieldName).equals(newValue)) {
-                    differences.put(fieldName, newValue);
-                }
-            }
-            return differences;
-        } catch (Exception e) {
-            return null;
+        if (newData == null) {
+            return objectMapper.convertValue(oldData, Map.class);
+        }
+        if (oldData == null) {
+            return objectMapper.convertValue(newData, Map.class);
         }
 
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode oldNode = mapper.convertValue(oldData, JsonNode.class);
+        JsonNode newNode = mapper.convertValue(newData, JsonNode.class);
+
+        Map<String, Object> differences = new HashMap<>();
+        Iterator<String> fieldNames = newNode.fieldNames();
+        while (fieldNames.hasNext()) {
+            String fieldName = fieldNames.next();
+            JsonNode newValue = newNode.get(fieldName);
+            if (!oldNode.has(fieldName) || !oldNode.get(fieldName).equals(newValue)) {
+                differences.put(fieldName, objectMapper.convertValue(newValue, Object.class));
+            }
+        }
+        return differences;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Map<String, Object> getMedicationHistory(Long medicationId, LocalDateTime start, LocalDateTime end,
             int page, int size) {
         Pageable pageable = PageRequest.of(page, size);

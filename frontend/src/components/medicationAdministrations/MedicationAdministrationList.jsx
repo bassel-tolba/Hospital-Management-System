@@ -164,7 +164,7 @@ const MedicationAdministrationList = () => {
 				setLoading(false);
 			}
 		},
-		[searchMedicationAdministrations, setLoading, canReadMedicationAdministration]
+		[searchMedicationAdministrations, setLoading, canReadMedicationAdministration],
 	);
 
 	const handlePageChange = (page, pageSize) => {
@@ -186,7 +186,7 @@ const MedicationAdministrationList = () => {
 					label: `${p.firstName} ${p.lastName} (ID: ${p.id})`,
 					value: p.id,
 					patient: p,
-				})) || []
+				})) || [],
 			);
 		} catch (error) {
 			console.error("Failed to search patients:", error);
@@ -204,7 +204,7 @@ const MedicationAdministrationList = () => {
 					label: `ID: ${p.id} (Expires: ${dayjs(p.expirationDate).format("DD MMM YYYY")})`,
 					value: p.id,
 					prescription: p,
-				}))
+				})),
 			);
 		} catch (error) {
 			console.error("Failed to fetch prescriptions:", error);
@@ -505,17 +505,11 @@ const MedicationAdministrationList = () => {
 					</Tooltip>
 				</>
 			),
-			dataIndex: "medicationId",
+			dataIndex: "medicationName",
 			key: "medicationName",
-			render: (medicationId, record) => {
+			render: (medicationName, record) => {
 				if (!canReadMedicationAdministration) return <Text disabled>***</Text>;
-				const name = getMedicationName(medicationId);
-				const prescribed = isPrescribed(record.prescriptionId);
-				return (
-					<>
-						{name} {prescribed && <MedicineBoxOutlined style={{ marginLeft: 4, color: "#1890ff", verticalAlign: "middle" }} />}
-					</>
-				);
+				else return <Text>{medicationName}</Text>;
 			},
 		},
 		{

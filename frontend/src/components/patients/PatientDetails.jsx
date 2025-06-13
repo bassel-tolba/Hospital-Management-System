@@ -1,4 +1,3 @@
-// PatientDetails.js
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
 	Layout,
@@ -95,6 +94,7 @@ const generateDocumentUrl = (url) => {
 	return `http://localhost:8080${processedUrl.startsWith("/") ? processedUrl : "/" + processedUrl}`;
 };
 
+// ... (No changes to sub-components like PaginatedTable, DetailModal, etc.)
 // -----------------------------------------------------------------------------
 // Reusable Table Component
 // -----------------------------------------------------------------------------
@@ -212,7 +212,7 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 					<Col xs={24} sm={12}>
 						{renderDetail(
 							t("appointment-date-time"),
-							data.appointmentDateTime ? moment(data.appointmentDateTime).format("YYYY-MM-DD HH:mm") : "N/A"
+							data.appointmentDateTime ? moment(data.appointmentDateTime).format("YYYY-MM-DD HH:mm") : "N/A",
 						)}
 					</Col>
 					<Col xs={24} sm={12}>
@@ -237,7 +237,7 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 					<Col xs={24} sm={12}>
 						{renderDetail(
 							t("assessment-date"),
-							data.assessmentDateTime ? moment(data.assessmentDateTime).format("YYYY-MM-DD HH:mm") : "N/A"
+							data.assessmentDateTime ? moment(data.assessmentDateTime).format("YYYY-MM-DD HH:mm") : "N/A",
 						)}
 					</Col>
 					<Col xs={24} sm={24}>
@@ -275,7 +275,7 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 					<Col xs={24} sm={12}>
 						{renderDetail(
 							t("prescription-date"),
-							data.prescriptionDate ? moment(data.prescriptionDate).format("YYYY-MM-DD HH:mm") : "N/A"
+							data.prescriptionDate ? moment(data.prescriptionDate).format("YYYY-MM-DD HH:mm") : "N/A",
 						)}
 					</Col>
 					<Col xs={24} sm={24}>
@@ -362,7 +362,7 @@ const ExpandedRowDetails = ({ expandedRow, isModalOpen, handleCloseModal }) => {
 					<Col xs={24} sm={12}>
 						{renderDetail(
 							t("administration-time"),
-							data.administrationTime ? moment(data.administrationTime).format("YYYY-MM-DD HH:mm") : "N/A"
+							data.administrationTime ? moment(data.administrationTime).format("YYYY-MM-DD HH:mm") : "N/A",
 						)}
 					</Col>
 					<Col xs={24} sm={12}>
@@ -466,6 +466,17 @@ const QuickNotesModal = ({
 	onDelete,
 	onEdit,
 	loading,
+	// Pagination props
+	currentPage,
+	onPageChange,
+	totalCount,
+	pageSize,
+	// START: ==================== MODIFICATION ====================
+	// ADDED: Permission props to control modal actions.
+	canCreate,
+	canUpdate,
+	canDelete,
+	// END: ==================== MODIFICATION ====================
 }) => {
 	const [isRecording, setIsRecording] = useState(false);
 	const [mediaRecorder, setMediaRecorder] = useState(null);
@@ -541,7 +552,11 @@ const QuickNotesModal = ({
 		const formData = new FormData();
 		formData.append("audio", blob, "recording.webm");
 		try {
-			const response = await fetch("http://localhost:8080/api/gemini/soundtotext", { method: "POST", body: formData });
+			const response = await fetch("http://localhost:8080/api/gemini/soundtotext", {
+				method: "POST",
+				body: formData,
+				headers: { Authorization: `Bearer ${useAuthStore.getState().user?.token}` },
+			});
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({ message: "Transcription failed with status " + response.status }));
 				throw new Error(errorData.message || "Transcription failed");
@@ -608,6 +623,7 @@ const QuickNotesModal = ({
 	let modalTitle = t("quick-notes");
 	if (quickNotesModalMode === "create") modalTitle = t("add-quick-note");
 	if (quickNotesModalMode === "edit") modalTitle = t("edit-quick-note");
+	const canPerformAudioActions = (quickNotesModalMode === "create" && canCreate) || (quickNotesModalMode === "edit" && canUpdate);
 
 	return (
 		<Modal
@@ -620,42 +636,58 @@ const QuickNotesModal = ({
 			footer={
 				quickNotesModalMode === "list"
 					? [
-							<Button key="add" type="primary" onClick={() => onEdit(null)}>
-								{t("add-new-note")}
-							</Button>,
+							canCreate && (
+								<Button key="add" type="primary" onClick={() => onEdit(null)}>
+									{t("add-new-note")}
+								</Button>
+							),
 							<Button key="close" onClick={onClose}>
 								{t("close")}
 							</Button>,
-					  ]
+						].filter(Boolean)
 					: [
 							<Button key="cancel" onClick={onClose}>
 								{t("cancel")}
 							</Button>,
-							<Button
-								key="submit"
-								type="primary"
-								onClick={handleSave}
-								loading={loading || isTranscribing}
-								disabled={isRecording || isTranscribing}>
-								{quickNotesModalMode === "create" ? t("create-note") : t("update-note")}
-							</Button>,
-					  ]
+							((quickNotesModalMode === "create" && canCreate) || (quickNotesModalMode === "edit" && canUpdate)) && (
+								<Button
+									key="submit"
+									type="primary"
+									onClick={handleSave}
+									loading={loading || isTranscribing}
+									disabled={isRecording || isTranscribing}>
+									{quickNotesModalMode === "create" ? t("create-note") : t("update-note")}
+								</Button>
+							),
+						].filter(Boolean)
 			}>
 			{quickNotesModalMode === "list" ? (
 				<List
 					itemLayout="horizontal"
 					dataSource={sortedQuickNotes}
 					loading={loading}
+					pagination={{
+						current: currentPage,
+						pageSize: pageSize,
+						total: totalCount,
+						onChange: onPageChange,
+						style: { marginTop: 16, textAlign: "center" },
+						showSizeChanger: false,
+					}}
 					renderItem={(item) => (
 						<List.Item
 							actions={[
-								<Tooltip title={t("edit")}>
-									<Button type="text" icon={<EditOutlined />} onClick={() => onEdit(item)} />
-								</Tooltip>,
-								<Tooltip title={t("delete")}>
-									<Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(item.id)} />
-								</Tooltip>,
-							]}>
+								canUpdate && (
+									<Tooltip title={t("edit")}>
+										<Button type="text" icon={<EditOutlined />} onClick={() => onEdit(item)} />
+									</Tooltip>
+								),
+								canDelete && (
+									<Tooltip title={t("delete")}>
+										<Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(item.id)} />
+									</Tooltip>
+								),
+							].filter(Boolean)}>
 							<List.Item.Meta
 								avatar={<Avatar icon={<PushpinOutlined />} />}
 								title={
@@ -678,12 +710,12 @@ const QuickNotesModal = ({
 									icon={isRecording ? <AudioMutedOutlined /> : <AudioOutlined />}
 									type={isRecording ? "danger" : "primary"}
 									onClick={isRecording ? stopRecording : startRecording}
-									disabled={isTranscribing}
+									disabled={isTranscribing || !canPerformAudioActions}
 									ghost={isRecording}
 								/>
 							</Tooltip>
 							<Tooltip title={t("play-pause-audio")}>
-								<Button onClick={playAudio} disabled={!audioBlobUrl || isTranscribing || isRecording}>
+								<Button onClick={playAudio} disabled={!audioBlobUrl || isTranscribing || isRecording || !canPerformAudioActions}>
 									{t("play-pause")}
 								</Button>
 							</Tooltip>
@@ -710,7 +742,7 @@ const QuickNotesModal = ({
 						onChange={(e) => setQuickNoteText(e.target.value)}
 						placeholder={t("enter-quick-notes")}
 						autoSize={{ minRows: 4, maxRows: 8 }}
-						disabled={isTranscribing}
+						disabled={isTranscribing || !canPerformAudioActions}
 					/>
 				</>
 			)}
@@ -756,6 +788,18 @@ const PatientDetails = () => {
 		filters,
 	} = usePatientDetailStore();
 
+	// START: ==================== MODIFICATION ====================
+	// ADDED: Retrieving `hasAuthority` to manage permissions.
+	const { user: loggedInUser, hasAuthority } = useAuthStore();
+
+	// Defining permission booleans for easier use in the component.
+	const canReadPatient = hasAuthority("READ_PATIENT");
+	const canCreateActivity = hasAuthority("CREATE_ACTIVITY");
+	const canReadActivity = hasAuthority("READ_ACTIVITY");
+	const canUpdateActivity = hasAuthority("UPDATE_ACTIVITY");
+	const canDeleteActivity = hasAuthority("DELETE_ACTIVITY");
+	// END: ==================== MODIFICATION ====================
+
 	const [admissionsPage, setAdmissionsPage] = useState(0);
 	const [appointmentsPage, setAppointmentsPage] = useState(0);
 	const [assessmentsPage, setAssessmentsPage] = useState(0);
@@ -769,6 +813,7 @@ const PatientDetails = () => {
 	const [labResultsPage, setLabResultsPage] = useState(0);
 	const [documentsPage, setDocumentsPage] = useState(0);
 	const [procedureLogsPage, setProcedureLogsPage] = useState(0);
+	const [quickNotesPage, setQuickNotesPage] = useState(1);
 
 	const [activeTab, setActiveTab] = useState("profile");
 
@@ -788,7 +833,6 @@ const PatientDetails = () => {
 
 	const [activityCreated, setActivityCreated] = useState(false);
 	const { fetchLabTests, labTests } = useLabStore();
-	const { user: loggedInUser } = useAuthStore();
 
 	const handleOpenServiceModal = () => setIsServiceModalOpen(true);
 	const handleCloseServiceModal = () => setIsServiceModalOpen(false);
@@ -836,11 +880,18 @@ const PatientDetails = () => {
 			setEditingQuickNoteId(null);
 			setQuickNoteText("");
 		}
-		if (mode === "list" && (!quickNotes || quickNotes.length === 0)) {
-			fetchQuickNotes(patientId, 1, 10); // Fetch initial page if list is empty
+		if (mode === "list") {
+			setQuickNotesPage(1);
+			fetchQuickNotes(patientId, 1, 10);
 		}
 		setIsQuickNotesModalOpen(true);
 	};
+
+	const handleQuickNotesPageChange = (page) => {
+		setQuickNotesPage(page);
+		fetchQuickNotes(patientId, page, 10);
+	};
+
 	const handleCloseQuickNotesModal = () => {
 		setIsQuickNotesModalOpen(false);
 		setQuickNotesModalMode("list");
@@ -864,7 +915,7 @@ const PatientDetails = () => {
 			setQuickNoteText("");
 			setEditingQuickNoteId(null);
 		} catch (error) {
-			// Error handled in store
+			// Error already handled in the service store
 		}
 	};
 	const handleDeleteQuickNote = async (quickNoteId) => {
@@ -879,7 +930,7 @@ const PatientDetails = () => {
 					await deleteQuickNote(quickNoteId);
 					notification.success({ message: t("success"), description: t("quick-note-deleted") });
 				} catch (error) {
-					// Error handled in store
+					// Error already handled in the service store
 				}
 			},
 		});
@@ -899,9 +950,11 @@ const PatientDetails = () => {
 	useEffect(() => {
 		if (patientId) {
 			fetchPatientData(patientId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10);
-			fetchQuickNotes(patientId, 1, 10);
+			if (canReadActivity) {
+				fetchQuickNotes(patientId, 1, 10);
+			}
 		}
-	}, [patientId, fetchPatientData, fetchQuickNotes, activityCreated]);
+	}, [patientId, fetchPatientData, fetchQuickNotes, activityCreated, canReadActivity]);
 
 	const fetchPaginatedDataForTab = async (dataType, pageState) => {
 		if (!patientId) return;
@@ -923,7 +976,7 @@ const PatientDetails = () => {
 				dataType === "documents" ? pageNum : 0,
 				0,
 				dataType === "procedureLogs" ? pageNum : 0,
-				10
+				10,
 			);
 		} catch (error) {
 			console.error(`Error fetching ${dataType}:`, error.message);
@@ -1244,14 +1297,14 @@ const PatientDetails = () => {
 						...record,
 						imageUrls: record.imageUrls?.map(generateImageUrl) || [],
 					})),
-			  ]
+				]
 			: [
 					...baseColumns,
 					commonActionColumn("Image Report", "imageReport", "image_report", (record) => ({
 						...record,
 						imageUrls: record.imageUrls?.map(generateImageUrl) || [],
 					})),
-			  ];
+				];
 	}, [isMobile, t, labTests]);
 
 	const labResultsColumns = useMemo(() => {
@@ -1415,6 +1468,171 @@ const PatientDetails = () => {
 		/>
 	);
 
+	// START: ==================== MODIFICATION ====================
+	// ADDED: Configuration array for all data tabs with associated permissions.
+	const tabsConfig = [
+		{
+			key: "3",
+			permission: "READ_ADMISSION",
+			title: t("admissions"),
+			icon: <ProfileOutlined />,
+			columns: admissionsColumns,
+			data: admissions,
+			page: admissionsPage,
+			setPage: setAdmissionsPage,
+			count: totalCounts?.admissions,
+			filterType: "admissions",
+		},
+		{
+			key: "4",
+			permission: "READ_APPOINTMENT",
+			title: t("appointments"),
+			icon: <CalendarOutlined />,
+			columns: appointmentsColumns,
+			data: appointments,
+			page: appointmentsPage,
+			setPage: setAppointmentsPage,
+			count: totalCounts?.appointments,
+			filterType: "appointments",
+		},
+		{
+			key: "5",
+			permission: "READ_ASSESSMENT",
+			title: t("assessments"),
+			icon: <FileTextOutlined />,
+			columns: assessmentsColumns,
+			data: assessments,
+			page: assessmentsPage,
+			setPage: setAssessmentsPage,
+			count: totalCounts?.assessments,
+			filterType: "assessments",
+		},
+		{
+			key: "6",
+			permission: "READ_BILLING",
+			title: t("billings"),
+			icon: <DollarOutlined />,
+			columns: billingColumns,
+			data: billings,
+			page: billingsPage,
+			setPage: setBillingsPage,
+			count: totalCounts?.billings,
+			filterType: "billings",
+		},
+		{
+			key: "7",
+			permission: "READ_NURSING_CARE_PLAN",
+			title: t("care-plans"),
+			icon: <UnorderedListOutlined />,
+			columns: carePlansColumns,
+			data: carePlans,
+			page: carePlansPage,
+			setPage: setCarePlansPage,
+			count: totalCounts?.carePlans,
+			filterType: "carePlans",
+		},
+		{
+			key: "8",
+			permission: "READ_PRESCRIPTION",
+			title: t("prescriptions"),
+			icon: <MedicineBoxOutlined />,
+			columns: prescriptionsColumns,
+			data: prescriptions,
+			page: prescriptionsPage,
+			setPage: setPrescriptionsPage,
+			count: totalCounts?.prescriptions,
+			filterType: "prescriptions",
+		},
+		{
+			key: "9",
+			permission: "READ_VITAL_SIGN",
+			title: t("vital-signs"),
+			icon: <HeartOutlined />,
+			columns: vitalSignsColumns,
+			data: vitalSigns,
+			page: vitalSignsPage,
+			setPage: setVitalSignsPage,
+			count: totalCounts?.vitalSigns,
+			filterType: "vitalSigns",
+		},
+		{
+			key: "10",
+			permission: "READ_PATIENT_PRODUCT_USAGE",
+			title: t("product-usages"),
+			icon: <ShoppingCartOutlined />,
+			columns: productUsagesColumns,
+			data: productUsages,
+			page: productUsagesPage,
+			setPage: setProductUsagesPage,
+			count: totalCounts?.productUsages,
+			filterType: "productUsages",
+		},
+		{
+			key: "11",
+			permission: "READ_MEDICATION_ADMINISTRATION",
+			title: t("med-admin"),
+			icon: <MedicineBoxOutlined />,
+			columns: medicationAdministrationsColumns,
+			data: medicationAdministrations,
+			page: medicationAdministrationsPage,
+			setPage: setMedicationAdministrationsPage,
+			count: totalCounts?.medicationAdministrations,
+			filterType: "medicationAdministrations",
+		},
+		{
+			key: "12",
+			permission: "READ_IMAGE_REPORT",
+			title: t("image-reports"),
+			icon: <PictureOutlined />,
+			columns: imageReportsColumns,
+			data: imageReports,
+			page: imageReportsPage,
+			setPage: setImageReportsPage,
+			count: totalCounts?.imageReports,
+			filterType: "imageReports",
+		},
+		{
+			key: "13",
+			permission: "READ_LAB_RESULT",
+			title: t("lab-results"),
+			icon: <ExperimentOutlined />,
+			columns: labResultsColumns,
+			data: labResults,
+			page: labResultsPage,
+			setPage: setLabResultsPage,
+			count: totalCounts?.labResults,
+			filterType: "labResults",
+		},
+		{
+			key: "14",
+			permission: "READ_DOCUMENT",
+			title: t("documents"),
+			icon: <FileTextOutlined />,
+			columns: documentsColumns,
+			data: documents,
+			page: documentsPage,
+			setPage: setDocumentsPage,
+			count: totalCounts?.documents,
+			filterType: "documents",
+		},
+		{
+			key: "15",
+			permission: "READ_PROCEDURE_LOG",
+			title: t("procedure-logs"),
+			icon: <FileDoneOutlined />,
+			columns: procedureLogsColumns,
+			data: procedureLogs,
+			page: procedureLogsPage,
+			setPage: setProcedureLogsPage,
+			count: totalCounts?.procedureLogs,
+			filterType: "procedureLogs",
+		},
+	];
+
+	// Filter tabs based on user permissions
+	const visibleTabs = tabsConfig.filter((tab) => hasAuthority(tab.permission));
+	// END: ==================== MODIFICATION ====================
+
 	return (
 		<Layout style={{ minHeight: "100vh", background: token.colorBgLayout }}>
 			<Header
@@ -1430,24 +1648,32 @@ const PatientDetails = () => {
 				<Title level={4} style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 					{t("patient-details")}
 				</Title>
-				<Space>
-					<Tooltip title={t("add-service")}>
-						<Button type="primary" shape="circle" icon={<PlusOutlined />} onClick={handleOpenServiceModal} />
-					</Tooltip>
-					{!loading && patient && (
-						<Dropdown overlay={patientFileMenu} placement="bottomRight">
-							<Tooltip title={t("generate-patient-file-html")}>
-								<Button type="default" shape="circle" icon={<DownloadOutlined />} />
-							</Tooltip>
-						</Dropdown>
-					)}
-				</Space>
+				{canReadPatient && (
+					<Space>
+						<Tooltip title={t("add-service")}>
+							<Button
+								type="primary"
+								shape="circle"
+								icon={<PlusOutlined />}
+								onClick={handleOpenServiceModal}
+								disabled={!canCreateActivity}
+							/>
+						</Tooltip>
+						{!loading && patient && (
+							<Dropdown overlay={patientFileMenu} placement="bottomRight">
+								<Tooltip title={t("generate-patient-file-html")}>
+									<Button type="default" shape="circle" icon={<DownloadOutlined />} />
+								</Tooltip>
+							</Dropdown>
+						)}
+					</Space>
+				)}
 			</Header>
 
 			<Content style={{ padding: isMobile ? "8px" : "16px" }}>
 				{loading && !patient && <Spin tip={t("loading-patient-details")} style={{ display: "block", marginTop: 50 }} />}
 
-				{patient && (
+				{patient && canReadPatient && (
 					<Card
 						style={{
 							marginBottom: isMobile ? "8px" : "16px",
@@ -1515,7 +1741,7 @@ const PatientDetails = () => {
 					</Card>
 				)}
 
-				{patient && (
+				{patient && canReadPatient && (
 					<Card className="patient-details-tabs" styles={{ body: { padding: "0" } }}>
 						<Tabs
 							activeKey={activeTab}
@@ -1577,195 +1803,61 @@ const PatientDetails = () => {
 												</div>
 											</Space>
 										</Col>
-										<Col xs={24} md={24} lg={8}>
-											<Title level={5} style={{ marginBottom: 16 }}>
-												{t("quick-notes")}
-											</Title>
-											<List
-												itemLayout="horizontal"
-												dataSource={quickNotes.slice(0, 3)}
-												loading={loading && quickNotes.length === 0}
-												renderItem={(item) => (
-													<List.Item
-														actions={[
-															<Button type="link" size="small" onClick={() => handleEditQuickNote(item)}>
-																{t("edit")}
-															</Button>,
-														]}>
-														<List.Item.Meta
-															avatar={
-																<Avatar
-																	size="small"
-																	icon={<PushpinOutlined />}
-																	style={{ backgroundColor: token.colorPrimaryBg }}
-																/>
-															}
-															title={`${item.addedByUser || t("system")} - ${moment(item.createdAt).fromNow()}`}
-															description={
-																<Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
-																	{item.noteText}
-																</Paragraph>
-															}
-														/>
-													</List.Item>
+										{canReadActivity && (
+											<Col xs={24} md={24} lg={8}>
+												<Title level={5} style={{ marginBottom: 16 }}>
+													{t("quick-notes")}
+												</Title>
+												<List
+													itemLayout="horizontal"
+													dataSource={quickNotes.slice(0, 3)}
+													loading={loading && quickNotes.length === 0}
+													renderItem={(item) => (
+														<List.Item
+															actions={
+																canUpdateActivity
+																	? [
+																			<Button
+																				type="link"
+																				size="small"
+																				onClick={() => handleEditQuickNote(item)}>
+																				{t("edit")}
+																			</Button>,
+																		]
+																	: []
+															}>
+															<List.Item.Meta
+																avatar={
+																	<Avatar
+																		size="small"
+																		icon={<PushpinOutlined />}
+																		style={{ backgroundColor: token.colorPrimaryBg }}
+																	/>
+																}
+																title={`${item.addedByUser || t("system")} - ${moment(item.createdAt).fromNow()}`}
+																description={
+																	<Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
+																		{item.noteText}
+																	</Paragraph>
+																}
+															/>
+														</List.Item>
+													)}
+												/>
+												{totalCounts?.quickNotes > 3 && (
+													<Button type="link" onClick={() => handleOpenQuickNotesModal("list")} style={{ marginTop: 8 }}>
+														{t("view-all-quick-notes")}
+													</Button>
 												)}
-											/>
-											{quickNotes.length > 3 && (
-												<Button type="link" onClick={() => handleOpenQuickNotesModal("list")} style={{ marginTop: 8 }}>
-													{t("view-all-quick-notes")}
-												</Button>
-											)}
-											{quickNotes.length === 0 && !loading && <Text type="secondary">{t("no-quick-notes-available")}</Text>}
-										</Col>
+												{quickNotes.length === 0 && !loading && <Text type="secondary">{t("no-quick-notes-available")}</Text>}
+											</Col>
+										)}
 									</Row>
 								</div>
 							</TabPane>
 
-							{[
-								{
-									key: "3",
-									title: t("admissions"),
-									icon: <ProfileOutlined />,
-									columns: admissionsColumns,
-									data: admissions,
-									page: admissionsPage,
-									setPage: setAdmissionsPage,
-									count: totalCounts?.admissions,
-									filterType: "admissions",
-								},
-								{
-									key: "4",
-									title: t("appointments"),
-									icon: <CalendarOutlined />,
-									columns: appointmentsColumns,
-									data: appointments,
-									page: appointmentsPage,
-									setPage: setAppointmentsPage,
-									count: totalCounts?.appointments,
-									filterType: "appointments",
-								},
-								{
-									key: "5",
-									title: t("assessments"),
-									icon: <FileTextOutlined />,
-									columns: assessmentsColumns,
-									data: assessments,
-									page: assessmentsPage,
-									setPage: setAssessmentsPage,
-									count: totalCounts?.assessments,
-									filterType: "assessments",
-								},
-								{
-									key: "6",
-									title: t("billings"),
-									icon: <DollarOutlined />,
-									columns: billingColumns,
-									data: billings,
-									page: billingsPage,
-									setPage: setBillingsPage,
-									count: totalCounts?.billings,
-									filterType: "billings",
-								},
-								{
-									key: "7",
-									title: t("care-plans"),
-									icon: <UnorderedListOutlined />,
-									columns: carePlansColumns,
-									data: carePlans,
-									page: carePlansPage,
-									setPage: setCarePlansPage,
-									count: totalCounts?.carePlans,
-									filterType: "carePlans",
-								},
-								{
-									key: "8",
-									title: t("prescriptions"),
-									icon: <MedicineBoxOutlined />,
-									columns: prescriptionsColumns,
-									data: prescriptions,
-									page: prescriptionsPage,
-									setPage: setPrescriptionsPage,
-									count: totalCounts?.prescriptions,
-									filterType: "prescriptions",
-								},
-								{
-									key: "9",
-									title: t("vital-signs"),
-									icon: <HeartOutlined />,
-									columns: vitalSignsColumns,
-									data: vitalSigns,
-									page: vitalSignsPage,
-									setPage: setVitalSignsPage,
-									count: totalCounts?.vitalSigns,
-									filterType: "vitalSigns",
-								},
-								{
-									key: "10",
-									title: t("product-usages"),
-									icon: <ShoppingCartOutlined />,
-									columns: productUsagesColumns,
-									data: productUsages,
-									page: productUsagesPage,
-									setPage: setProductUsagesPage,
-									count: totalCounts?.productUsages,
-									filterType: "productUsages",
-								},
-								{
-									key: "11",
-									title: t("med-admin"),
-									icon: <MedicineBoxOutlined />,
-									columns: medicationAdministrationsColumns,
-									data: medicationAdministrations,
-									page: medicationAdministrationsPage,
-									setPage: setMedicationAdministrationsPage,
-									count: totalCounts?.medicationAdministrations,
-									filterType: "medicationAdministrations",
-								},
-								{
-									key: "12",
-									title: t("image-reports"),
-									icon: <PictureOutlined />,
-									columns: imageReportsColumns,
-									data: imageReports,
-									page: imageReportsPage,
-									setPage: setImageReportsPage,
-									count: totalCounts?.imageReports,
-									filterType: "imageReports",
-								},
-								{
-									key: "13",
-									title: t("lab-results"),
-									icon: <ExperimentOutlined />,
-									columns: labResultsColumns,
-									data: labResults,
-									page: labResultsPage,
-									setPage: setLabResultsPage,
-									count: totalCounts?.labResults,
-									filterType: "labResults",
-								},
-								{
-									key: "14",
-									title: t("documents"),
-									icon: <FileTextOutlined />,
-									columns: documentsColumns,
-									data: documents,
-									page: documentsPage,
-									setPage: setDocumentsPage,
-									count: totalCounts?.documents,
-									filterType: "documents",
-								},
-								{
-									key: "15",
-									title: t("procedure-logs"),
-									icon: <FileDoneOutlined />,
-									columns: procedureLogsColumns,
-									data: procedureLogs,
-									page: procedureLogsPage,
-									setPage: setProcedureLogsPage,
-									count: totalCounts?.procedureLogs,
-									filterType: "procedureLogs",
-								},
-							].map((tab) => (
+							{/* MODIFIED: Mapping over the permission-filtered array of tabs */}
+							{visibleTabs.map((tab) => (
 								<TabPane
 									key={tab.key}
 									tab={
@@ -1803,18 +1895,22 @@ const PatientDetails = () => {
 						</Tabs>
 					</Card>
 				)}
-				{!patient && !loading && (
+				{!patient && !loading && !canReadPatient && (
 					<Card style={{ textAlign: "center", padding: 50 }}>
-						<Text type="secondary">{t("patient-not-found")}</Text>
+						<Text type="secondary">{t("patient-not-found-or-permission-denied")}</Text>
 					</Card>
 				)}
 			</Content>
-			<FloatButton.Group shape="circle" style={{ right: isMobile ? 16 : 24, bottom: isMobile ? 60 : 24 }}>
-				<Tooltip title={t("quick-notes")}>
-					<FloatButton icon={<PushpinOutlined />} onClick={() => handleOpenQuickNotesModal("list")} />
-				</Tooltip>
-				<FloatButton.BackTop visibilityHeight={100} />
-			</FloatButton.Group>
+
+			{canReadActivity && (
+				<FloatButton.Group shape="circle" style={{ right: isMobile ? 16 : 24, bottom: isMobile ? 60 : 24 }}>
+					<Tooltip title={t("quick-notes")}>
+						<FloatButton icon={<PushpinOutlined />} onClick={() => handleOpenQuickNotesModal("list")} />
+					</Tooltip>
+					<FloatButton.BackTop visibilityHeight={100} />
+				</FloatButton.Group>
+			)}
+
 			<Modal
 				title={t("request-service")}
 				open={isServiceModalOpen}
@@ -1834,18 +1930,27 @@ const PatientDetails = () => {
 			/>
 			{isSliderOpen && selectedImageData && <ImageSlider open={isSliderOpen} data={selectedImageData} onClose={handleCloseSlider} />}
 			<PatientAvatarModal imageUrl={selectedAvatarUrl} isOpen={isAvatarModalOpen} onClose={handleCloseAvatarModal} />
-			<QuickNotesModal
-				isOpen={isQuickNotesModalOpen}
-				onClose={handleCloseQuickNotesModal}
-				onSave={handleSaveQuickNotes}
-				quickNotesModalMode={quickNotesModalMode}
-				quickNoteText={quickNoteText}
-				setQuickNoteText={setQuickNoteText}
-				quickNotes={quickNotes}
-				onDelete={handleDeleteQuickNote}
-				onEdit={handleEditQuickNote}
-				loading={loading && (quickNotesModalMode === "list" || quickNotesModalMode === "create" || quickNotesModalMode === "edit")}
-			/>
+			{canReadActivity && (
+				<QuickNotesModal
+					isOpen={isQuickNotesModalOpen}
+					onClose={handleCloseQuickNotesModal}
+					onSave={handleSaveQuickNotes}
+					quickNotesModalMode={quickNotesModalMode}
+					quickNoteText={quickNoteText}
+					setQuickNoteText={setQuickNoteText}
+					quickNotes={quickNotes}
+					onDelete={handleDeleteQuickNote}
+					onEdit={handleEditQuickNote}
+					loading={loading && (quickNotesModalMode === "list" || quickNotesModalMode === "create" || quickNotesModalMode === "edit")}
+					currentPage={quickNotesPage}
+					onPageChange={handleQuickNotesPageChange}
+					totalCount={totalCounts?.quickNotes || 0}
+					pageSize={10}
+					canCreate={canCreateActivity}
+					canUpdate={canUpdateActivity}
+					canDelete={canDeleteActivity}
+				/>
+			)}
 		</Layout>
 	);
 };

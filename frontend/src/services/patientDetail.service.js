@@ -1,4 +1,3 @@
-// patientDetail.service.js
 import axios from "axios";
 import { create } from "zustand";
 import { notification } from "antd";
@@ -28,7 +27,7 @@ export const usePatientDetailStore = create((set, get) => ({
 	procedureLogs: [],
 	totalCounts: {},
 	filters: {
-		admissions: false, // Added admissions filter
+		admissions: false,
 		appointments: false,
 		assessments: false,
 		billings: false,
@@ -70,13 +69,19 @@ export const usePatientDetailStore = create((set, get) => ({
 		documentsPage,
 		quickNotesPage,
 		procedureLogsPage,
-		pageSize
+		pageSize,
 	) => {
 		set({ loading: true, error: null });
 		let patientResponse;
 		try {
-			const user = useAuthStore.getState().user;
+			const { user, hasAuthority } = useAuthStore.getState();
 			const { filters } = get();
+
+			if (!hasAuthority("READ_PATIENT")) {
+				set({ loading: false, error: "Permission Denied", patient: null });
+				notification.error({ message: "Permission Denied", description: "You do not have permission to view patient details." });
+				return;
+			}
 
 			patientResponse = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}`, {
 				headers: {
@@ -87,19 +92,22 @@ export const usePatientDetailStore = create((set, get) => ({
 			const requests = [];
 			const responses = {};
 
-			if (quickNotesPage) {
+			// START: ==================== MODIFICATION ====================
+			// ADDED: Permission checks before dispatching API calls.
+
+			if (quickNotesPage && hasAuthority("READ_ACTIVITY")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/quick-notes`, {
 							headers: { Authorization: `Bearer ${user?.token}` },
-							params: { page: quickNotesPage - 1, size: pageSize }, // No filterByAdmission for quick notes typically
+							params: { page: quickNotesPage - 1, size: pageSize },
 						})
 						.then((res) => {
 							responses.quickNotes = res;
-						})
+						}),
 				);
 			}
-			if (procedureLogsPage) {
+			if (procedureLogsPage && hasAuthority("READ_PROCEDURE_LOG")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`, {
@@ -108,22 +116,22 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.procedureLogs = res;
-						})
+						}),
 				);
 			}
-			if (admissionsPage) {
+			if (admissionsPage && hasAuthority("READ_ADMISSION")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/admissions`, {
 							headers: { Authorization: `Bearer ${user?.token}` },
-							params: { page: admissionsPage - 1, size: pageSize, filterByAdmission: filters.admissions }, // Added filter support
+							params: { page: admissionsPage - 1, size: pageSize, filterByAdmission: filters.admissions },
 						})
 						.then((res) => {
 							responses.admissions = res;
-						})
+						}),
 				);
 			}
-			if (appointmentsPage) {
+			if (appointmentsPage && hasAuthority("READ_APPOINTMENT")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/appointments`, {
@@ -132,10 +140,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.appointments = res;
-						})
+						}),
 				);
 			}
-			if (assessmentsPage) {
+			if (assessmentsPage && hasAuthority("READ_ASSESSMENT")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/assessments`, {
@@ -144,10 +152,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.assessments = res;
-						})
+						}),
 				);
 			}
-			if (billingsPage) {
+			if (billingsPage && hasAuthority("READ_BILLING")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/billings`, {
@@ -156,10 +164,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.billings = res;
-						})
+						}),
 				);
 			}
-			if (carePlansPage) {
+			if (carePlansPage && hasAuthority("READ_NURSING_CARE_PLAN")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/care-plans`, {
@@ -168,10 +176,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.carePlans = res;
-						})
+						}),
 				);
 			}
-			if (prescriptionsPage) {
+			if (prescriptionsPage && hasAuthority("READ_PRESCRIPTION")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/prescriptions`, {
@@ -180,10 +188,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.prescriptions = res;
-						})
+						}),
 				);
 			}
-			if (vitalSignsPage) {
+			if (vitalSignsPage && hasAuthority("READ_VITAL_SIGN")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/vital-signs`, {
@@ -192,10 +200,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.vitalSigns = res;
-						})
+						}),
 				);
 			}
-			if (productUsagesPage) {
+			if (productUsagesPage && hasAuthority("READ_PATIENT_PRODUCT_USAGE")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/product-usages`, {
@@ -204,10 +212,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.productUsages = res;
-						})
+						}),
 				);
 			}
-			if (medicationAdministrationsPage) {
+			if (medicationAdministrationsPage && hasAuthority("READ_MEDICATION_ADMINISTRATION")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/medication-administrations`, {
@@ -220,10 +228,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.medicationAdministrations = res;
-						})
+						}),
 				);
 			}
-			if (imageReportsPage) {
+			if (imageReportsPage && hasAuthority("READ_IMAGE_REPORT")) {
 				requests.push(
 					axios
 						.get(`${IMAGE_REPORT_API_BASE_URL}/patient/${patientId}`, {
@@ -232,10 +240,10 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.imageReports = res;
-						})
+						}),
 				);
 			}
-			if (labResultsPage) {
+			if (labResultsPage && hasAuthority("READ_LAB_RESULT")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/lab-results`, {
@@ -244,21 +252,22 @@ export const usePatientDetailStore = create((set, get) => ({
 						})
 						.then((res) => {
 							responses.labResults = res;
-						})
+						}),
 				);
 			}
-			if (documentsPage) {
+			if (documentsPage && hasAuthority("READ_DOCUMENT")) {
 				requests.push(
 					axios
 						.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/documents`, {
 							headers: { Authorization: `Bearer ${user?.token}` },
-							params: { page: documentsPage - 1, size: pageSize, filterByAdmission: filters.documents }, // Assuming documents might be filterable
+							params: { page: documentsPage - 1, size: pageSize, filterByAdmission: filters.documents },
 						})
 						.then((res) => {
 							responses.documents = res;
-						})
+						}),
 				);
 			}
+			// END: ==================== MODIFICATION ====================
 
 			await Promise.all(requests);
 
@@ -304,19 +313,24 @@ export const usePatientDetailStore = create((set, get) => ({
 			}));
 		} catch (error) {
 			set({ error: error.message, loading: false });
-			notification.error({
-				message: "Error",
-				description: `Failed to fetch patient data: ${error.message}`,
-			});
-			throw error;
+			// The error might be from the initial patient data fetch, which is critical.
+			if (!patientResponse) {
+				notification.error({
+					message: "Error",
+					description: `Failed to fetch patient data: ${error.message}`,
+				});
+			} else {
+				console.error("Error fetching sub-data:", error); // Log other errors but don't show a breaking notification
+			}
+			// Do not re-throw error to allow partial data rendering
 		}
 	},
 
 	fetchAllDataForReport: async (patientId, reportScope = "all") => {
-		const user = useAuthStore.getState().user;
-		if (!user || !user.token) {
-			notification.error({ message: "Authentication Error", description: "User token not found." });
-			throw new Error("User token not found.");
+		const { user, hasAuthority } = useAuthStore.getState();
+		if (!user || !user.token || !hasAuthority("READ_PATIENT")) {
+			notification.error({ message: "Authentication Error", description: "User token not found or insufficient permissions." });
+			throw new Error("User token not found or insufficient permissions.");
 		}
 		const headers = { Authorization: `Bearer ${user.token}` };
 		const pageSize = 100;
@@ -342,35 +356,23 @@ export const usePatientDetailStore = create((set, get) => ({
 			let currentPage = 0;
 			let totalPages = 1;
 			const accumulatedData = [];
-
-			// Data types that should NOT be filtered by admission for a patient file, even in "active" scope.
-			// Admissions list itself provides context. Documents are usually not admission-specific.
 			const neverFilterByAdmissionForReport = ["admissions", "documents"];
-
-			const paramsForCall = {
-				...additionalParams,
-				size: pageSize,
-			};
+			const paramsForCall = { ...additionalParams, size: pageSize };
 
 			if (filterByActiveAdmissionForReport && !neverFilterByAdmissionForReport.includes(dataType)) {
 				paramsForCall.filterByAdmission = true;
 			} else {
-				// For "all" scope, or for types like "admissions", explicitly do not filter by admission.
 				paramsForCall.filterByAdmission = false;
 			}
 
 			while (currentPage < totalPages) {
 				try {
-					const response = await axios.get(endpoint, {
-						headers,
-						params: { ...paramsForCall, page: currentPage },
-					});
+					const response = await axios.get(endpoint, { headers, params: { ...paramsForCall, page: currentPage } });
 					if (response.data && response.data.content) {
 						accumulatedData.push(...response.data.content);
 						totalPages = response.data.totalPages;
-						if (totalPages === 0) break; // No data
+						if (totalPages === 0) break;
 					} else {
-						console.warn(`Unexpected response structure for ${dataType} page ${currentPage}:`, response.data);
 						break;
 					}
 					currentPage++;
@@ -383,50 +385,51 @@ export const usePatientDetailStore = create((set, get) => ({
 			return accumulatedData;
 		};
 
-		// fetchAdmissionsPaged is a specific case of fetchDataPaged where filterByAdmission is always false
-		// because the admissions list in the report should show all admissions for context.
 		const fetchAdmissionsPagedForReport = async () => {
-			let currentPage = 0;
-			let totalPages = 1;
-			const accumulatedData = [];
-			while (currentPage < totalPages) {
-				try {
-					const response = await axios.get(`${PATIENT_API_BASE_DATA_URL}/${patientId}/admissions`, {
-						headers,
-						params: { page: currentPage, size: pageSize, filterByAdmission: false }, // Always false for the main admissions list
-					});
-					if (response.data && response.data.content) {
-						accumulatedData.push(...response.data.content);
-						totalPages = response.data.totalPages;
-						if (totalPages === 0) break;
-					} else {
-						break;
-					}
-					currentPage++;
-				} catch (error) {
-					console.error(`Error fetching admissions for report page ${currentPage}:`, error);
-					notification.error({ message: "Report Data Fetch Error", description: `Failed to fetch admissions. Report may be incomplete.` });
-					break;
-				}
-			}
-			return accumulatedData;
+			return fetchDataPaged("admissions", `${PATIENT_API_BASE_DATA_URL}/${patientId}/admissions`);
 		};
 
 		try {
-			const results = await Promise.all([
-				fetchAdmissionsPagedForReport(), // Always fetches all admissions
-				fetchDataPaged("appointments", `${PATIENT_API_BASE_DATA_URL}/${patientId}/appointments`),
-				fetchDataPaged("assessments", `${PATIENT_API_BASE_DATA_URL}/${patientId}/assessments`),
-				fetchDataPaged("billings", `${PATIENT_API_BASE_DATA_URL}/${patientId}/billings`),
-				fetchDataPaged("carePlans", `${PATIENT_API_BASE_DATA_URL}/${patientId}/care-plans`),
-				fetchDataPaged("prescriptions", `${PATIENT_API_BASE_DATA_URL}/${patientId}/prescriptions`),
-				fetchDataPaged("vitalSigns", `${PATIENT_API_BASE_DATA_URL}/${patientId}/vital-signs`, { sort: "timestamp,desc" }),
-				fetchDataPaged("productUsages", `${PATIENT_API_BASE_DATA_URL}/${patientId}/product-usages`),
-				fetchDataPaged("medicationAdministrations", `${PATIENT_API_BASE_DATA_URL}/${patientId}/medication-administrations`),
-				fetchDataPaged("imageReports", `${IMAGE_REPORT_API_BASE_URL}/patient/${patientId}`),
-				fetchDataPaged("labResults", `${PATIENT_API_BASE_DATA_URL}/${patientId}/lab-results`),
-				fetchDataPaged("procedureLogs", `${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`),
-			]);
+			// START: ==================== MODIFICATION ====================
+			// ADDED: Permission checks before fetching data for the report.
+			// Using Promise.resolve([]) as a placeholder for unauthorized requests.
+			const dataFetchPromises = [
+				hasAuthority("READ_ADMISSION") ? fetchAdmissionsPagedForReport() : Promise.resolve([]),
+				hasAuthority("READ_APPOINTMENT")
+					? fetchDataPaged("appointments", `${PATIENT_API_BASE_DATA_URL}/${patientId}/appointments`)
+					: Promise.resolve([]),
+				hasAuthority("READ_ASSESSMENT")
+					? fetchDataPaged("assessments", `${PATIENT_API_BASE_DATA_URL}/${patientId}/assessments`)
+					: Promise.resolve([]),
+				hasAuthority("READ_BILLING") ? fetchDataPaged("billings", `${PATIENT_API_BASE_DATA_URL}/${patientId}/billings`) : Promise.resolve([]),
+				hasAuthority("READ_NURSING_CARE_PLAN")
+					? fetchDataPaged("carePlans", `${PATIENT_API_BASE_DATA_URL}/${patientId}/care-plans`)
+					: Promise.resolve([]),
+				hasAuthority("READ_PRESCRIPTION")
+					? fetchDataPaged("prescriptions", `${PATIENT_API_BASE_DATA_URL}/${patientId}/prescriptions`)
+					: Promise.resolve([]),
+				hasAuthority("READ_VITAL_SIGN")
+					? fetchDataPaged("vitalSigns", `${PATIENT_API_BASE_DATA_URL}/${patientId}/vital-signs`, { sort: "timestamp,desc" })
+					: Promise.resolve([]),
+				hasAuthority("READ_PATIENT_PRODUCT_USAGE")
+					? fetchDataPaged("productUsages", `${PATIENT_API_BASE_DATA_URL}/${patientId}/product-usages`)
+					: Promise.resolve([]),
+				hasAuthority("READ_MEDICATION_ADMINISTRATION")
+					? fetchDataPaged("medicationAdministrations", `${PATIENT_API_BASE_DATA_URL}/${patientId}/medication-administrations`)
+					: Promise.resolve([]),
+				hasAuthority("READ_IMAGE_REPORT")
+					? fetchDataPaged("imageReports", `${IMAGE_REPORT_API_BASE_URL}/patient/${patientId}`)
+					: Promise.resolve([]),
+				hasAuthority("READ_LAB_RESULT")
+					? fetchDataPaged("labResults", `${PATIENT_API_BASE_DATA_URL}/${patientId}/lab-results`)
+					: Promise.resolve([]),
+				hasAuthority("READ_PROCEDURE_LOG")
+					? fetchDataPaged("procedureLogs", `${PATIENT_API_BASE_DATA_URL}/${patientId}/procedure-logs`)
+					: Promise.resolve([]),
+			];
+
+			const results = await Promise.all(dataFetchPromises);
+			// END: ==================== MODIFICATION ====================
 
 			allFetchedData.admissions = results[0];
 			allFetchedData.appointments = results[1];
@@ -450,6 +453,7 @@ export const usePatientDetailStore = create((set, get) => ({
 	},
 
 	fetchProcedureLogs: async (patientId, page, pageSize, filterByAdmission) => {
+		if (!useAuthStore.getState().hasAuthority("READ_PROCEDURE_LOG")) return;
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -471,6 +475,10 @@ export const usePatientDetailStore = create((set, get) => ({
 		}
 	},
 	fetchQuickNotes: async (patientId, page, pageSize) => {
+		if (!useAuthStore.getState().hasAuthority("READ_ACTIVITY")) {
+			set({ quickNotes: [], totalCounts: { ...get().totalCounts, quickNotes: 0 } });
+			return;
+		}
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -493,6 +501,10 @@ export const usePatientDetailStore = create((set, get) => ({
 	},
 
 	createQuickNote: async (patientId, noteText, addedByUserId) => {
+		if (!useAuthStore.getState().hasAuthority("CREATE_ACTIVITY")) {
+			notification.error({ message: "Permission Denied", description: "You do not have permission to create quick notes." });
+			throw new Error("Permission Denied");
+		}
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -504,10 +516,9 @@ export const usePatientDetailStore = create((set, get) => ({
 						Authorization: `Bearer ${user?.token}`,
 						"Content-Type": "application/json",
 					},
-				}
+				},
 			);
-			// Fetch the current page of quick notes to update the list, or just the first page
-			const currentPage = Math.floor((get().totalCounts.quickNotes || 0) / 10); // Assuming 10 per page
+			const currentPage = Math.floor((get().totalCounts.quickNotes || 0) / 10);
 			get().fetchQuickNotes(patientId, currentPage + 1, 10);
 			set({ loading: false });
 			return response.data;
@@ -520,6 +531,10 @@ export const usePatientDetailStore = create((set, get) => ({
 	},
 
 	updateQuickNote: async (quickNoteId, noteText, addedByUserId) => {
+		if (!useAuthStore.getState().hasAuthority("UPDATE_ACTIVITY")) {
+			notification.error({ message: "Permission Denied", description: "You do not have permission to update quick notes." });
+			throw new Error("Permission Denied");
+		}
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -531,13 +546,11 @@ export const usePatientDetailStore = create((set, get) => ({
 						Authorization: `Bearer ${user?.token}`,
 						"Content-Type": "application/json",
 					},
-				}
+				},
 			);
 			const patientId = get().patient?.id;
 			if (patientId) {
-				// Determine which page the updated note might be on, or just refresh current view
-				// For simplicity, refreshing the first page or a common view.
-				get().fetchQuickNotes(patientId, 1, 10); // Refresh first page
+				get().fetchQuickNotes(patientId, 1, 10);
 			}
 			set({ loading: false });
 			return response.data;
@@ -550,6 +563,10 @@ export const usePatientDetailStore = create((set, get) => ({
 	},
 
 	deleteQuickNote: async (quickNoteId) => {
+		if (!useAuthStore.getState().hasAuthority("DELETE_ACTIVITY")) {
+			notification.error({ message: "Permission Denied", description: "You do not have permission to delete quick notes." });
+			throw new Error("Permission Denied");
+		}
 		set({ loading: true, error: null });
 		try {
 			const user = useAuthStore.getState().user;
@@ -558,7 +575,7 @@ export const usePatientDetailStore = create((set, get) => ({
 			});
 			const patientId = get().patient?.id;
 			if (patientId) {
-				get().fetchQuickNotes(patientId, 1, 10); // Refresh first page
+				get().fetchQuickNotes(patientId, 1, 10);
 			}
 			set({ loading: false });
 		} catch (error) {

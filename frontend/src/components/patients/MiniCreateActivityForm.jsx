@@ -1,70 +1,79 @@
-// MiniCreateActivityForm.js
 import React, { useState, useEffect } from "react";
 import { Form, Input, Button, Select, Spin, message, Card, Typography } from "antd";
 import { useActivityStore } from "../../services/activity.service";
 import { useLabStore } from "../../services/lab.service";
 import { useImageReportTypeStore } from "../../services/imageReportType.service";
-import { useTranslation } from "react-i18next"; // Import
-
-import { LoadingOutlined } from "@ant-design/icons"; // More specific loading icon
+import { useUnitStore } from "../../services/unit.service"; // Import the new unit store
+import { useTranslation } from "react-i18next";
+import { LoadingOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 const { TextArea } = Input;
 const { Title } = Typography;
 
 const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
-	const { t } = useTranslation(); // Initialize
+	const { t } = useTranslation();
 	const { createActivity, loading, error, clearError } = useActivityStore();
 	const { labTests, fetchLabTests, loading: labLoading } = useLabStore();
 	const { imageReportTypes, fetchImageReportTypes, loading: imageReportLoading } = useImageReportTypeStore();
+	const { fetchUnitsByType, loading: unitLoading } = useUnitStore(); // Get unit store functions
 
+	const [form] = Form.useForm();
 	const [formData, setFormData] = useState({
 		activityType: "",
 		description: "",
-		patientIds: [patientId || ""], // Initialize with patientId, handle null/undefined
+		patientIds: [patientId || ""],
 		state: "pending",
+		unitId: null, // Add unitId to form data
 	});
 	const [selectedLabTest, setSelectedLabTest] = useState(null);
 	const [selectedImageReportType, setSelectedImageReportType] = useState(null);
-
-	const [form] = Form.useForm();
-
-	// --- Effects ---
+	const [targetUnits, setTargetUnits] = useState([]); // A single state for the list of units to show
 
 	useEffect(() => {
-		// If patientId exists, set it in the form.
 		if (patientId) {
 			setFormData((prev) => ({ ...prev, patientIds: [patientId] }));
 		}
 	}, [patientId]);
 
 	useEffect(() => {
-		if (formData.activityType === "LAB_TEST") {
-			fetchLabTests();
-		} else if (formData.activityType === "IMAGE_REPORT") {
-			fetchImageReportTypes(0, 10000); // Good practice to have pagination limits, even for "all"
-		}
-	}, [formData.activityType, fetchLabTests, fetchImageReportTypes]);
+		const fetchDependencies = async () => {
+			// Reset selections and dynamic data
+			setTargetUnits([]);
+			form.setFieldsValue({ unitId: null, description: null });
 
-	useEffect(() => {
-		form.setFieldsValue({
-			activityType: formData.activityType,
-			description: formData.description,
-		});
-	}, [formData.activityType, formData.description, form]);
+			if (formData.activityType === "LAB_TEST") {
+				fetchLabTests();
+				try {
+					const units = await fetchUnitsByType("LABORATORY");
+					setTargetUnits(units);
+				} catch (e) {
+					console.error("Failed to fetch lab units", e);
+					message.error(t("failed-to-fetch-lab-units"));
+				}
+			} else if (formData.activityType === "IMAGE_REPORT") {
+				fetchImageReportTypes(0, 10000);
+				try {
+					const units = await fetchUnitsByType("RADIOLOGY");
+					setTargetUnits(units);
+				} catch (e) {
+					console.error("Failed to fetch radiology units", e);
+					message.error(t("failed-to-fetch-radiology-units"));
+				}
+			}
+		};
 
-	// --- Handlers ---
+		fetchDependencies();
+	}, [formData.activityType, fetchLabTests, fetchImageReportTypes, fetchUnitsByType, form, t]);
 
 	const handleInputChange = (name, value) => {
-		// Reset selections when activityType changes
+		const newFormData = { ...formData, [name]: value };
 		if (name === "activityType") {
+			newFormData.unitId = null; // Reset unitId when activity type changes
 			setSelectedLabTest(null);
 			setSelectedImageReportType(null);
-			form.setFieldsValue({ description: null }); // Clear description
 		}
-
-		setFormData((prev) => ({ ...prev, [name]: value }));
-		form.setFieldsValue({ [name]: value }); // Update form state (controlled component)
+		setFormData(newFormData);
 	};
 
 	const handleLabTestSelect = (value) => {
@@ -72,7 +81,7 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 		setSelectedLabTest(selectedTest);
 		const description = selectedTest ? selectedTest.testName : "";
 		setFormData((prev) => ({ ...prev, description }));
-		form.setFieldsValue({ description }); // Update form's description
+		form.setFieldsValue({ description });
 	};
 
 	const handleImageReportTypeSelect = (value) => {
@@ -80,150 +89,126 @@ const MiniCreateActivityForm = ({ onActivityCreated, patientId }) => {
 		setSelectedImageReportType(selectedReportType);
 		const description = selectedReportType ? selectedReportType.name : "";
 		setFormData((prev) => ({ ...prev, description }));
-		form.setFieldsValue({ description }); // Update form's description
-	};
-
-	const getLabTestOptions = () => {
-		return (
-			labTests?.map((test) => ({
-				label: test.testName,
-				value: test.testName,
-			})) || []
-		); // Return empty array if labTests is null/undefined
-	};
-
-	const getImageReportTypeOptions = () => {
-		return (
-			imageReportTypes?.map((type) => ({
-				label: type.name,
-				value: type.name,
-			})) || []
-		); // Return empty array if imageReportTypes is null/undefined
+		form.setFieldsValue({ description });
 	};
 
 	const onFinish = async (values) => {
 		try {
-			let description;
-			if (formData.activityType === "LAB_TEST" && selectedLabTest) {
-				description = selectedLabTest.testName;
-			} else if (formData.activityType === "IMAGE_REPORT" && selectedImageReportType) {
-				description = selectedImageReportType.name;
-			} else {
-				description = values.description;
-			}
-
-			const activityData = { ...formData, description, patientIds: [patientId] }; // Ensure patientId is included
+			// Combine values from the form with patientId from props
+			const activityData = {
+				...formData,
+				...values,
+				patientIds: [patientId],
+			};
 			await createActivity(activityData);
-
-			// Reset form and selections
-			setFormData({
-				activityType: "",
-				description: "",
-				patientIds: [patientId], // Keep patientId
-				state: "pending",
-			});
-
-			setSelectedLabTest(null);
-			setSelectedImageReportType(null);
-			form.resetFields(); // Reset Ant Design form fields
 
 			onActivityCreated();
 			message.success(t("activity-created-successfully"));
+			form.resetFields();
+			setFormData({
+				activityType: "",
+				description: "",
+				patientIds: [patientId],
+				state: "pending",
+				unitId: null,
+			});
+			setTargetUnits([]);
 		} catch (err) {
 			console.error("Failed to create activity", err);
-			message.error(err.message || t("failed-to-create-activity")); // More robust error handling
+			message.error(err.message || t("failed-to-create-activity"));
 		}
 	};
 
-	// --- Loading and Error States ---
-	const combinedLoading = loading || labLoading || imageReportLoading;
-	if (combinedLoading) {
-		return (
-			<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100px" }}>
-				<Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-			</div>
-		);
-	}
+	const combinedLoading = loading || labLoading || imageReportLoading || unitLoading;
 
-	if (error) {
-		return (
-			<Card style={{ borderColor: "red" }}>
-				<p style={{ color: "red" }}>
-					{t("error")}: {error}
-				</p>
-				<Button type="link" size="small" onClick={clearError}>
-					{t("clear-error")}
-				</Button>
-			</Card>
-		);
-	}
-
-	// --- Render ---
 	return (
 		<Card>
 			<Title level={4} style={{ textAlign: "center", marginBottom: "20px" }}>
 				{t("request-service")}
 			</Title>
-			<Form form={form} layout="vertical" onFinish={onFinish} initialValues={formData}>
-				<Form.Item label={t("service-type")} name="activityType" rules={[{ required: true, message: t("please-select-service-type") }]}>
-					<Select placeholder={t("select-service-type")} onChange={(value) => handleInputChange("activityType", value)} allowClear>
-						<Option value="LAB_TEST">{t("lab-test")}</Option>
-						<Option value="IMAGE_REPORT">{t("image-report")}</Option>
-						<Option value="VITAL_SIGNS">{t("vital-signs")}</Option>
-						<Option value="MEDICATION_ADMINISTRATION">{t("medication-administration")}</Option>
-						<Option value="ASSESSMENT">{t("assessment")}</Option>
-						<Option value="PRODUCT">{t("product")}</Option>
-					</Select>
-				</Form.Item>
-
-				{formData.activityType === "LAB_TEST" && (
-					<Form.Item
-						label={t("lab-test")}
-						name="labTest"
-						rules={[{ required: formData.activityType === "LAB_TEST", message: t("please-select-lab-test") }]}>
-						<Select
-							placeholder={t("select-lab-test")}
-							options={getLabTestOptions()}
-							onSelect={handleLabTestSelect}
-							filterOption={(inputValue, option) => option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
-							allowClear
-						/>
+			<Spin spinning={combinedLoading} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}>
+				<Form form={form} layout="vertical" onFinish={onFinish} initialValues={formData}>
+					<Form.Item label={t("service-type")} name="activityType" rules={[{ required: true, message: t("please-select-service-type") }]}>
+						<Select placeholder={t("select-service-type")} onChange={(value) => handleInputChange("activityType", value)} allowClear>
+							<Option value="LAB_TEST">{t("lab-test")}</Option>
+							<Option value="IMAGE_REPORT">{t("image-report")}</Option>
+							<Option value="VITAL_SIGNS">{t("vital-signs")}</Option>
+							<Option value="MEDICATION_ADMINISTRATION">{t("medication-administration")}</Option>
+							<Option value="ASSESSMENT">{t("assessment")}</Option>
+							<Option value="PRODUCT">{t("product")}</Option>
+						</Select>
 					</Form.Item>
-				)}
 
-				{formData.activityType === "IMAGE_REPORT" && (
-					<Form.Item
-						label={t("image-report-type")}
-						name="imageReportType"
-						rules={[{ required: formData.activityType === "IMAGE_REPORT", message: t("please-select-image-report-type") }]}>
-						<Select
-							placeholder={t("select-image-report-type")}
-							options={getImageReportTypeOptions()}
-							onSelect={handleImageReportTypeSelect}
-							filterOption={(inputValue, option) => option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1}
-							allowClear
-						/>
+					{(formData.activityType === "LAB_TEST" || formData.activityType === "IMAGE_REPORT") && (
+						<Form.Item
+							label={formData.activityType === "LAB_TEST" ? t("target-lab") : t("target-radiology-unit")}
+							name="unitId"
+							rules={[{ required: true, message: t("please-select-target-unit") }]}>
+							<Select placeholder={t("select-unit")} onChange={(value) => handleInputChange("unitId", value)} allowClear>
+								{targetUnits.map((unit) => (
+									<Option key={unit.id} value={unit.id}>
+										{unit.name}
+									</Option>
+								))}
+							</Select>
+						</Form.Item>
+					)}
+
+					{formData.activityType === "LAB_TEST" && (
+						<Form.Item label={t("lab-test")} name="description" rules={[{ required: true, message: t("please-select-lab-test") }]}>
+							<Select placeholder={t("select-lab-test")} onSelect={handleLabTestSelect} showSearch allowClear>
+								{labTests?.map((test) => (
+									<Option key={test.id} value={test.testName}>
+										{test.testName}
+									</Option>
+								))}
+							</Select>
+						</Form.Item>
+					)}
+
+					{formData.activityType === "IMAGE_REPORT" && (
+						<Form.Item
+							label={t("image-report-type")}
+							name="description"
+							rules={[{ required: true, message: t("please-select-image-report-type") }]}>
+							<Select placeholder={t("select-image-report-type")} onSelect={handleImageReportTypeSelect} showSearch allowClear>
+								{imageReportTypes?.map((type) => (
+									<Option key={type.id} value={type.name}>
+										{type.name}
+									</Option>
+								))}
+							</Select>
+						</Form.Item>
+					)}
+
+					{(formData.activityType === "ASSESSMENT" ||
+						formData.activityType === "VITAL_SIGNS" ||
+						formData.activityType === "MEDICATION_ADMINISTRATION" ||
+						formData.activityType === "PRODUCT") && (
+						<Form.Item
+							label={t("description")}
+							name="description"
+							rules={[
+								{
+									required: true,
+									message: t("please-enter-description"),
+								},
+							]}>
+							<TextArea
+								rows={4}
+								placeholder={t("enter-description")}
+								onChange={(e) => handleInputChange("description", e.target.value)}
+							/>
+						</Form.Item>
+					)}
+
+					<Form.Item>
+						<Button type="primary" htmlType="submit" loading={loading} block>
+							{t("create-activity")}
+						</Button>
 					</Form.Item>
-				)}
-
-				<Form.Item
-					label={t("description")}
-					name="description"
-					rules={[
-						{
-							required: true,
-							message: t("please-enter-description"),
-						},
-					]}>
-					<TextArea rows={4} placeholder={t("enter-description")} />
-				</Form.Item>
-
-				<Form.Item>
-					<Button type="primary" htmlType="submit" loading={loading} block>
-						{t("create-activity")}
-					</Button>
-				</Form.Item>
-			</Form>
+				</Form>
+			</Spin>
 		</Card>
 	);
 };

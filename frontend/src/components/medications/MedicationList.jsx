@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
 	Table,
 	Input,
@@ -13,10 +13,9 @@ import {
 	Col,
 	Alert,
 	Divider,
-	Tooltip,
 	Steps,
-	Menu,
-	Popover,
+	DatePicker,
+	Tooltip,
 } from "antd";
 import {
 	SearchOutlined,
@@ -28,26 +27,29 @@ import {
 	EditTwoTone,
 	DeleteTwoTone,
 	InfoCircleOutlined,
-	LockOutlined, // Import LockOutlined for access denied
+	LockOutlined,
+	PrinterOutlined,
+	QuestionCircleOutlined, // A better icon for a help button
 } from "@ant-design/icons";
 import MedicationHistory from "./MedicationHistory";
 import AllMedicationHistory from "./AllMedicationHistory";
 import { useMedicationStore } from "../../services/medication.service";
-import { useAuthStore } from "../../services/auth.service"; // <-- Added Auth Store import
+import { useAuthStore } from "../../services/auth.service";
+import moment from "moment";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { Step } = Steps;
+const { RangePicker } = DatePicker;
 
 const MedicationList = () => {
-	const { user, hasAuthority } = useAuthStore(); // <-- Get user and hasAuthority
+	const { user, hasAuthority } = useAuthStore();
 
 	const {
 		medications,
 		loading,
 		total,
 		searchMedications,
-		// deleteMedication, // Not directly used by the delete button logic currently
 		createMedication,
 		updateMedication,
 		setLoading,
@@ -56,7 +58,9 @@ const MedicationList = () => {
 		deleteBatch,
 		getBatchesForMedication,
 	} = useMedicationStore();
+
 	const [medicationBatches, setMedicationBatches] = useState([]);
+	const [medicationBatchesLoading, setMedicationBatchesLoading] = useState(false);
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [isStockModalVisible, setIsStockModalVisible] = useState(false);
 	const [selectedMedication, setSelectedMedication] = useState(null);
@@ -76,7 +80,12 @@ const MedicationList = () => {
 	const [isAllHistoryVisible, setIsAllHistoryVisible] = useState(false);
 	const [isBatchModalVisible, setIsBatchModalVisible] = useState(false);
 	const [isEditBatchModalVisible, setIsEditBatchModalVisible] = useState(false);
-	// const [isInfoModalVisible, setIsInfoModalVisible] = useState(false); // Removed Info Modal State
+	const [isHelpModalVisible, setIsHelpModalVisible] = useState(false); // State for the new help modal
+
+	// State for batch filtering
+	const [batchStartDate, setBatchStartDate] = useState(null);
+	const [batchEndDate, setBatchEndDate] = useState(null);
+	const printableBatchContentRef = useRef(null);
 
 	// Derived permission flags for cleaner JSX
 	const canReadMedication = user && hasAuthority("READ_MEDICATION");
@@ -88,28 +97,42 @@ const MedicationList = () => {
 	const canDeleteBatchPerm = user && (hasAuthority("UPDATE_MEDICATION_STOCK") || hasAuthority("DELETE_MEDICATION"));
 
 	useEffect(() => {
-		// Fetch only if user has permission to read
 		if (canReadMedication) {
 			fetchMedications();
 		} else {
-			// Optionally clear data or set loading state appropriately
-			// medications = []; // Reset data if needed
 			setLoading(false);
 		}
-	}, [page, size, searchParams, canReadMedication]); // Add canReadMedication dependency
+	}, [page, size, searchParams, canReadMedication]);
+
+	useEffect(() => {
+		const fetchBatches = async () => {
+			if (isBatchModalVisible && selectedMedication && canReadMedication) {
+				setMedicationBatchesLoading(true);
+				try {
+					const batches = await getBatchesForMedication(selectedMedication.id, {
+						startDate: batchStartDate,
+						endDate: batchEndDate,
+					});
+					const mappedBatches = batches.map((batch) => ({ ...batch, key: batch.id }));
+					setMedicationBatches(mappedBatches);
+				} catch (error) {
+					console.error("Error fetching batches:", error);
+				} finally {
+					setMedicationBatchesLoading(false);
+				}
+			}
+		};
+		fetchBatches();
+	}, [isBatchModalVisible, selectedMedication, batchStartDate, batchEndDate, getBatchesForMedication, canReadMedication]);
 
 	const fetchMedications = async () => {
 		setLoading(true);
-		// No need for inner check here, already handled by useEffect guard
 		await searchMedications({ ...searchParams, page, size });
 		setLoading(false);
 	};
 
 	const showModal = (medication) => {
-		// Check permission before showing modal for editing/creating
-		if (medication && !canUpdateMedication) return; // Don't show edit modal if no update permission
-		if (!medication && !canCreateMedication) return; // Don't show add modal if no create permission
-
+		if ((medication && !canUpdateMedication) || (!medication && !canCreateMedication)) return;
 		setSelectedMedication(medication);
 		if (medication) {
 			form.setFieldsValue(medication);
@@ -126,37 +149,26 @@ const MedicationList = () => {
 	};
 
 	const showStockModal = (medication) => {
-		// Check permission before showing stock modal
 		if (!canUpdateStock) return;
-
 		setSelectedMedication(medication);
 		setStockChangeQuantity(0);
 		setPurchasePrice(0);
 		setIsStockModalVisible(true);
 	};
-	const showBatchesModal = async (medication) => {
-		// Check permission before fetching/showing batches
-		if (!canReadMedication) return;
 
+	const showBatchesModal = (medication) => {
+		if (!canReadMedication) return;
 		setSelectedMedication(medication);
 		setIsBatchModalVisible(true);
-
-		try {
-			const batches = await getBatchesForMedication(medication.id);
-			const mappedBatches = batches.map((batch) => ({
-				...batch,
-				key: batch.id,
-			}));
-			setMedicationBatches(mappedBatches);
-		} catch (error) {
-			console.error("Error fetching batches:", error);
-		}
 	};
+
 	const handleBatchesModalClose = () => {
 		setIsBatchModalVisible(false);
 		setSelectedMedication(null);
 		setMedicationBatches([]);
 		setSelectedBatch(null);
+		setBatchStartDate(null);
+		setBatchEndDate(null);
 	};
 
 	const handleCancel = () => {
@@ -174,137 +186,88 @@ const MedicationList = () => {
 	};
 
 	const handleFormSubmit = async () => {
-		// Permissions checked via button disabled state below
 		try {
 			const values = await form.validateFields();
 			if (selectedMedication) {
-				// Check UPDATE_MEDICATION again just in case state changed
 				if (!canUpdateMedication) throw new Error("Permission denied");
 				await updateMedication(selectedMedication.id, values);
 			} else {
-				// Check CREATE_MEDICATION again just in case state changed
 				if (!canCreateMedication) throw new Error("Permission denied");
 				await createMedication(values);
 			}
-			fetchMedications(); // Re-fetch if possible
+			fetchMedications();
 			setIsModalVisible(false);
 			setSelectedMedication(null);
 			form.resetFields();
 			setMessage("");
 		} catch (error) {
 			console.log("Error submitting form:", error);
-			// TODO: Show user-friendly error message
 		}
 	};
 
 	const handleStockChangeSubmit = async () => {
-		// Permission checked via button disabled state below
 		try {
-			// Check UPDATE_MEDICATION_STOCK again
 			if (!canUpdateStock) throw new Error("Permission denied");
-			const batchData = {
-				quantity: stockChangeQuantity,
-				purchasePrice: purchasePrice,
-			};
+			const batchData = { quantity: stockChangeQuantity, purchasePrice: purchasePrice };
 			await addBatch(selectedMedication.id, batchData);
-			fetchMedications(); // Re-fetch if possible
+			fetchMedications();
 			setIsStockModalVisible(false);
 			setSelectedMedication(null);
 			setStockChangeQuantity(0);
 			setPurchasePrice(0);
 		} catch (error) {
 			console.error("Error adding batch:", error);
-			// TODO: Show user-friendly error message
 		}
 	};
 
 	const handleDelete = (medicationId) => {
-		// Check DELETE_MEDICATION before showing the warning (reflects intent)
 		if (!canDeleteMedication) {
 			Modal.error({ title: "Permission Denied", content: "You do not have permission to delete medications." });
 			return;
 		}
-
-		// Original warning logic
 		Modal.warning({
 			title: "Deletion Not Allowed",
 			content: (
 				<div>
 					<p>
-						Medications cannot be permanently deleted once they are created. This is because they might be associated with patient
-						records, prescriptions, batch information, or other important data within the system. Deleting a medication could cause
-						inconsistencies and data loss.
+						Medications cannot be permanently deleted once they are created to maintain data integrity with patient records and
+						prescriptions.
 					</p>
-					<p>What you can do:</p>
-					<ul>
-						<li>Update: You can modify the medication's details (name, dosage, etc.) using the "Edit" button.</li>
-						<li>
-							Discontinue Use: If you no longer need the medication, simply stop using it. It will remain in the system for historical
-							records, but you can filter it out of your active views if needed.
-						</li>
-					</ul>
 					<p>
-						If you absolutely believe the medication must be removed: Please contact the system administrator or the project developer.
-						They can assess the situation and determine if a safe removal is possible, taking into account all data dependencies. This is
-						generally not recommended.
+						<b>What to do instead:</b> Use the "Edit" button to correct details or simply discontinue its use. For critical removal,
+						contact an administrator.
 					</p>
 				</div>
 			),
 			okText: "OK",
 		});
-		// Original code did not call deleteMedication(medicationId);
 	};
 
 	const handleSearch = (value) => {
-		// Search only possible if user can read
 		if (!canReadMedication) return;
 		setSearchParams({ ...searchParams, searchTerm: value });
 		setPage(0);
 	};
 
 	const handleTableChange = (pagination) => {
-		// Pagination only relevant if user can read
 		if (!canReadMedication) return;
 		setPage(pagination.current - 1);
 		setSize(pagination.pageSize);
 	};
 
-	const onPriceUnitChange = (value) => {
-		setPricingUnit(value);
-	};
-
-	const onPriceChange = (value) => {
-		setPrice(value);
-		updateMessage();
-	};
-
-	const onAmountPerUnitChange = (value) => {
-		setAmountPerUnit(value);
-		updateMessage();
-	};
-
-	const getCalculatedPrice = () => {
-		if (price && amountPerUnit) {
-			return (price * amountPerUnit).toFixed(2);
-		}
-		return "0.00";
-	};
-
 	const updateMessage = () => {
-		const name = form.getFieldValue("name");
-		const dosage = form.getFieldValue("dosage");
+		const name = form.getFieldValue("name") || "[Name]";
+		const dosage = form.getFieldValue("dosage") || "[Dosage]";
 		const unit = pricingUnit;
-		const numberOfUnits = amountPerUnit;
-		const unitPrice = price;
-		const totalPrice = getCalculatedPrice();
-
-		const newMessage = `You are adding/editing a medicine named ${name} that has a dosage of ${dosage} and has ${numberOfUnits} ${unit} with a price of ${unitPrice} per ${unit} and a total price of ${totalPrice}.`;
-
-		setMessage(newMessage);
+		const numberOfUnits = amountPerUnit || 0;
+		const unitPrice = price || 0;
+		const totalPrice = (unitPrice * numberOfUnits).toFixed(2);
+		setMessage(
+			`A medication named '${name}' with dosage '${dosage}' will have a total selling price of £${totalPrice} ( ${numberOfUnits} ${unit.toLowerCase()} x £${unitPrice} per ${unit.toLowerCase()} ).`,
+		);
 	};
 
 	const showHistoryModal = (medication) => {
-		// Check permission before showing history
 		if (!canReadHistory) return;
 		setSelectedMedication(medication);
 		setIsHistoryModalVisible(true);
@@ -316,7 +279,6 @@ const MedicationList = () => {
 	};
 
 	const showAllHistory = () => {
-		// Check permission before showing all history
 		if (!canReadHistory) return;
 		setIsAllHistoryVisible(true);
 	};
@@ -324,8 +286,8 @@ const MedicationList = () => {
 	const handleAllHistoryClose = () => {
 		setIsAllHistoryVisible(false);
 	};
+
 	const handleEditBatch = (batch) => {
-		// Check permission before showing edit batch modal
 		if (!canUpdateStock) return;
 		setSelectedBatch(batch);
 		batchForm.setFieldsValue({ purchasePrice: batch.purchasePrice });
@@ -333,374 +295,166 @@ const MedicationList = () => {
 	};
 
 	const handleDeleteBatch = async (batchId) => {
-		// Check permission before attempting delete
 		if (!canDeleteBatchPerm) {
 			Modal.error({ title: "Permission Denied", content: "You do not have permission to delete medication batches." });
 			return;
 		}
-
 		Modal.confirm({
 			title: "Confirm Delete",
 			content: "Are you sure you want to delete this batch? This action cannot be undone.",
 			okText: "Delete",
 			okType: "danger",
-			cancelText: "Cancel",
 			onOk: async () => {
 				try {
 					await deleteBatch(batchId);
 					if (selectedMedication && canReadMedication) {
-						// Check read perm before fetching again
-						const batches = await getBatchesForMedication(selectedMedication.id);
-						const mappedBatches = batches.map((batch) => ({
-							...batch,
-							key: batch.id,
-						}));
-						setMedicationBatches(mappedBatches);
+						const batches = await getBatchesForMedication(selectedMedication.id, { startDate: batchStartDate, endDate: batchEndDate });
+						setMedicationBatches(batches.map((b) => ({ ...b, key: b.id })));
 					}
 				} catch (error) {
 					console.error("Error deleting batch:", error);
-					// TODO: Show user-friendly error message
 				}
 			},
 		});
 	};
 
 	const handleUpdateBatch = async () => {
-		// Permission checked via button disabled state below
 		try {
-			// Check UPDATE_MEDICATION_STOCK again
 			if (!canUpdateStock) throw new Error("Permission denied");
 			const values = await batchForm.validateFields();
-			await updateBatch(selectedBatch.id, {
-				purchasePrice: values.purchasePrice,
-			});
+			await updateBatch(selectedBatch.id, { purchasePrice: values.purchasePrice });
 			if (selectedMedication && canReadMedication) {
-				// Check read perm before fetching again
-				const batches = await getBatchesForMedication(selectedMedication.id);
-				const mappedBatches = batches.map((batch) => ({
-					...batch,
-					key: batch.id,
-				}));
-				setMedicationBatches(mappedBatches);
+				const batches = await getBatchesForMedication(selectedMedication.id, { startDate: batchStartDate, endDate: batchEndDate });
+				setMedicationBatches(batches.map((b) => ({ ...b, key: b.id })));
 			}
 			setIsEditBatchModalVisible(false);
 			setSelectedBatch(null);
 			batchForm.resetFields();
 		} catch (error) {
 			console.error("Error updating batch:", error);
-			// TODO: Show user-friendly error message
 		}
 	};
 
-	// Removed showInfoModal and handleInfoModalClose
+	const handleBatchDateChange = (dates) => {
+		if (dates && dates.length === 2) {
+			setBatchStartDate(dates[0].format("YYYY-MM-DD HH:mm:ss"));
+			setBatchEndDate(dates[1].format("YYYY-MM-DD HH:mm:ss"));
+		} else {
+			setBatchStartDate(null);
+			setBatchEndDate(null);
+		}
+	};
+
+	const handlePrintBatches = () => {
+		if (printableBatchContentRef.current) {
+			const printWindow = window.open("", "", "height=800,width=1000");
+			printWindow.document.write("<html><head><title>Medication Batches Report</title>");
+			printWindow.document.write(
+				`<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif;margin:20px}h1{text-align:center;margin-bottom:20px;color:#1890ff}h2{font-size:16px;color:#333}table{width:100%;border-collapse:collapse}th,td{border:1px solid #f0f0f0;padding:8px 12px;text-align:left}th{background-color:#fafafa;font-weight:500}.no-print{display:none!important}.report-footer{text-align:right;margin-top:20px;font-size:12px;color:#888}</style>`,
+			);
+			printWindow.document.write("</head><body>");
+			printWindow.document.write(`<h1>Batches Report for ${selectedMedication?.name}</h1>`);
+			if (batchStartDate && batchEndDate) {
+				printWindow.document.write(`<h2>Date Range: ${moment(batchStartDate).format("lll")} to ${moment(batchEndDate).format("lll")}</h2>`);
+			}
+			printWindow.document.write(printableBatchContentRef.current.innerHTML);
+			printWindow.document.write(`<div class="report-footer">Report generated on: ${moment().format("YYYY-MM-DD HH:mm:ss")}</div>`);
+			printWindow.document.write("</body></html>");
+			printWindow.document.close();
+			printWindow.focus();
+			printWindow.print();
+		}
+	};
 
 	const columns = [
-		{
-			title: "Name",
-			dataIndex: "name",
-			key: "name",
-		},
-		{
-			title: "Dosage",
-			dataIndex: "dosage",
-			key: "dosage",
-		},
+		{ title: "Name", dataIndex: "name", key: "name" },
+		{ title: "Dosage", dataIndex: "dosage", key: "dosage" },
 		{
 			title: "Price",
 			key: "price",
 			render: (text, record) => (
 				<Text strong style={{ color: "#1890ff" }}>
-					{record.price * record.amountPerUnit} Pounds
+					£{(record.price * record.amountPerUnit).toFixed(2)}
 				</Text>
 			),
 		},
-		{
-			title: "Stock",
-			key: "stock",
-			dataIndex: "stock",
-		},
+		{ title: "Stock", key: "stock", dataIndex: "stock" },
 		{
 			title: "Batches",
 			key: "batches",
-			// Conditionally render based on READ_MEDICATION
 			render: (text, record) =>
 				canReadMedication ? (
-					<Button type="default" onClick={() => showBatchesModal(record)}>
-						View Batches
-					</Button>
+					<Tooltip title="View Batches">
+						<Button icon={<UnorderedListOutlined />} onClick={() => showBatchesModal(record)} />
+					</Tooltip>
 				) : (
-					<Text disabled>N/A</Text> // Or null if you prefer to hide completely
+					<Text disabled>N/A</Text>
 				),
 		},
 		{
 			title: "Actions",
 			key: "actions",
-			// Conditionally render actions based on permissions
 			render: (text, record) => (
 				<Space size="middle">
 					{canUpdateMedication && (
-						<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>
-							Edit
-						</Button>
+						<Tooltip title="Edit">
+							<Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)} />
+						</Tooltip>
 					)}
 					{canUpdateStock && (
-						<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record)}>
-							Add Batch
-						</Button>
+						<Tooltip title="Add Batch">
+							<Button type="default" icon={<PlusOutlined />} onClick={() => showStockModal(record)} />
+						</Tooltip>
 					)}
 					{canReadHistory && (
-						<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)}>
-							History
-						</Button>
+						<Tooltip title="History">
+							<Button type="default" icon={<HistoryOutlined />} onClick={() => showHistoryModal(record)} />
+						</Tooltip>
 					)}
 					{canDeleteMedication && (
-						<Button
-							type="dashed"
-							danger
-							icon={<DeleteOutlined />}
-							onClick={() => handleDelete(record.id)}
-							title="Medications cannot be deleted directly. Click for more information."
-							// style={{ opacity: 0.9 }} // Opacity might not be needed if hidden based on permission
-						>
-							Delete
-						</Button>
+						<Tooltip title="Delete">
+							<Button type="dashed" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+						</Tooltip>
 					)}
-					{/* Show placeholder if no actions are available */}
-					{!canUpdateMedication && !canUpdateStock && !canReadHistory && !canDeleteMedication && <Text disabled>No Actions Permitted</Text>}
+					{!canUpdateMedication && !canUpdateStock && !canReadHistory && !canDeleteMedication && <Text disabled>No Actions</Text>}
 				</Space>
 			),
 		},
 	];
+
 	const batchColumns = [
 		{
 			title: "Purchase Date",
 			dataIndex: "purchaseDate",
 			key: "purchaseDate",
-			render: (text) => (text ? new Date(text).toLocaleString() : "N/A"),
+			render: (text) => (text ? moment(text).format("YYYY-MM-DD HH:mm") : "N/A"),
 		},
-		{
-			title: "Purchase Price",
-			dataIndex: "purchasePrice",
-			key: "purchasePrice",
-			render: (text) => `£${text.toFixed(2)}`,
-		},
-		{
-			title: "Quantity",
-			dataIndex: "quantity",
-			key: "quantity",
-		},
-		{
-			title: "Remaining Quantity",
-			dataIndex: "remainingQuantity",
-			key: "remainingQuantity",
-		},
+		{ title: "Purchase Price", dataIndex: "purchasePrice", key: "purchasePrice", render: (text) => `£${text.toFixed(2)}` },
+		{ title: "Initial Qty", dataIndex: "quantity", key: "quantity" },
+		{ title: "Remaining Qty", dataIndex: "remainingQuantity", key: "remainingQuantity" },
 		{
 			title: "Actions",
 			key: "actions",
-			// Conditionally render batch actions
+			className: "no-print",
 			render: (text, record) => (
 				<Space size="middle">
-					{canUpdateStock && <Button type="primary" icon={<EditTwoTone />} onClick={() => handleEditBatch(record)} size="small" />}
-					{canDeleteBatchPerm && (
-						<Button type="primary" icon={<DeleteTwoTone />} onClick={() => handleDeleteBatch(record.id)} size="small" danger />
+					{canUpdateStock && (
+						<Tooltip title="Edit Batch">
+							<Button type="primary" icon={<EditTwoTone />} onClick={() => handleEditBatch(record)} size="small" />
+						</Tooltip>
 					)}
-					{/* Show placeholder if no actions are available */}
+					{canDeleteBatchPerm && (
+						<Tooltip title="Delete Batch">
+							<Button type="primary" icon={<DeleteTwoTone />} onClick={() => handleDeleteBatch(record.id)} size="small" danger />
+						</Tooltip>
+					)}
 					{!canUpdateStock && !canDeleteBatchPerm && <Text disabled>N/A</Text>}
 				</Space>
 			),
 		},
 	];
-	const helpContent = (
-		// ... (help content remains unchanged) ...
-		<Steps direction="vertical" current={-1} style={{ maxHeight: "600px", overflowY: "auto", paddingRight: "20px" }}>
-			{" "}
-			{/* Added padding */}
-			{/* current=-1 shows all steps */}
-			<Step
-				title="Adding a New Medication"
-				description={
-					<div>
-						<p>
-							To add a new medication, click the "Add New Medication" button. This will open a form where you'll enter the medication's
-							details.
-						</p>
-						<Divider />
-						<Title level={5}>Fields:</Title>
-						<ul>
-							<li>Name: The common name of the medication (e.g., "Amoxicillin").</li>
-							<li>
-								Dosage: The strength of the medication (e.g., "250mg", "500mg", "10ml").
-								<span style={{ color: "red" }}>Important:</span> If you have the *same* medication but with *different* dosages,
-								create a *separate* medication entry for *each* dosage. For example:
-								<ul>
-									<li>Amoxicillin 250mg</li>
-									<li>Amoxicillin 500mg</li>
-								</ul>
-								Use a consistent format (like "MedicationName Dosage") to make it clear.
-							</li>
-							<li>
-								Pricing Unit: This is *how* you sell the medication. It is *critical* for correct pricing. Choose the unit that
-								matches how you price the medication:
-								<ul>
-									<li>PER_MG: Price per milligram.</li>
-									<li>PER_ML: Price per milliliter (for liquids).</li>
-									<li>PER_TABLET: Price per individual tablet.</li>
-									<li>PER_DOSE: Price per dose (if a dose is a standard unit).</li>
-									<li>PER_VIAL: Price per vial.</li>
-									<li>PER_UNIT: A general-purpose unit.</li>
-									<li>PER_PEN: For pre-filled pens (e.g., insulin).</li>
-									<li>PER_GRAM: Price per gram.</li>
-									<li>PER_CAPSULE: Price per capsule.</li>
-									<li>PER_PATCH: Price per transdermal patch.</li>
-									<li>PER_INHALER: Price per inhaler.</li>
-									<li>PER_BOX: Price for a whole box.</li>
-									<li>PER_PACK: Price for a whole pack.</li>
-								</ul>
-							</li>
-							<li>
-								Price: The price of *one* of the selected "Pricing Unit". For example, if the Pricing Unit is PER_MG, this is the
-								price of *one* milligram. If it's PER_BOX, this is the price of *one* box.
-							</li>
-							<li>
-								Amount Per Unit: How many of the "Pricing Unit" are in *this* medication. This determines the total *selling* price.
-								<ul>
-									<li>If you choose PER_MG and the medication contains 500mg, enter `500`.</li>
-									<li>If you choose PER_ML and the medication contains 10ml, enter `10`.</li>
-									<li>If you choose PER_TABLET, enter `1` (because you're selling one tablet at a time).</li>
-									<li>If you choose PER_BOX and you're adding information for *one* box, enter `1`.</li>
-								</ul>
-							</li>
-							<li>Image URL: Add here the url of the image you want to display for the medication.</li>
-						</ul>
-						<Divider />
-						<p>The total selling price (displayed in the table) is calculated automatically: `Price` * `Amount Per Unit`.</p>
-					</div>
-				}
-			/>
-			<Step
-				title="Editing a Medication"
-				description={
-					<div>
-						<p>
-							To edit an existing medication, click the "Edit" button next to the medication in the table. This will open the same form
-							as adding a medication, but the fields will be pre-filled with the medication's current information. You can change any of
-							the fields and click "Update" to save the changes.
-						</p>
-						<Alert
-							message="You can change *any* detail of a medication, including its name, dosage, pricing unit, and price."
-							type="info"
-							showIcon
-							style={{ marginBottom: "16px" }}
-						/>
-					</div>
-				}
-			/>
-			<Step
-				title="Adding a Batch"
-				description={
-					<div>
-						<p>Batches are used to track your *inventory* and the *purchase price* you paid. To add a new batch:</p>
-						<ol>
-							<li>Click the "Add Batch" button next to the medication you want to add stock to.</li>
-							<li>
-								Enter the Quantity: This is the number of *units* you received in this batch. This refers to the number of sellable
-								items (tablets, boxes, vials, etc.), *not* the total milligrams or milliliters.
-							</li>
-							<li>
-								Enter the Purchase Price (per unit): This is the price you paid for *one* unit of the medication in this batch (e.g.,
-								the price per tablet, per box). This is for your internal records and is *different* from the selling price.
-							</li>
-							<li>Click "Add Batch" to save.</li>
-						</ol>
-						<Alert
-							message="The system automatically calculates the total stock of a medication by adding up the remaining quantities of all its batches. You don't enter the total stock directly."
-							type="info"
-							showIcon
-							style={{ marginBottom: "16px" }}
-						/>
-						<Alert
-							message="The system uses the First-In, First-Out (FIFO) method.  This means that when medication is dispensed, the system assumes the oldest batch (the first one you added) is used first."
-							type="warning"
-							showIcon
-						/>
-					</div>
-				}
-			/>
-			<Step
-				title="Viewing Batches"
-				description={
-					<div>
-						<p>To see the details of all batches for a medication, click the "View Batches" button. This will open a table showing:</p>
-						<ul>
-							<li>Purchase Date: When you received the batch.</li>
-							<li>Purchase Price: The price you paid per unit.</li>
-							<li>Quantity: The number of units in the batch.</li>
-							<li>Remaining Quantity: The number of units left in the batch.</li>
-						</ul>
-					</div>
-				}
-			/>
-			<Step
-				title="Editing/Deleting Batches"
-				description={
-					<div>
-						<p>You can edit the purchase price of a batch or delete a batch entirely.</p>
-						<ul>
-							<li>Edit Batch: click edit to change the batch purchase price.</li>
-							<li>Delete Batch: To delete a batch click delete to delete the batch (this cannot be undone).</li>
-						</ul>
-					</div>
-				}
-			/>
-			<Step
-				title="Searching Medications"
-				description={
-					<p>
-						Use the search bar at the top of the page to find medications by name. Type in part or all of the medication name, and the
-						table will update to show only matching medications.
-					</p>
-				}
-			/>
-			<Step
-				title="Medication History"
-				description={
-					<div>
-						<p>
-							Click the "History" button next to a medication to view a detailed history of all changes made to that medication,
-							including batch additions, updates, and usage.
-						</p>
-						<p>Click the "View All History" button to see a combined history of all medications.</p>
-					</div>
-				}
-			/>
-			<Step
-				title="Deleting Medications"
-				description={
-					<div>
-						<Alert
-							message="Medications cannot generally be deleted.  This is to prevent data loss and maintain the integrity of records.  If a medication is associated with prescriptions, batches, or patient data, it cannot be removed."
-							type="error"
-							showIcon
-							style={{ marginBottom: "16px" }}
-						/>
-						<p>Instead of deleting, you can:</p>
-						<ul>
-							<li>Edit: Modify the medication's details if something is incorrect.</li>
-							<li>Discontinue Use: Simply stop using the medication. It will remain in the system for historical purposes.</li>
-						</ul>
-						<p>
-							If you believe a medication *must* be deleted (e.g., it was created in error and has *no* associated data), contact your
-							system administrator.
-						</p>
-					</div>
-				}
-			/>
-		</Steps>
-	);
 
-	// Top-level check: If user cannot read medications, show access denied message
 	if (!canReadMedication && !loading) {
-		// Check !loading to avoid flicker during initial auth check
 		return (
 			<div style={{ padding: 20, textAlign: "center" }}>
 				<Alert
@@ -718,34 +472,27 @@ const MedicationList = () => {
 		<div className="main-container" style={{ padding: 20 }}>
 			<Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
 				<Col>
-					<Title level={2}>Medication List</Title>
+					<Title level={2}>Medication Management</Title>
 				</Col>
 				<Col>
-					{/* Help button is always visible */}
-					<Popover content={helpContent} title="Medication Page Help" trigger="click">
-						<Button type="default" icon={<InfoCircleOutlined />}>
-							Help
-						</Button>
-					</Popover>
+					<Button type="default" icon={<QuestionCircleOutlined />} onClick={() => setIsHelpModalVisible(true)}>
+						Help
+					</Button>
 				</Col>
 			</Row>
-
 			<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
 				<Col xs={24} sm={18}>
-					{/* Search bar requires READ_MEDICATION (implicitly handled by top-level check) */}
-					<Input.Search placeholder="Search by name..." onSearch={handleSearch} style={{ width: "100%" }} />
+					<Input.Search placeholder="Search by name..." onSearch={handleSearch} style={{ width: "100%" }} allowClear />
 				</Col>
 				<Col xs={24} sm={6}>
-					{/* Conditionally render Add button */}
 					{canCreateMedication && (
-						<Button type="primary" block onClick={() => showModal(null)}>
-							Add New Medication
+						<Button type="primary" block icon={<PlusOutlined />} onClick={() => showModal(null)}>
+							New Medication
 						</Button>
 					)}
 				</Col>
 			</Row>
 			<Row justify="end" style={{ marginBottom: 16 }}>
-				{/* Conditionally render View All History button */}
 				{canReadHistory && (
 					<Button type="default" icon={<UnorderedListOutlined />} onClick={showAllHistory}>
 						View All History
@@ -753,25 +500,19 @@ const MedicationList = () => {
 				)}
 			</Row>
 
-			<div style={{ overflowX: "auto", margin: "0 -16px" }}>
-				{/* Table rendering is implicitly handled by top-level check */}
+			<div style={{ overflowX: "auto" }}>
 				<Table
-					columns={columns} // Columns now have internal permission checks
+					columns={columns}
 					dataSource={medications}
 					loading={loading}
 					rowKey="id"
-					pagination={{
-						current: page + 1,
-						pageSize: size,
-						total: total,
-						onChange: handleTableChange,
-					}}
+					onChange={handleTableChange}
+					pagination={{ current: page + 1, pageSize: size, total, showSizeChanger: true, pageSizeOptions: ["10", "20", "50", "100"] }}
 				/>
 			</div>
 
-			{/* Add/Edit Modal */}
 			<Modal
-				title={selectedMedication ? "Edit Medication" : "Add Medication"}
+				title={selectedMedication ? "Edit Medication" : "Add New Medication"}
 				visible={isModalVisible}
 				onCancel={handleCancel}
 				footer={[
@@ -782,45 +523,37 @@ const MedicationList = () => {
 						key="submit"
 						type="primary"
 						onClick={handleFormSubmit}
-						// Disable button based on permission and mode (add vs edit)
 						disabled={!user || (selectedMedication ? !canUpdateMedication : !canCreateMedication)}>
 						{selectedMedication ? "Update" : "Save"}
 					</Button>,
 				]}
 				width="70%">
-				<Form form={form} layout="vertical">
-					{/* Form fields are implicitly enabled/disabled by modal visibility & button state */}
+				<Form form={form} layout="vertical" onValuesChange={updateMessage}>
 					<Row gutter={16}>
 						<Col xs={24} sm={12}>
-							<Form.Item label="Name" name="name" rules={[{ required: true, message: "Please input name" }]}>
-								<Input onChange={updateMessage} />
+							<Form.Item label="Name" name="name" rules={[{ required: true }]}>
+								<Input />
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12}>
-							<Form.Item label="Dosage" name="dosage" rules={[{ required: true, message: "Please input dosage" }]}>
-								<Input onChange={updateMessage} />
+							<Form.Item label="Dosage" name="dosage" rules={[{ required: true }]}>
+								<Input placeholder="e.g., 500mg, 10ml" />
 							</Form.Item>
 						</Col>
 					</Row>
-
 					<Row gutter={16}>
-						<Col xs={24} sm={12}>
-							<Form.Item label="Pricing Unit" name="pricingUnit" rules={[{ required: true, message: "Please input pricing unit" }]}>
-								<Select
-									value={pricingUnit}
-									onChange={(e) => {
-										onPriceUnitChange(e);
-										updateMessage();
-									}}>
+						<Col xs={24} sm={8}>
+							<Form.Item label="Pricing Unit" name="pricingUnit" rules={[{ required: true }]} initialValue="PER_MG">
+								<Select onChange={(value) => setPricingUnit(value)}>
 									<Option value="PER_MG">PER_MG</Option>
 									<Option value="PER_ML">PER_ML</Option>
+									<Option value="PER_TABLET">PER_TABLET</Option>
+									<Option value="PER_CAPSULE">PER_CAPSULE</Option>
 									<Option value="PER_DOSE">PER_DOSE</Option>
 									<Option value="PER_VIAL">PER_VIAL</Option>
 									<Option value="PER_UNIT">PER_UNIT</Option>
 									<Option value="PER_PEN">PER_PEN</Option>
 									<Option value="PER_GRAM">PER_GRAM</Option>
-									<Option value="PER_TABLET">PER_TABLET</Option>
-									<Option value="PER_CAPSULE">PER_CAPSULE</Option>
 									<Option value="PER_PATCH">PER_PATCH</Option>
 									<Option value="PER_INHALER">PER_INHALER</Option>
 									<Option value="PER_BOX">PER_BOX</Option>
@@ -828,93 +561,81 @@ const MedicationList = () => {
 								</Select>
 							</Form.Item>
 						</Col>
-					</Row>
-
-					<Row gutter={16}>
-						<Col xs={24} sm={12}>
-							<Form.Item label="Price" name="price" rules={[{ required: true, message: "Please input price" }]}>
-								<Input type="number" value={price} onChange={(e) => onPriceChange(e.target.value)} />
+						<Col xs={24} sm={8}>
+							<Form.Item label={`Price per ${pricingUnit.toLowerCase()}`} name="price" rules={[{ required: true }]}>
+								<InputNumber min={0} step={0.01} onChange={(val) => setPrice(val)} style={{ width: "100%" }} />
+							</Form.Item>
+						</Col>
+						<Col xs={24} sm={8}>
+							<Form.Item label={`Amount of ${pricingUnit.toLowerCase()}s`} name="amountPerUnit" rules={[{ required: true }]}>
+								<InputNumber min={1} onChange={(val) => setAmountPerUnit(val)} style={{ width: "100%" }} />
 							</Form.Item>
 						</Col>
 					</Row>
-
 					<Row gutter={16}>
-						<Col xs={24} sm={12}>
-							<Form.Item label="Image URL" name="imageURL" rules={[{ required: true, message: "Please input Image URL" }]}>
-								<Input />
-							</Form.Item>
-						</Col>
-						<Col xs={24} sm={12}>
-							<Form.Item
-								label={`And this unit has ${amountPerUnit} ${pricingUnit} in it`}
-								name="amountPerUnit"
-								rules={[{ required: true, message: "Please input amount per unit" }]}>
-								<Input type="number" value={amountPerUnit} onChange={(e) => onAmountPerUnitChange(e.target.value)} />
+						<Col span={24}>
+							<Form.Item label="Image URL" name="imageURL">
+								<Input placeholder="https://example.com/image.png" />
 							</Form.Item>
 						</Col>
 					</Row>
-
 					<Row gutter={16}>
-						<Col xs={24}>
+						<Col span={24}>
 							<Alert message={message} type="info" showIcon />
 						</Col>
 					</Row>
 				</Form>
 			</Modal>
 
-			{/* Add Batch Modal */}
 			<Modal
-				title="Add Batch"
+				title={`Add Batch to ${selectedMedication?.name}`}
 				visible={isStockModalVisible}
 				onCancel={handleStockModalCancel}
 				footer={[
 					<Button key="cancel" onClick={handleStockModalCancel}>
 						Cancel
 					</Button>,
-					<Button
-						key="submit"
-						type="default"
-						onClick={handleStockChangeSubmit}
-						// Disable button based on permission
-						disabled={!canUpdateStock}>
+					<Button key="submit" type="primary" onClick={handleStockChangeSubmit} disabled={!canUpdateStock}>
 						Add Batch
 					</Button>,
 				]}>
 				<Form layout="vertical">
 					<Row gutter={16}>
 						<Col xs={24} sm={12}>
-							<Form.Item label="Quantity" name="quantity" rules={[{ required: true, message: "Please input quantity" }]}>
-								<InputNumber
-									value={stockChangeQuantity}
-									onChange={(value) => setStockChangeQuantity(value)}
-									min={1}
-									style={{ width: "100%" }}
-								/>
+							<Form.Item label="Quantity" rules={[{ required: true }]}>
+								<InputNumber value={stockChangeQuantity} onChange={setStockChangeQuantity} min={1} style={{ width: "100%" }} />
 							</Form.Item>
 						</Col>
 						<Col xs={24} sm={12}>
-							<Form.Item
-								label="Purchase Price (per unit)"
-								name="purchasePrice"
-								rules={[{ required: true, message: "Please input purchase price" }]}>
-								<InputNumber value={purchasePrice} onChange={(value) => setPurchasePrice(value)} min={0} style={{ width: "100%" }} />
+							<Form.Item label="Purchase Price (per unit)" rules={[{ required: true }]}>
+								<InputNumber value={purchasePrice} onChange={setPurchasePrice} min={0} step={0.01} style={{ width: "100%" }} />
 							</Form.Item>
 						</Col>
 					</Row>
 				</Form>
 			</Modal>
 
-			{/* View Batches Modal */}
 			<Modal
 				title={`Batches for ${selectedMedication?.name}`}
 				visible={isBatchModalVisible}
 				onCancel={handleBatchesModalClose}
-				footer={null} // Actions are in the table now
-				width="70%">
-				<Table columns={batchColumns} dataSource={medicationBatches} rowKey="id" pagination={false} />
+				footer={null}
+				width="80%">
+				<Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+					<Col>
+						<RangePicker showTime format="YYYY-MM-DD HH:mm:ss" onChange={handleBatchDateChange} />
+					</Col>
+					<Col>
+						<Button type="default" icon={<PrinterOutlined />} onClick={handlePrintBatches}>
+							Print Report
+						</Button>
+					</Col>
+				</Row>
+				<div ref={printableBatchContentRef}>
+					<Table columns={batchColumns} dataSource={medicationBatches} loading={medicationBatchesLoading} rowKey="id" pagination={false} />
+				</div>
 			</Modal>
 
-			{/* Edit Batch Modal */}
 			<Modal
 				title="Edit Batch"
 				visible={isEditBatchModalVisible}
@@ -924,18 +645,16 @@ const MedicationList = () => {
 					batchForm.resetFields();
 				}}
 				onOk={handleUpdateBatch}
-				// Disable OK button based on permission
 				okButtonProps={{ disabled: !canUpdateStock }}
 				okText="Update"
 				cancelText="Cancel">
 				<Form form={batchForm} layout="vertical">
-					<Form.Item label="Purchase Price" name="purchasePrice" rules={[{ required: true, message: "Please input purchase price" }]}>
-						<InputNumber min={0} style={{ width: "100%" }} />
+					<Form.Item label="Purchase Price" name="purchasePrice" rules={[{ required: true }]}>
+						<InputNumber min={0} step={0.01} style={{ width: "100%" }} />
 					</Form.Item>
 				</Form>
 			</Modal>
 
-			{/* History Modals are conditionally opened based on permission checks */}
 			<MedicationHistory
 				medicationId={selectedMedication?.id}
 				medicationName={selectedMedication?.name}
@@ -943,7 +662,160 @@ const MedicationList = () => {
 				onClose={handleHistoryModalClose}
 			/>
 			<AllMedicationHistory visible={isAllHistoryVisible} onClose={handleAllHistoryClose} />
-			{/* Removed Info Modal */}
+
+			<Modal
+				title={
+					<>
+						<InfoCircleOutlined style={{ marginRight: 8, color: "#1890ff" }} /> Medication Guide
+					</>
+				}
+				visible={isHelpModalVisible}
+				onCancel={() => setIsHelpModalVisible(false)}
+				footer={null}
+				width="60%">
+				<Steps direction="vertical" current={-1} style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: "20px" }}>
+					<Step
+						title="Adding a New Medication"
+						description={
+							<div>
+								<p>
+									Click "New Medication" to open a form for entering the medication's details. Each field is critical for correct
+									pricing and tracking.
+								</p>
+								<Divider />
+								<Title level={5}>Fields Explained:</Title>
+								<ul>
+									<li>
+										<b>Name & Dosage:</b> The medication's brand/generic name and its strength (e.g., "Amoxicillin", "500mg").{" "}
+										<Text strong>Important:</Text> Create a separate medication entry for each different dosage (e.g., Amoxicillin
+										250mg, Amoxicillin 500mg).
+									</li>
+									<li>
+										<b>Pricing Unit:</b> How the medication is sold (e.g., PER_TABLET, PER_BOX). This is crucial for calculating
+										the selling price.
+									</li>
+									<li>
+										<b>Price per Unit:</b> The price for <Text strong>one</Text> of the selected pricing units.
+									</li>
+									<li>
+										<b>Amount of Units:</b> How many of the pricing units are in this specific medication package. For example, a
+										box (PER_BOX) might contain 30 tablets.
+									</li>
+									<li>
+										<b>Image URL:</b> An optional link to an image of the medication.
+									</li>
+								</ul>
+								<Alert
+									message="The system automatically calculates the total selling price by multiplying the 'Price per Unit' by the 'Amount of Units'."
+									type="info"
+									showIcon
+								/>
+							</div>
+						}
+					/>
+					<Step
+						title="Editing a Medication"
+						description={
+							<p>
+								Click the "Edit" button (<EditOutlined />) on any medication row to modify its details. You can change any aspect of
+								the medication, including its name, dosage, and pricing structure.
+							</p>
+						}
+					/>
+					<Step
+						title="Adding a Batch (Inventory)"
+						description={
+							<div>
+								<p>
+									Batches track your inventory and purchase costs. Click "Add Batch" (<PlusOutlined />) on a medication to record a
+									new shipment.
+								</p>
+								<ol>
+									<li>
+										<b>Quantity:</b> The number of sellable units (e.g., tablets, boxes) you received.
+									</li>
+									<li>
+										<b>Purchase Price (per unit):</b> The cost you paid for <Text strong>one</Text> unit in this batch. This is
+										for your internal records and differs from the selling price.
+									</li>
+								</ol>
+								<Alert
+									message="Total stock is automatically calculated from all available batches. The system uses a First-In, First-Out (FIFO) method for dispensing."
+									type="warning"
+									showIcon
+								/>
+							</div>
+						}
+					/>
+					<Step
+						title="Viewing Batches"
+						description={
+							<div>
+								<p>
+									Click "View Batches" to see a detailed list of all inventory batches for a medication. This view shows purchase
+									dates, costs, and remaining quantities.
+								</p>
+								<Divider />
+								<Title level={5}>Filtering and Printing</Title>
+								<ul>
+									<li>
+										<b>Filter by Date:</b> Use the date range picker at the top of the window to show only batches purchased
+										within a specific timeframe.
+									</li>
+									<li>
+										<b>Print Report:</b> Click the "Print Report" button (<PrinterOutlined />) to generate a clean, printable
+										summary of the batches currently displayed. This report will respect any date filters you have applied.
+									</li>
+								</ul>
+							</div>
+						}
+					/>
+					<Step
+						title="Editing & Deleting Batches"
+						description={
+							<div>
+								<p>Within the "View Batches" window, you can manage individual batches:</p>
+								<ul>
+									<li>
+										<b>
+											Edit (<EditTwoTone />
+											):
+										</b>{" "}
+										Allows you to correct the purchase price of a batch.
+									</li>
+									<li>
+										<b>
+											Delete (<DeleteTwoTone />
+											):
+										</b>{" "}
+										Permanently removes a batch record.{" "}
+										<Text strong>This is only possible if no units from the batch have been dispensed.</Text>
+									</li>
+								</ul>
+							</div>
+						}
+					/>
+					<Step
+						title="Medication History"
+						description={
+							<p>
+								Click "History" (<HistoryOutlined />) to see a log of all changes for a single medication. Use the "View All History"
+								button at the top for a comprehensive log across all medications.
+							</p>
+						}
+					/>
+					<Step
+						title="Deleting Medications"
+						description={
+							<Alert
+								message="Medications generally cannot be deleted to ensure data integrity with patient records and prescriptions. Instead, 'Edit' the medication if its details are wrong, or simply stop adding new batches if it is no longer in use."
+								type="error"
+								showIcon
+							/>
+						}
+					/>
+				</Steps>
+			</Modal>
 		</div>
 	);
 };
