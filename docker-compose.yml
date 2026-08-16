@@ -5,13 +5,13 @@ services:
     ports:
       - "5431:5432"
     environment:
-      POSTGRES_USER: bassel
-      POSTGRES_PASSWORD: fl studio
-      POSTGRES_DB: mydb
+      POSTGRES_USER: 
+      POSTGRES_PASSWORD: 
+      POSTGRES_DB: 
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U bassel -d mydb"]
+        test: ["CMD-SHELL", "pg_isready -U user -d db"]
         interval: 10s
         timeout: 5s
         retries: 5
@@ -23,15 +23,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/mydb
-      SPRING_DATASOURCE_USERNAME: bassel
-      SPRING_DATASOURCE_PASSWORD: fl studio
-      JWT_SECRET: c2VjcmV0X2Zvcl90ZXN0aW5nX29ubHlfZG9fbm90X3VzZV9pdF9pbl9wcm9kdWN0aW9uXzE2MzYxODcwNzY=
-      JWT_EXPIRATION: 3600000
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/db
+      SPRING_DATASOURCE_USERNAME: 
+      SPRING_DATASOURCE_PASSWORD: 
+      JWT_SECRET: 
+      JWT_EXPIRATION: 
       file_upload_dir: /app/uploads
       file_upload_directory: /app/uploads
       SPRING_PROFILES_ACTIVE: dev
-      # Add any other backend env variables here
+
     volumes:
       - upload_volume:/app/uploads
     depends_on:
