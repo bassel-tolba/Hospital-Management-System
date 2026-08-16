@@ -1,147 +1,75 @@
-# Hospital Management System
-
-This is a full-stack web application for managing various aspects of a hospital, including patient records, staff assignments, scheduling, billing, and diagnostics. It consists of a Spring Boot backend and a React frontend.
-
-## Features
-
-**Patient Management:**
-
-* Add, view, update, and delete patient records.
-* Search and filter patient data.
-* View detailed patient information, including admissions, appointments, assessments, billing, care plans, prescriptions, vital signs, product usage, medication administrations, image reports, and lab results.
-
-**Staff Management:**
-
-* Manage user accounts (add, update, delete, search).
-* Assign nurses to patients, units, and rooms.
-* View nurse activities.
-
-**Scheduling:**
-
-* Automated scheduling of vital sign recordings based on unit type.
-* View and manage patient schedules.
-
-**Billing:**
-
-* Generate and manage patient bills.
-* Calculate billing totals, including costs for procedures, product usage, lab tests, and image reports.
-* Generate HTML bills for viewing and printing.
-
-**Diagnostics:**
-
-* Manage lab tests and results (using dynamic table generation).
-* Upload, view, and manage image reports.
-* Define image report types and their associated costs.
-
-**Other Features:**
-
-* Secure authentication and authorization using JWT.
-* Role-based access control to different functionalities.
-* Assessment templates and PDF export.
-* Product usage tracking and billing.
-* Medication management and administration.
-
-## Technologies Used
-
-**Backend:**
-
-* Java 17
-* Spring Boot
-* Spring Security
-* Spring Data JPA
-* PostgreSQL
-* Lombok
-* Mapstruct
-* JWT (JJWT)
-* Jackson Databind
-
-**Frontend:**
-
-* React
-* Vite
-* Ant Design
-* Material UI
-* Axios
-* CKEditor 5
-* HTML2PDF.js
-* React Player
-* Zustand
-* React Router
+<img width="800" height="500" alt="Untitled design (3)" src="https://github.com/user-attachments/assets/e01a5d23-9e61-4f62-aae9-8b285dfe894c" />
 
 
-## Building and Running with Docker
+# JCare
 
-This project uses Docker for simplified building and deployment.  Follow these steps:
+Full-stack hospital management system covering patient records, staff assignments, automated scheduling, billing, and diagnostics. Started as a basic patient tracker, turned into a full-blown clinical workflow and billing engine. It happens.
 
-1. **Configure for Production:**
-   - In the `backend/src/main/resources/application.properties` file, uncomment the production configuration section and comment out the development configuration.  This will configure the application to connect to the PostgreSQL database running in the Docker container.  Your production configuration should look like this:
+## Stack
 
-   ```properties
-   spring.application.name=website
-   spring.datasource.url=jdbc:postgresql://database:5432/mydb
-   spring.datasource.username=bassel
-   spring.datasource.password=fl studio
-   spring.datasource.driver-class-name=org.postgresql.Driver
+- **Backend:** Java 17, Spring Boot, Spring Data JPA, Spring Security.
+- **DB:** PostgreSQL.
+- **Frontend:** React (Vite), Zustand (state), React Router.
+- **UI:** Ant Design *and* Material UI (yes, both. Don't ask).
+- **Other:** JWT (JJWT), Lombok, Mapstruct, CKEditor 5, HTML2PDF.js, React Player.
 
-   # JPA Configuration
-   spring.jpa.hibernate.ddl-auto=update
-   # ... (rest of the production configuration)
-   ```
+## What's in here
 
-2. **Build and Run with Docker Compose:**
-   - Navigate to the root directory of the project.
-   - Run the following command:
+**Patient & Clinical Core**
+- Admissions, appointments, and care plans.
+- Vital signs tracking, assessments (with PDF export), and prescriptions.
+- Medication management and administration logs.
+- Product usage tracking.
 
-   ```bash
-   docker-compose up --build
-   ```
+**Staff & Resourcing**
+- User accounts and role-based access control (RBAC).
+- Assigning nurses to patients, units, and rooms.
+- Nurse activity tracking.
 
-   This will build the backend and frontend Docker images and start the containers, including the PostgreSQL database.
+**Diagnostics**
+- Lab tests and results (utilizing dynamic table generation).
+- Image report uploads and management.
+- Configurable image report types and associated costs.
 
-3. **Access the Application:**
-    - The backend will be accessible at `http://localhost:8080`.
-    - The frontend will be accessible at `http://localhost:3000`.
+**Billing & Finance**
+- Patient bill generation.
+- Automated cost aggregation across procedures, product usage, lab tests, and imaging.
+- HTML bills ready for viewing and printing.
 
+**Scheduling & Auth**
+- Automated scheduling for vital sign recordings based on unit type.
+- Secure JWT-based authentication.
 
+## Getting started
 
-## Frontend Development Server
+You can spin the whole thing up via Docker, or run it locally for development.
 
-To run the frontend development server without Docker:
+### The Docker Route
 
-1. Navigate to the `frontend` directory.
-2. Run `npm install` to install dependencies.
-3. Run `npm run dev` to start the development server.
-
-
-## Backend Development Server
-
-To run the backend development server without Docker:
-1. Make sure postgress database is set up on your local machine running at localhost:5432
-2. Set `spring.datasource.url=jdbc:postgresql://localhost:5432/mydb`  in the `backend/src/main/resources/application.properties` file.
-3. Open the project in your ide.
-4. Run the project.
-
-
-
-
-## Folder Structure
-
+1. Open `backend/src/main/resources/application.properties`.
+2. Manually uncomment the Docker database URL (`database:5432`) and comment out the local one. 
+3. Run the build:
+```bash
+docker-compose up --build
 ```
-backend/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── ... (backend source code)
-│   │   └── resources/
-│   │       └── application.properties
-│   └── test/
-│       └── ... (backend tests)
-└── pom.xml
+Backend will be on `http://localhost:8080`, frontend on `http://localhost:3000`.
 
-frontend/
-├── src/
-│   └── ... (frontend source code)
-├── package.json
-└── ... (other frontend files)
+### Local Development
 
-docker-compose.yml
+If you want hot-reloading and IDE support:
+
+1. Make sure Postgres is running locally on `:5432`.
+2. Open `backend/src/main/resources/application.properties` and set the URL back to `jdbc:postgresql://localhost:5432/mydb`.
+3. Fire up the backend via your Java IDE.
+4. Fire up the frontend:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Known rough edges
+
+Being upfront:
+
+- **Manual config swapping.** Having to manually comment/uncomment `application.properties` to switch between Docker and local dev is annoying.
