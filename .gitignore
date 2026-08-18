@@ -13,8 +13,6 @@ Thumbs.db
 node_modules/
 npm-debug.log*
 yarn-error.log*
-package-lock.json*
-
 .pnp*
 dist/        # Common output directory for builds
 build/       # Another common output directory
